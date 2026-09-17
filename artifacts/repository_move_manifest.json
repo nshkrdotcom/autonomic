@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "project": "autonomic",
+  "migration": "umbrella_to_poncho_monorepo",
+  "version": "0.1.0",
+  "mappings": [
+    {
+      "source_umbrella_path": "apps/autonomic_kernel",
+      "target_poncho_path": "packages/autonomic",
+      "app": "autonomic",
+      "module": "Autonomic",
+      "hex_package": "autonomic",
+      "role": "Core OTP control plane, authority governor, effect broker, homeostat, and verification contracts"
+    },
+    {
+      "source_umbrella_path": "apps/autonomic_linux",
+      "target_poncho_path": "packages/autonomic_linux",
+      "app": "autonomic_linux",
+      "module": "Autonomic.Linux",
+      "hex_package": "autonomic_linux",
+      "role": "Linux isolation backend (cgroups v2, namespaces, seccomp, overlayfs sandboxing)"
+    },
+    {
+      "source_umbrella_path": "native/autonomic_launcher",
+      "target_poncho_path": "packages/autonomic_linux/native/autonomic_launcher",
+      "app": null,
+      "module": null,
+      "hex_package": "autonomic_linux (bundled priv executable)",
+      "role": "Privileged external Rust launcher process for cgroup v2, namespaces, and overlayfs"
+    },
+    {
+      "source_umbrella_path": "apps/autonomic_store",
+      "target_poncho_path": "packages/autonomic_postgres",
+      "app": "autonomic_postgres",
+      "module": "Autonomic.Postgres",
+      "hex_package": "autonomic_postgres",
+      "role": "PostgreSQL durable authority store, Ecto repository, transactional ledger, and epoch fencing"
+    },
+    {
+      "source_umbrella_path": "apps/autonomic_typesafe",
+      "target_poncho_path": "packages/autonomic_typesafe",
+      "app": "autonomic_typesafe",
+      "module": "Autonomic.Typesafe",
+      "hex_package": "autonomic_typesafe",
+      "role": "Semantic sensor bank backed by TypeSafe/Jev for evidence budgeting, drift detection, and anomaly scoring"
+    },
+    {
+      "source_umbrella_path": "apps/autonomic_store/test/reference/coding_agent_test.exs",
+      "target_poncho_path": "integration/autonomic_acceptance/test/coding_agent_test.exs",
+      "app": "autonomic_acceptance",
+      "module": "Autonomic.Acceptance",
+      "hex_package": null,
+      "role": "Cross-package end-to-end coding agent acceptance scenario (Linux + Postgres + TypeSafe)"
+    },
+    {
+      "source_umbrella_path": "apps/autonomic_store/test/integration/class4_horizon_test.exs",
+      "target_poncho_path": "integration/autonomic_acceptance/test/class4_horizon_test.exs",
+      "app": "autonomic_acceptance",
+      "module": "Autonomic.Acceptance",
+      "hex_package": null,
+      "role": "Cross-package Class 4 commit horizon integration test (Postgres + TypeSafe)"
+    }
+  ],
+  "eliminated_umbrella_artifacts": [
+    "apps/",
+    "mix.exs (root umbrella mixfile)",
+    "mix.lock (root umbrella lockfile)",
+    "in_umbrella: true declarations"
+  ]
+}

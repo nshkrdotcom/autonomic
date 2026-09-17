@@ -1,0 +1,1530 @@
+* creating /tmp/autonomic-isolated-524b7fjz/public/public_key
+* creating /tmp/autonomic-isolated-524b7fjz/public/packages/autonomic
+* creating /tmp/autonomic-isolated-524b7fjz/public/packages/autonomic_linux
+* creating /tmp/autonomic-isolated-524b7fjz/public/packages/autonomic_postgres
+* creating /tmp/autonomic-isolated-524b7fjz/public/packages/autonomic_typesafe
+* creating /tmp/autonomic-isolated-524b7fjz/public/names
+* creating /tmp/autonomic-isolated-524b7fjz/public/versions
+=== Staging Autonomic Hex Packages for version 0.1.0 ===
+Destination: /home/home/p/g/n/autonomic/_release_stage/0.1.0
+
+Staging package 'autonomic'...
+  [OK] Staged 'autonomic' with versioned Hex dependencies
+Staging package 'autonomic_linux'...
+  [OK] Staged 'autonomic_linux' with versioned Hex dependencies
+Staging package 'autonomic_postgres'...
+  [OK] Staged 'autonomic_postgres' with versioned Hex dependencies
+Staging package 'autonomic_typesafe'...
+  [OK] Staged 'autonomic_typesafe' with versioned Hex dependencies
+
+All 4 packages staged successfully at /home/home/p/g/n/autonomic/_release_stage/0.1.0
+
+=== Building Hex Package Tarballs (mix hex.build) ===
+
+Building 'autonomic' in /home/home/p/g/n/autonomic/_release_stage/0.1.0/autonomic...
+Building autonomic 0.1.0
+  Dependencies:
+    finch ~> 0.23 (app: finch)
+    jason ~> 1.4 (app: jason)
+    gen_stage ~> 1.3 (app: gen_stage)
+    telemetry ~> 1.3 (app: telemetry)
+  App: autonomic
+  Name: autonomic
+  Files:
+    lib
+    lib/autonomic
+    lib/autonomic/application.ex
+    lib/autonomic/contracts.ex
+    lib/autonomic/episode_supervisor.ex
+    lib/autonomic/snapshot_manager.ex
+    lib/autonomic/effect_state.ex
+    lib/autonomic/sensor_array.ex
+    lib/autonomic/homeostat.ex
+    lib/autonomic/runtime.ex
+    lib/autonomic/adapters
+    lib/autonomic/adapters/git.ex
+    lib/autonomic/adapters/http.ex
+    lib/autonomic/adapters/git_remote.ex
+    lib/autonomic/adapters/artifact.ex
+    lib/autonomic/bounded_http.ex
+    lib/autonomic/policy.ex
+    lib/autonomic/rate_limiter.ex
+    lib/autonomic/system_regulator.ex
+    lib/autonomic/repair_manager.ex
+    lib/autonomic/episode_spec.ex
+    lib/autonomic/authority_governor.ex
+    lib/autonomic/canonical.ex
+    lib/autonomic/effect_broker.ex
+    lib/autonomic/verification_runner.ex
+    lib/autonomic/verifier.ex
+    lib/autonomic/effect_socket.ex
+    lib/autonomic/episode_controller.ex
+    lib/autonomic/payloads.ex
+    config
+    config/test.exs
+    config/dev.exs
+    config/config.exs
+    config/prod.exs
+    assets
+    assets/autonomic.svg
+    guides
+    guides/04-adapter-authoring.md
+    guides/02-invariants.md
+    guides/01-architecture.md
+    guides/03-effect-broker.md
+    .formatter.exs
+    CHANGELOG.md
+    LICENSE
+    README.md
+    mix.exs
+  Version: 0.1.0
+  Build tools: mix
+  Description: Production-oriented BEAM/OTP control plane and kernel for untrusted coding workers
+inside disposable execution domains with durable authority, effect brokering,
+homeostatic regulation, and verification recovery.
+  Licenses: MIT
+  Links:
+    Changelog: https://github.com/nshkrdotcom/autonomic/blob/main/packages/autonomic/CHANGELOG.md
+    GitHub: https://github.com/nshkrdotcom/autonomic
+    HexDocs: https://hexdocs.pm/autonomic
+    License: https://github.com/nshkrdotcom/autonomic/blob/main/LICENSE
+  Elixir: ~> 1.20
+Package checksum: ca07ea39d52a8487e223a5a881f9923f1aaef46f1cbf907ac273ae73da16a561
+Saved to autonomic-0.1.0.tar
+  [OK] Built: autonomic-0.1.0.tar (51200 bytes)
+
+Building 'autonomic_linux' in /home/home/p/g/n/autonomic/_release_stage/0.1.0/autonomic_linux...
+Building autonomic_linux 0.1.0
+  Dependencies:
+    autonomic ~> 0.1.0 (app: autonomic)
+  App: autonomic_linux
+  Name: autonomic_linux
+  Files:
+    lib
+    lib/autonomic
+    lib/autonomic/linux
+    lib/autonomic/linux/application.ex
+    lib/autonomic/linux/launcher.ex
+    lib/autonomic/linux/backend.ex
+    lib/autonomic/linux/preflight.ex
+    native/autonomic_launcher/src
+    native/autonomic_launcher/src/main.rs
+    native/autonomic_launcher/Cargo.toml
+    native/autonomic_launcher/Cargo.lock
+    config
+    config/test.exs
+    config/dev.exs
+    config/runtime.exs
+    config/config.exs
+    config/prod.exs
+    assets
+    assets/autonomic.svg
+    guides
+    guides/03-host-provisioning.md
+    guides/01-linux-isolation.md
+    guides/02-launcher-protocol.md
+    .formatter.exs
+    CHANGELOG.md
+    LICENSE
+    README.md
+    mix.exs
+  Version: 0.1.0
+  Build tools: mix
+  Description: Linux isolation execution domain backend for the Autonomic Kernel architecture,
+providing cgroup v2, namespaces, seccomp filtering, and overlayfs sandboxing.
+  Licenses: MIT
+  Links:
+    Changelog: https://github.com/nshkrdotcom/autonomic/blob/main/packages/autonomic_linux/CHANGELOG.md
+    GitHub: https://github.com/nshkrdotcom/autonomic
+    HexDocs: https://hexdocs.pm/autonomic_linux
+    License: https://github.com/nshkrdotcom/autonomic/blob/main/LICENSE
+  Elixir: ~> 1.20
+Package checksum: 8706ac40b060753ad8080d16a7c04ac04b8f7e42768d453f41858d142f26396b
+Saved to autonomic_linux-0.1.0.tar
+  [OK] Built: autonomic_linux-0.1.0.tar (32256 bytes)
+
+Building 'autonomic_postgres' in /home/home/p/g/n/autonomic/_release_stage/0.1.0/autonomic_postgres...
+Building autonomic_postgres 0.1.0
+  Dependencies:
+    autonomic ~> 0.1.0 (app: autonomic)
+    ecto_sql ~> 3.13 (app: ecto_sql)
+    postgrex ~> 0.21 (app: postgrex)
+  App: autonomic_postgres
+  Name: autonomic_postgres
+  Files:
+    lib
+    lib/autonomic
+    lib/autonomic/store
+    lib/autonomic/store/application.ex
+    lib/autonomic/store/postgres.ex
+    lib/autonomic/store/schemas.ex
+    lib/autonomic/store/repo.ex
+    priv
+    priv/repo
+    priv/repo/migrations
+    priv/repo/migrations/20260917000000_create_autonomic_tables.exs
+    config
+    config/test.exs
+    config/dev.exs
+    config/config.exs
+    config/prod.exs
+    assets
+    assets/autonomic.svg
+    guides
+    guides/03-epoch-fencing-and-recovery.md
+    guides/01-postgres-authority.md
+    guides/02-schema-model.md
+    .formatter.exs
+    CHANGELOG.md
+    LICENSE
+    README.md
+    mix.exs
+  Version: 0.1.0
+  Build tools: mix
+  Description: PostgreSQL durable authority store, Ecto repository, transactional ledger,
+and epoch fencing backend for the Autonomic Kernel architecture.
+  Licenses: MIT
+  Links:
+    Changelog: https://github.com/nshkrdotcom/autonomic/blob/main/packages/autonomic_postgres/CHANGELOG.md
+    GitHub: https://github.com/nshkrdotcom/autonomic
+    HexDocs: https://hexdocs.pm/autonomic_postgres
+    License: https://github.com/nshkrdotcom/autonomic/blob/main/LICENSE
+  Elixir: ~> 1.20
+Package checksum: e73e8748b894a5a370f070ae35a8a15d6681950d97377a3806da31ff3e94e7b8
+Saved to autonomic_postgres-0.1.0.tar
+  [OK] Built: autonomic_postgres-0.1.0.tar (23552 bytes)
+
+Building 'autonomic_typesafe' in /home/home/p/g/n/autonomic/_release_stage/0.1.0/autonomic_typesafe...
+Building autonomic_typesafe 0.1.0
+  Dependencies:
+    autonomic ~> 0.1.0 (app: autonomic)
+    typesafe_sdk ~> 0.2.0 (app: typesafe_sdk)
+  App: autonomic_typesafe
+  Name: autonomic_typesafe
+  Files:
+    lib
+    lib/autonomic
+    lib/autonomic/typesafe
+    lib/autonomic/typesafe/application.ex
+    lib/autonomic/typesafe/evidence.ex
+    lib/autonomic/typesafe/sensor_bank.ex
+    lib/autonomic/typesafe/bank.ex
+    lib/autonomic/typesafe/sensor.ex
+    config
+    config/test.exs
+    config/dev.exs
+    config/config.exs
+    config/prod.exs
+    assets
+    assets/autonomic.svg
+    guides
+    guides/03-evidence-budgeting-and-drift.md
+    guides/02-typesafe-sdk-integration.md
+    guides/01-semantic-sensors.md
+    .formatter.exs
+    CHANGELOG.md
+    LICENSE
+    README.md
+    mix.exs
+  Version: 0.1.0
+  Build tools: mix
+  Description: TypeSafe/Jev semantic sensor bank backend for the Autonomic Kernel architecture,
+providing evidence redaction, drift monitoring, and anomaly detection.
+  Licenses: MIT
+  Links:
+    Changelog: https://github.com/nshkrdotcom/autonomic/blob/main/packages/autonomic_typesafe/CHANGELOG.md
+    GitHub: https://github.com/nshkrdotcom/autonomic
+    HexDocs: https://hexdocs.pm/autonomic_typesafe
+    License: https://github.com/nshkrdotcom/autonomic/blob/main/LICENSE
+  Elixir: ~> 1.20
+Package checksum: 6fa851a2e46d577cade866f2947763afb48b83dcc6bf179da83f70e1bdfcdc1a
+Saved to autonomic_typesafe-0.1.0.tar
+  [OK] Built: autonomic_typesafe-0.1.0.tar (17408 bytes)
+
+All 4 package tarballs built in /home/home/p/g/n/autonomic/_release_stage/0.1.0/tarballs
+
+=== Inspecting Unpacked Hex Package Tarballs ===
+
+Inspecting 'autonomic' (autonomic-0.1.0.tar):
+  Tarball archive members: ['VERSION', 'CHECKSUM', 'metadata.config', 'contents.tar.gz']
+  Extracted 40 files into /home/home/p/g/n/autonomic/_release_stage/0.1.0/unpacked/autonomic
+  [OK] Found README.md
+  [OK] Found LICENSE
+  [OK] Found CHANGELOG.md
+  [PASS] Package 'autonomic' meets all Hex distribution criteria.
+
+Inspecting 'autonomic_linux' (autonomic_linux-0.1.0.tar):
+  Tarball archive members: ['VERSION', 'CHECKSUM', 'metadata.config', 'contents.tar.gz']
+  Extracted 21 files into /home/home/p/g/n/autonomic/_release_stage/0.1.0/unpacked/autonomic_linux
+  [OK] Found README.md
+  [OK] Found LICENSE
+  [OK] Found CHANGELOG.md
+  [PASS] Package 'autonomic_linux' meets all Hex distribution criteria.
+
+Inspecting 'autonomic_postgres' (autonomic_postgres-0.1.0.tar):
+  Tarball archive members: ['VERSION', 'CHECKSUM', 'metadata.config', 'contents.tar.gz']
+  Extracted 18 files into /home/home/p/g/n/autonomic/_release_stage/0.1.0/unpacked/autonomic_postgres
+  [OK] Found README.md
+  [OK] Found LICENSE
+  [OK] Found CHANGELOG.md
+  [PASS] Package 'autonomic_postgres' meets all Hex distribution criteria.
+
+Inspecting 'autonomic_typesafe' (autonomic_typesafe-0.1.0.tar):
+  Tarball archive members: ['VERSION', 'CHECKSUM', 'metadata.config', 'contents.tar.gz']
+  Extracted 18 files into /home/home/p/g/n/autonomic/_release_stage/0.1.0/unpacked/autonomic_typesafe
+  [OK] Found README.md
+  [OK] Found LICENSE
+  [OK] Found CHANGELOG.md
+  [PASS] Package 'autonomic_typesafe' meets all Hex distribution criteria.
+
+All 4 packages PASSED Hex release inspection.
+ISOLATED VERIFY: autonomic
+Resolving Hex dependencies...
+Resolution completed in 0.758s
+New:
+  bunt 1.0.0
+  credo 1.7.19
+  dialyxir 1.4.8
+  earmark_parser 1.4.46
+  erlex 0.2.9
+  ex_doc 0.40.4
+  file_system 1.1.1
+  finch 0.23.0
+  gen_stage 1.3.2
+  hpax 1.0.4
+  jason 1.4.5
+  makeup 1.2.2
+  makeup_elixir 1.0.1
+  makeup_erlang 1.1.0
+  mime 2.0.7
+  mint 1.10.0
+  nimble_options 1.1.1
+  nimble_parsec 1.4.2
+  nimble_pool 1.1.0
+  telemetry 1.4.2
+* Getting finch (Hex package)
+* Getting jason (Hex package)
+* Getting gen_stage (Hex package)
+* Getting telemetry (Hex package)
+* Getting ex_doc (Hex package)
+* Getting credo (Hex package)
+* Getting dialyxir (Hex package)
+* Getting erlex (Hex package)
+* Getting bunt (Hex package)
+* Getting file_system (Hex package)
+* Getting earmark_parser (Hex package)
+* Getting makeup_elixir (Hex package)
+* Getting makeup_erlang (Hex package)
+* Getting makeup (Hex package)
+* Getting nimble_parsec (Hex package)
+* Getting mime (Hex package)
+* Getting mint (Hex package)
+* Getting nimble_options (Hex package)
+* Getting nimble_pool (Hex package)
+* Getting hpax (Hex package)
+==> earmark_parser
+Compiling 2 files (.xrl)
+Compiling 1 file (.yrl)
+Compiling 3 files (.erl)
+Compiling 32 files (.ex)
+Generated earmark_parser app
+==> file_system
+Compiling 7 files (.ex)
+Generated file_system app
+==> gen_stage
+Compiling 10 files (.ex)
+     warning: unused require Logger
+     │
+ 103 │   require Logger
+     │   ~
+     │
+     └─ lib/gen_stage/dispatchers/partition_dispatcher.ex:103:3
+
+Generated gen_stage app
+==> mime
+Compiling 1 file (.ex)
+Generated mime app
+==> nimble_options
+Compiling 3 files (.ex)
+Generated nimble_options app
+==> bunt
+Compiling 2 files (.ex)
+Generated bunt app
+==> jason
+Compiling 10 files (.ex)
+Generated jason app
+==> hpax
+Compiling 4 files (.ex)
+Generated hpax app
+==> mint
+Compiling 1 file (.erl)
+Compiling 20 files (.ex)
+Generated mint app
+==> erlex
+Compiling 1 file (.xrl)
+Compiling 1 file (.yrl)
+Compiling 2 files (.erl)
+Compiling 2 files (.ex)
+Generated erlex app
+==> nimble_parsec
+Compiling 4 files (.ex)
+Generated nimble_parsec app
+==> makeup
+Compiling 15 files (.ex)
+Generated makeup app
+==> makeup_elixir
+Compiling 6 files (.ex)
+Generated makeup_elixir app
+==> makeup_erlang
+Compiling 4 files (.ex)
+Generated makeup_erlang app
+==> ex_doc
+Compiling 30 files (.ex)
+Generated ex_doc app
+==> autonomic
+===> Analyzing applications...
+===> Compiling telemetry
+==> dialyxir
+Compiling 70 files (.ex)
+Generated dialyxir app
+==> credo
+Compiling 257 files (.ex)
+Generated credo app
+==> nimble_pool
+Compiling 2 files (.ex)
+Generated nimble_pool app
+==> finch
+Compiling 23 files (.ex)
+Generated finch app
+==> autonomic
+Compiling 26 files (.ex)
+Generated autonomic app
+==> file_system
+Compiling 7 files (.ex)
+Generated file_system app
+==> gen_stage
+Compiling 10 files (.ex)
+     warning: unused require Logger
+     │
+ 103 │   require Logger
+     │   ~
+     │
+     └─ lib/gen_stage/dispatchers/partition_dispatcher.ex:103:3
+
+Generated gen_stage app
+==> mime
+Compiling 1 file (.ex)
+Generated mime app
+==> nimble_options
+Compiling 3 files (.ex)
+Generated nimble_options app
+==> bunt
+Compiling 2 files (.ex)
+Generated bunt app
+==> jason
+Compiling 10 files (.ex)
+Generated jason app
+==> hpax
+Compiling 4 files (.ex)
+Generated hpax app
+==> mint
+Compiling 1 file (.erl)
+Compiling 20 files (.ex)
+Generated mint app
+==> erlex
+Compiling 2 files (.erl)
+Compiling 2 files (.ex)
+Generated erlex app
+==> autonomic
+===> Analyzing applications...
+===> Compiling telemetry
+==> dialyxir
+Compiling 70 files (.ex)
+Generated dialyxir app
+==> credo
+Compiling 257 files (.ex)
+Generated credo app
+==> nimble_pool
+Compiling 2 files (.ex)
+Generated nimble_pool app
+==> finch
+Compiling 23 files (.ex)
+Generated finch app
+==> autonomic
+Compiling 26 files (.ex)
+Generated autonomic app
+Running ExUnit with seed: 217663, max_cases: 48
+Excluding tags: [:postgres, :linux, :live, :reference, :db_outage]
+
+..........
+Finished in 0.1 seconds (0.03s async, 0.08s sync)
+
+Result: 10 passed
+Generating docs...
+View html docs at "doc/index.html"
+View markdown docs at "doc/llms.txt"
+View epub docs at "doc/Autonomic.epub"
+ISOLATED VERIFY: autonomic_linux
+127.0.0.1 - - [17/Sep/2026 12:46:17] "GET /packages/autonomic HTTP/1.1" 200 -
+Resolving Hex dependencies...
+Resolution completed in 1.103s
+New:
+  autonomic 0.1.0
+  bunt 1.0.0
+  credo 1.7.19
+  dialyxir 1.4.8
+  earmark_parser 1.4.46
+  erlex 0.2.9
+  ex_doc 0.40.4
+  file_system 1.1.1
+  finch 0.23.0
+  gen_stage 1.3.2
+  hpax 1.0.4
+  jason 1.4.5
+  makeup 1.2.2
+  makeup_elixir 1.0.1
+  makeup_erlang 1.1.0
+  mime 2.0.7
+  mint 1.10.0
+  nimble_options 1.1.1
+  nimble_parsec 1.4.2
+  nimble_pool 1.1.0
+  telemetry 1.4.2
+* Getting autonomic (Hex package)
+127.0.0.1 - - [17/Sep/2026 12:46:19] "GET /tarballs/autonomic-0.1.0.tar HTTP/1.1" 200 -
+* Getting ex_doc (Hex package)
+* Getting credo (Hex package)
+* Getting dialyxir (Hex package)
+* Getting erlex (Hex package)
+* Getting bunt (Hex package)
+* Getting file_system (Hex package)
+* Getting jason (Hex package)
+* Getting earmark_parser (Hex package)
+* Getting makeup_elixir (Hex package)
+* Getting makeup_erlang (Hex package)
+* Getting makeup (Hex package)
+* Getting nimble_parsec (Hex package)
+* Getting finch (Hex package)
+* Getting gen_stage (Hex package)
+* Getting telemetry (Hex package)
+* Getting mime (Hex package)
+* Getting mint (Hex package)
+* Getting nimble_options (Hex package)
+* Getting nimble_pool (Hex package)
+* Getting hpax (Hex package)
+==> earmark_parser
+Compiling 2 files (.xrl)
+Compiling 1 file (.yrl)
+Compiling 3 files (.erl)
+Compiling 32 files (.ex)
+Generated earmark_parser app
+==> file_system
+Compiling 7 files (.ex)
+Generated file_system app
+==> gen_stage
+Compiling 10 files (.ex)
+     warning: unused require Logger
+     │
+ 103 │   require Logger
+     │   ~
+     │
+     └─ lib/gen_stage/dispatchers/partition_dispatcher.ex:103:3
+
+Generated gen_stage app
+==> mime
+Compiling 1 file (.ex)
+Generated mime app
+==> nimble_options
+Compiling 3 files (.ex)
+Generated nimble_options app
+==> bunt
+Compiling 2 files (.ex)
+Generated bunt app
+==> jason
+Compiling 10 files (.ex)
+Generated jason app
+==> hpax
+Compiling 4 files (.ex)
+Generated hpax app
+==> mint
+Compiling 1 file (.erl)
+Compiling 20 files (.ex)
+Generated mint app
+==> erlex
+Compiling 1 file (.xrl)
+Compiling 1 file (.yrl)
+Compiling 2 files (.erl)
+Compiling 2 files (.ex)
+Generated erlex app
+==> nimble_parsec
+Compiling 4 files (.ex)
+Generated nimble_parsec app
+==> makeup
+Compiling 15 files (.ex)
+Generated makeup app
+==> makeup_elixir
+Compiling 6 files (.ex)
+Generated makeup_elixir app
+==> makeup_erlang
+Compiling 4 files (.ex)
+Generated makeup_erlang app
+==> ex_doc
+Compiling 30 files (.ex)
+Generated ex_doc app
+==> autonomic_linux
+===> Analyzing applications...
+===> Compiling telemetry
+==> dialyxir
+Compiling 70 files (.ex)
+Generated dialyxir app
+==> credo
+Compiling 257 files (.ex)
+Generated credo app
+==> nimble_pool
+Compiling 2 files (.ex)
+Generated nimble_pool app
+==> finch
+Compiling 23 files (.ex)
+Generated finch app
+==> autonomic
+Compiling 26 files (.ex)
+Generated autonomic app
+==> autonomic_linux
+Compiling 4 files (.ex)
+Generated autonomic_linux app
+==> file_system
+Compiling 7 files (.ex)
+Generated file_system app
+==> gen_stage
+Compiling 10 files (.ex)
+     warning: unused require Logger
+     │
+ 103 │   require Logger
+     │   ~
+     │
+     └─ lib/gen_stage/dispatchers/partition_dispatcher.ex:103:3
+
+Generated gen_stage app
+==> mime
+Compiling 1 file (.ex)
+Generated mime app
+==> nimble_options
+Compiling 3 files (.ex)
+Generated nimble_options app
+==> bunt
+Compiling 2 files (.ex)
+Generated bunt app
+==> jason
+Compiling 10 files (.ex)
+Generated jason app
+==> hpax
+Compiling 4 files (.ex)
+Generated hpax app
+==> mint
+Compiling 1 file (.erl)
+Compiling 20 files (.ex)
+Generated mint app
+==> erlex
+Compiling 2 files (.erl)
+Compiling 2 files (.ex)
+Generated erlex app
+==> autonomic_linux
+===> Analyzing applications...
+===> Compiling telemetry
+==> dialyxir
+Compiling 70 files (.ex)
+Generated dialyxir app
+==> credo
+Compiling 257 files (.ex)
+Generated credo app
+==> nimble_pool
+Compiling 2 files (.ex)
+Generated nimble_pool app
+==> finch
+Compiling 23 files (.ex)
+Generated finch app
+==> autonomic
+Compiling 26 files (.ex)
+Generated autonomic app
+==> autonomic_linux
+Compiling 4 files (.ex)
+Generated autonomic_linux app
+Running ExUnit with seed: 403784, max_cases: 48
+Excluding tags: [:postgres, :linux, :live, :reference, :db_outage]
+
+All tests have been excluded.
+
+Finished in 0.07 seconds (0.00s async, 0.07s sync)
+
+Result: 0 tests, 3 excluded
+Generating docs...
+View html docs at "doc/index.html"
+View markdown docs at "doc/llms.txt"
+View epub docs at "doc/Autonomic Linux.epub"
+ISOLATED VERIFY: autonomic_postgres
+127.0.0.1 - - [17/Sep/2026 12:47:00] "GET /packages/autonomic HTTP/1.1" 200 -
+Resolving Hex dependencies...
+Resolution completed in 1.139s
+New:
+  autonomic 0.1.0
+  bunt 1.0.0
+  credo 1.7.19
+  db_connection 2.10.2
+  decimal 3.1.1
+  dialyxir 1.4.8
+  earmark_parser 1.4.46
+  ecto 3.14.2
+  ecto_sql 3.14.0
+  erlex 0.2.9
+  ex_doc 0.40.4
+  file_system 1.1.1
+  finch 0.23.0
+  gen_stage 1.3.2
+  hpax 1.0.4
+  jason 1.4.5
+  makeup 1.2.2
+  makeup_elixir 1.0.1
+  makeup_erlang 1.1.0
+  mime 2.0.7
+  mint 1.10.0
+  nimble_options 1.1.1
+  nimble_parsec 1.4.2
+  nimble_pool 1.1.0
+  postgrex 0.22.4
+  telemetry 1.4.2
+* Getting autonomic (Hex package)
+* Getting ecto_sql (Hex package)
+* Getting postgrex (Hex package)
+* Getting ex_doc (Hex package)
+* Getting credo (Hex package)
+* Getting dialyxir (Hex package)
+* Getting erlex (Hex package)
+* Getting bunt (Hex package)
+* Getting file_system (Hex package)
+* Getting jason (Hex package)
+* Getting earmark_parser (Hex package)
+* Getting makeup_elixir (Hex package)
+* Getting makeup_erlang (Hex package)
+* Getting makeup (Hex package)
+* Getting nimble_parsec (Hex package)
+* Getting db_connection (Hex package)
+* Getting decimal (Hex package)
+* Getting telemetry (Hex package)
+* Getting ecto (Hex package)
+* Getting finch (Hex package)
+* Getting gen_stage (Hex package)
+* Getting mime (Hex package)
+* Getting mint (Hex package)
+* Getting nimble_options (Hex package)
+* Getting nimble_pool (Hex package)
+* Getting hpax (Hex package)
+==> earmark_parser
+Compiling 2 files (.xrl)
+Compiling 1 file (.yrl)
+Compiling 3 files (.erl)
+Compiling 32 files (.ex)
+Generated earmark_parser app
+==> file_system
+Compiling 7 files (.ex)
+Generated file_system app
+==> gen_stage
+Compiling 10 files (.ex)
+     warning: unused require Logger
+     │
+ 103 │   require Logger
+     │   ~
+     │
+     └─ lib/gen_stage/dispatchers/partition_dispatcher.ex:103:3
+
+Generated gen_stage app
+==> mime
+Compiling 1 file (.ex)
+Generated mime app
+==> nimble_options
+Compiling 3 files (.ex)
+Generated nimble_options app
+==> bunt
+Compiling 2 files (.ex)
+Generated bunt app
+==> hpax
+Compiling 4 files (.ex)
+Generated hpax app
+==> mint
+Compiling 1 file (.erl)
+Compiling 20 files (.ex)
+Generated mint app
+==> erlex
+Compiling 1 file (.xrl)
+Compiling 1 file (.yrl)
+Compiling 2 files (.erl)
+Compiling 2 files (.ex)
+Generated erlex app
+==> decimal
+Compiling 4 files (.ex)
+Generated decimal app
+==> jason
+Compiling 10 files (.ex)
+Generated jason app
+==> nimble_parsec
+Compiling 4 files (.ex)
+Generated nimble_parsec app
+==> makeup
+Compiling 15 files (.ex)
+Generated makeup app
+==> makeup_elixir
+Compiling 6 files (.ex)
+Generated makeup_elixir app
+==> makeup_erlang
+Compiling 4 files (.ex)
+Generated makeup_erlang app
+==> ex_doc
+Compiling 30 files (.ex)
+Generated ex_doc app
+==> autonomic_postgres
+===> Analyzing applications...
+===> Compiling telemetry
+==> db_connection
+Compiling 18 files (.ex)
+Generated db_connection app
+==> ecto
+Compiling 56 files (.ex)
+Generated ecto app
+==> dialyxir
+Compiling 70 files (.ex)
+Generated dialyxir app
+==> credo
+Compiling 257 files (.ex)
+Generated credo app
+warning: "xref: [exclude: ...]" in your mix.exs file is deprecated, instead use: "elixirc_options: [no_warn_undefined: ...]"
+  (mix 1.20.4) lib/mix/tasks/compile.elixir.ex:243: Mix.Tasks.Compile.Elixir.xref_exclude_opts/2
+  (mix 1.20.4) lib/mix/tasks/compile.elixir.ex:142: Mix.Tasks.Compile.Elixir.run/1
+  (mix 1.20.4) lib/mix/task.ex:502: anonymous fn/3 in Mix.Task.run_task/5
+  (mix 1.20.4) lib/mix/task.compiler.ex:299: Mix.Task.Compiler.run_compiler/2
+  (mix 1.20.4) lib/mix/task.compiler.ex:287: Mix.Task.Compiler.run/4
+  (mix 1.20.4) lib/mix/tasks/compile.all.ex:75: Mix.Tasks.Compile.All.do_run/2
+
+==> postgrex
+Compiling 70 files (.ex)
+Generated postgrex app
+==> ecto_sql
+Compiling 25 files (.ex)
+Generated ecto_sql app
+==> nimble_pool
+Compiling 2 files (.ex)
+Generated nimble_pool app
+==> finch
+Compiling 23 files (.ex)
+Generated finch app
+==> autonomic
+Compiling 26 files (.ex)
+Generated autonomic app
+==> autonomic_postgres
+Compiling 4 files (.ex)
+Generated autonomic_postgres app
+==> file_system
+Compiling 7 files (.ex)
+Generated file_system app
+==> gen_stage
+Compiling 10 files (.ex)
+     warning: unused require Logger
+     │
+ 103 │   require Logger
+     │   ~
+     │
+     └─ lib/gen_stage/dispatchers/partition_dispatcher.ex:103:3
+
+Generated gen_stage app
+==> mime
+Compiling 1 file (.ex)
+Generated mime app
+==> nimble_options
+Compiling 3 files (.ex)
+Generated nimble_options app
+==> bunt
+Compiling 2 files (.ex)
+Generated bunt app
+==> hpax
+Compiling 4 files (.ex)
+Generated hpax app
+==> mint
+Compiling 1 file (.erl)
+Compiling 20 files (.ex)
+Generated mint app
+==> erlex
+Compiling 2 files (.erl)
+Compiling 2 files (.ex)
+Generated erlex app
+==> decimal
+Compiling 4 files (.ex)
+Generated decimal app
+==> jason
+Compiling 10 files (.ex)
+Generated jason app
+==> autonomic_postgres
+===> Analyzing applications...
+===> Compiling telemetry
+==> db_connection
+Compiling 18 files (.ex)
+Generated db_connection app
+==> ecto
+Compiling 56 files (.ex)
+Generated ecto app
+==> dialyxir
+Compiling 70 files (.ex)
+Generated dialyxir app
+==> credo
+Compiling 257 files (.ex)
+Generated credo app
+warning: "xref: [exclude: ...]" in your mix.exs file is deprecated, instead use: "elixirc_options: [no_warn_undefined: ...]"
+  (mix 1.20.4) lib/mix/tasks/compile.elixir.ex:243: Mix.Tasks.Compile.Elixir.xref_exclude_opts/2
+  (mix 1.20.4) lib/mix/tasks/compile.elixir.ex:142: Mix.Tasks.Compile.Elixir.run/1
+  (mix 1.20.4) lib/mix/task.ex:502: anonymous fn/3 in Mix.Task.run_task/5
+  (mix 1.20.4) lib/mix/task.compiler.ex:299: Mix.Task.Compiler.run_compiler/2
+  (mix 1.20.4) lib/mix/task.compiler.ex:287: Mix.Task.Compiler.run/4
+  (mix 1.20.4) lib/mix/tasks/compile.all.ex:75: Mix.Tasks.Compile.All.do_run/2
+
+==> postgrex
+Compiling 70 files (.ex)
+Generated postgrex app
+==> ecto_sql
+Compiling 25 files (.ex)
+Generated ecto_sql app
+==> nimble_pool
+Compiling 2 files (.ex)
+Generated nimble_pool app
+==> finch
+Compiling 23 files (.ex)
+Generated finch app
+==> autonomic
+Compiling 26 files (.ex)
+Generated autonomic app
+==> autonomic_postgres
+Compiling 4 files (.ex)
+Generated autonomic_postgres app
+
+12:47:51.185 [error] Postgrex.Protocol (#PID<0.4739.0> ("db_conn_20")) failed to connect: ** (Postgrex.Error) FATAL 28P01 (invalid_password) password authentication failed for user "autonomic"
+
+12:47:51.185 [error] Postgrex.Protocol (#PID<0.4738.0> ("db_conn_19")) failed to connect: ** (Postgrex.Error) FATAL 28P01 (invalid_password) password authentication failed for user "autonomic"
+
+12:47:51.185 [error] Postgrex.Protocol (#PID<0.4722.0> ("db_conn_3")) failed to connect: ** (Postgrex.Error) FATAL 28P01 (invalid_password) password authentication failed for user "autonomic"
+
+12:47:51.185 [error] Postgrex.Protocol (#PID<0.4740.0> ("db_conn_21")) failed to connect: ** (Postgrex.Error) FATAL 28P01 (invalid_password) password authentication failed for user "autonomic"
+
+12:47:51.185 [error] Postgrex.Protocol (#PID<0.4733.0> ("db_conn_14")) failed to connect: ** (Postgrex.Error) FATAL 28P01 (invalid_password) password authentication failed for user "autonomic"
+
+12:47:51.185 [error] Postgrex.Protocol (#PID<0.4728.0> ("db_conn_9")) failed to connect: ** (Postgrex.Error) FATAL 28P01 (invalid_password) password authentication failed for user "autonomic"
+
+12:47:51.185 [error] Postgrex.Protocol (#PID<0.4723.0> ("db_conn_4")) failed to connect: ** (Postgrex.Error) FATAL 28P01 (invalid_password) password authentication failed for user "autonomic"
+
+12:47:51.185 [error] Postgrex.Protocol (#PID<0.4743.0> ("db_conn_24")) failed to connect: ** (Postgrex.Error) FATAL 28P01 (invalid_password) password authentication failed for user "autonomic"
+
+12:47:51.185 [error] Postgrex.Protocol (#PID<0.4735.0> ("db_conn_16")) failed to connect: ** (Postgrex.Error) FATAL 28P01 (invalid_password) password authentication failed for user "autonomic"
+
+12:47:51.185 [error] Postgrex.Protocol (#PID<0.4725.0> ("db_conn_6")) failed to connect: ** (Postgrex.Error) FATAL 28P01 (invalid_password) password authentication failed for user "autonomic"
+
+12:47:51.185 [error] Postgrex.Protocol (#PID<0.4731.0> ("db_conn_12")) failed to connect: ** (Postgrex.Error) FATAL 28P01 (invalid_password) password authentication failed for user "autonomic"
+
+12:47:51.185 [error] Postgrex.Protocol (#PID<0.4736.0> ("db_conn_17")) failed to connect: ** (Postgrex.Error) FATAL 28P01 (invalid_password) password authentication failed for user "autonomic"
+
+12:47:51.185 [error] Postgrex.Protocol (#PID<0.4742.0> ("db_conn_23")) failed to connect: ** (Postgrex.Error) FATAL 28P01 (invalid_password) password authentication failed for user "autonomic"
+
+12:47:51.185 [error] Postgrex.Protocol (#PID<0.4727.0> ("db_conn_8")) failed to connect: ** (Postgrex.Error) FATAL 28P01 (invalid_password) password authentication failed for user "autonomic"
+
+12:47:51.185 [error] Postgrex.Protocol (#PID<0.4720.0> ("db_conn_1")) failed to connect: ** (Postgrex.Error) FATAL 28P01 (invalid_password) password authentication failed for user "autonomic"
+
+12:47:51.185 [error] Postgrex.Protocol (#PID<0.4732.0> ("db_conn_13")) failed to connect: ** (Postgrex.Error) FATAL 28P01 (invalid_password) password authentication failed for user "autonomic"
+
+12:47:51.185 [error] Postgrex.Protocol (#PID<0.4726.0> ("db_conn_7")) failed to connect: ** (Postgrex.Error) FATAL 28P01 (invalid_password) password authentication failed for user "autonomic"
+
+12:47:51.185 [error] Postgrex.Protocol (#PID<0.4734.0> ("db_conn_15")) failed to connect: ** (Postgrex.Error) FATAL 28P01 (invalid_password) password authentication failed for user "autonomic"
+
+12:47:51.185 [error] Postgrex.Protocol (#PID<0.4741.0> ("db_conn_22")) failed to connect: ** (Postgrex.Error) FATAL 28P01 (invalid_password) password authentication failed for user "autonomic"
+
+12:47:51.185 [error] Postgrex.Protocol (#PID<0.4737.0> ("db_conn_18")) failed to connect: ** (Postgrex.Error) FATAL 28P01 (invalid_password) password authentication failed for user "autonomic"
+
+12:47:51.185 [error] Postgrex.Protocol (#PID<0.4730.0> ("db_conn_11")) failed to connect: ** (Postgrex.Error) FATAL 28P01 (invalid_password) password authentication failed for user "autonomic"
+
+12:47:51.185 [error] Postgrex.Protocol (#PID<0.4729.0> ("db_conn_10")) failed to connect: ** (Postgrex.Error) FATAL 28P01 (invalid_password) password authentication failed for user "autonomic"
+
+12:47:51.185 [error] Postgrex.Protocol (#PID<0.4721.0> ("db_conn_2")) failed to connect: ** (Postgrex.Error) FATAL 28P01 (invalid_password) password authentication failed for user "autonomic"
+
+12:47:51.185 [error] Postgrex.Protocol (#PID<0.4724.0> ("db_conn_5")) failed to connect: ** (Postgrex.Error) FATAL 28P01 (invalid_password) password authentication failed for user "autonomic"
+Running ExUnit with seed: 379824, max_cases: 48
+Excluding tags: [:postgres, :linux, :live, :reference, :db_outage]
+
+All tests have been excluded.
+
+Finished in 0.09 seconds (0.00s async, 0.09s sync)
+
+Result: 0 tests, 11 excluded
+Generating docs...
+View html docs at "doc/index.html"
+View markdown docs at "doc/llms.txt"
+View epub docs at "doc/Autonomic Postgres.epub"
+ISOLATED VERIFY: autonomic_typesafe
+127.0.0.1 - - [17/Sep/2026 12:47:52] "GET /packages/autonomic HTTP/1.1" 200 -
+Resolving Hex dependencies...
+Resolution completed in 1.513s
+New:
+  abnf_parsec 2.1.0
+  autonomic 0.1.0
+  bunt 1.0.0
+  credo 1.7.19
+  dialyxir 1.4.8
+  earmark_parser 1.4.46
+  erlex 0.2.9
+  ex_doc 0.40.4
+  execution_plane 0.3.0
+  execution_plane_http 0.1.0
+  file_system 1.1.1
+  finch 0.23.0
+  foundation 0.2.2
+  gen_stage 1.3.2
+  ground_plane_contracts 0.1.1
+  ground_plane_persistence_policy 0.1.0
+  hpax 1.0.4
+  idna 7.1.0
+  jason 1.4.5
+  jsv 0.21.2
+  makeup 1.2.2
+  makeup_elixir 1.0.1
+  makeup_erlang 1.1.0
+  mime 2.0.7
+  mint 1.10.0
+  multipart_ex 0.1.0
+  nimble_options 1.1.1
+  nimble_parsec 1.4.2
+  nimble_pool 1.1.0
+  pristine 0.3.1
+  sinter 0.3.2
+  telemetry 1.4.2
+  texture 1.2.1
+  typesafe_sdk 0.2.0
+  uuid 1.1.8
+* Getting autonomic (Hex package)
+* Getting typesafe_sdk (Hex package)
+* Getting ex_doc (Hex package)
+* Getting credo (Hex package)
+* Getting dialyxir (Hex package)
+* Getting erlex (Hex package)
+* Getting bunt (Hex package)
+* Getting file_system (Hex package)
+* Getting jason (Hex package)
+* Getting earmark_parser (Hex package)
+* Getting makeup_elixir (Hex package)
+* Getting makeup_erlang (Hex package)
+* Getting makeup (Hex package)
+* Getting nimble_parsec (Hex package)
+* Getting pristine (Hex package)
+* Getting telemetry (Hex package)
+* Getting execution_plane (Hex package)
+* Getting execution_plane_http (Hex package)
+* Getting finch (Hex package)
+* Getting foundation (Hex package)
+* Getting multipart_ex (Hex package)
+* Getting sinter (Hex package)
+* Getting uuid (Hex package)
+* Getting jsv (Hex package)
+* Getting nimble_options (Hex package)
+* Getting abnf_parsec (Hex package)
+* Getting idna (Hex package)
+* Getting texture (Hex package)
+* Getting mime (Hex package)
+* Getting mint (Hex package)
+* Getting nimble_pool (Hex package)
+* Getting hpax (Hex package)
+* Getting ground_plane_contracts (Hex package)
+* Getting ground_plane_persistence_policy (Hex package)
+* Getting gen_stage (Hex package)
+You have added/upgraded packages you could sponsor, run `mix hex.sponsor` to learn more
+==> earmark_parser
+Compiling 2 files (.xrl)
+Compiling 1 file (.yrl)
+Compiling 3 files (.erl)
+Compiling 32 files (.ex)
+Generated earmark_parser app
+==> file_system
+Compiling 7 files (.ex)
+Generated file_system app
+==> gen_stage
+Compiling 10 files (.ex)
+     warning: unused require Logger
+     │
+ 103 │   require Logger
+     │   ~
+     │
+     └─ lib/gen_stage/dispatchers/partition_dispatcher.ex:103:3
+
+Generated gen_stage app
+==> mime
+Compiling 1 file (.ex)
+Generated mime app
+==> nimble_options
+Compiling 3 files (.ex)
+Generated nimble_options app
+==> bunt
+Compiling 2 files (.ex)
+Generated bunt app
+==> jason
+Compiling 10 files (.ex)
+Generated jason app
+==> hpax
+Compiling 4 files (.ex)
+Generated hpax app
+==> mint
+Compiling 1 file (.erl)
+Compiling 20 files (.ex)
+Generated mint app
+==> ground_plane_contracts
+Compiling 25 files (.ex)
+Generated ground_plane_contracts app
+==> erlex
+Compiling 1 file (.xrl)
+Compiling 1 file (.yrl)
+Compiling 2 files (.erl)
+Compiling 2 files (.ex)
+Generated erlex app
+==> multipart_ex
+Compiling 8 files (.ex)
+Generated multipart_ex app
+==> autonomic_typesafe
+===> Analyzing applications...
+===> Compiling idna
+==> nimble_parsec
+Compiling 4 files (.ex)
+Generated nimble_parsec app
+==> makeup
+Compiling 15 files (.ex)
+Generated makeup app
+==> makeup_elixir
+Compiling 6 files (.ex)
+Generated makeup_elixir app
+==> makeup_erlang
+Compiling 4 files (.ex)
+Generated makeup_erlang app
+==> ex_doc
+Compiling 30 files (.ex)
+Generated ex_doc app
+==> autonomic_typesafe
+===> Analyzing applications...
+===> Compiling telemetry
+==> foundation
+Compiling 19 files (.ex)
+    warning: TelemetryReporter.start_link/1 is undefined (module TelemetryReporter is not available or is yet to be defined). Make sure the module name is correct and has been specified in full (or that an alias has been defined)
+    │
+ 62 │       reporter.start_link(opts)
+    │                ~
+    │
+    └─ lib/foundation/telemetry.ex:62:16: Foundation.Telemetry.start_reporter/1
+
+    warning: TelemetryReporter.log/4 is undefined (module TelemetryReporter is not available or is yet to be defined). Make sure the module name is correct and has been specified in full (or that an alias has been defined)
+    │
+ 73 │       reporter_mod.log(reporter, name, data, severity)
+    │                    ~
+    │
+    └─ lib/foundation/telemetry.ex:73:20: Foundation.Telemetry.log/4
+
+    warning: TelemetryReporter.TelemetryAdapter.attach_many/1 is undefined (module TelemetryReporter.TelemetryAdapter is not available or is yet to be defined)
+    │
+ 85 │       {:ok, adapter.attach_many(opts)}
+    │                     ~
+    │
+    └─ lib/foundation/telemetry.ex:85:21: Foundation.Telemetry.attach_reporter/1
+
+    warning: TelemetryReporter.TelemetryAdapter.detach/1 is undefined (module TelemetryReporter.TelemetryAdapter is not available or is yet to be defined)
+    │
+ 95 │       adapter.detach(handler_id)
+    │               ~
+    │
+    └─ lib/foundation/telemetry.ex:95:15: Foundation.Telemetry.detach_reporter/1
+
+Generated foundation app
+==> abnf_parsec
+Compiling 4 files (.ex)
+Generated abnf_parsec app
+==> texture
+Compiling 7 files (.ex)
+Generated texture app
+==> ground_plane_persistence_policy
+Compiling 11 files (.ex)
+Generated ground_plane_persistence_policy app
+==> execution_plane
+Compiling 44 files (.ex)
+Generated execution_plane app
+==> dialyxir
+Compiling 70 files (.ex)
+Generated dialyxir app
+==> jsv
+Compiling 74 files (.ex)
+Generated jsv app
+==> sinter
+Compiling 11 files (.ex)
+Generated sinter app
+==> credo
+Compiling 257 files (.ex)
+Generated credo app
+==> nimble_pool
+Compiling 2 files (.ex)
+Generated nimble_pool app
+==> finch
+Compiling 23 files (.ex)
+Generated finch app
+==> autonomic
+Compiling 26 files (.ex)
+Generated autonomic app
+==> execution_plane_http
+Compiling 5 files (.ex)
+Generated execution_plane_http app
+==> uuid
+Compiling 1 file (.ex)
+    warning: use Bitwise is deprecated. import Bitwise instead
+    │
+  2 │   use Bitwise, only_operators: true
+    │   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    │
+    └─ lib/uuid.ex:2: UUID (module)
+
+Generated uuid app
+==> pristine
+Compiling 110 files (.ex)
+     warning: the variable "start" is accessed inside size(...) of a bitstring but it was defined outside of the match. You must precede it with the pin operator
+     │
+ 136 │         <<event_block::binary-size(start), _boundary::binary-size(length), rest::binary>> = data
+     │                                    ~
+     │
+     └─ lib/pristine/streaming/sse_decoder.ex:136:36: Pristine.Streaming.SSEDecoder.split_event_block/1
+
+     warning: the variable "length" is accessed inside size(...) of a bitstring but it was defined outside of the match. You must precede it with the pin operator
+     │
+ 136 │         <<event_block::binary-size(start), _boundary::binary-size(length), rest::binary>> = data
+     │                                                                   ~
+     │
+     └─ lib/pristine/streaming/sse_decoder.ex:136:67: Pristine.Streaming.SSEDecoder.split_event_block/1
+
+     warning: this clause of defp unavailable_error/1 is never used (or it will always fail/warn when invoked)
+     │
+ 153 │   defp unavailable_error(%Error{} = error), do: error
+     │        ~
+     │
+     └─ lib/pristine/runtime_gateway/local.ex:153:8: Pristine.RuntimeGateway.Local.unavailable_error/1
+
+     warning: the following clause is redundant:
+
+         nil ->
+
+     previous clauses have already matched on the following types:
+
+         binary()
+         atom()
+
+     type warning found at:
+     │
+ 232 │       nil -> nil
+     │           ~
+     │
+     └─ lib/pristine/governed_authority.ex:232:11: Pristine.GovernedAuthority.optional_string/2
+
+     warning: the following clause cannot match because the previous clauses already matched all possible values:
+
+         _ ->
+
+     it attempts to match on the result of:
+
+         items
+
+     which has the already matched type:
+
+         dynamic(empty_list() or non_empty_list(term(), term()))
+
+     type warning found at:
+     │
+ 365 │       _ -> nil
+     │         ~
+     │
+     └─ lib/pristine/operation.ex:365:9: Pristine.Operation.infer_page_number/3
+
+      warning: this clause of defp normalize_backoff_opts/1 is never used (or it will always fail/warn when invoked)
+      │
+ 1082 │   defp normalize_backoff_opts(_opts), do: []
+      │        ~
+      │
+      └─ lib/pristine/core/pipeline.ex:1082:8: Pristine.Core.Pipeline.normalize_backoff_opts/1
+
+      warning: this clause of defp resolve_auth/3 is never used (or it will always fail/warn when invoked)
+      │
+ 1283 │   defp resolve_auth(_auth, [], _override), do: []
+      │        ~
+      │
+      └─ lib/pristine/core/pipeline.ex:1283:8: Pristine.Core.Pipeline.resolve_auth/3
+
+      warning: this clause of defp resolve_auth/3 is never used (or it will always fail/warn when invoked)
+      │
+ 1285 │   defp resolve_auth(auth, security, _override) when is_list(security) do
+      │        ~
+      │
+      └─ lib/pristine/core/pipeline.ex:1285:8: Pristine.Core.Pipeline.resolve_auth/3
+
+      warning: this clause of defp resolve_auth/3 is never used (or it will always fail/warn when invoked)
+      │
+ 1289 │   defp resolve_auth(_auth, nil, _override), do: []
+      │        ~
+      │
+      └─ lib/pristine/core/pipeline.ex:1289:8: Pristine.Core.Pipeline.resolve_auth/3
+
+      warning: this clause of defp strip_header/2 is never used (or it will always fail/warn when invoked)
+      │
+ 2128 │   defp strip_header(headers, _name), do: headers
+      │        ~
+      │
+      └─ lib/pristine/core/pipeline.ex:2128:8: Pristine.Core.Pipeline.strip_header/2
+
+Generated pristine app
+==> typesafe_sdk
+Compiling 71 files (.ex)
+Generated typesafe_sdk app
+==> autonomic_typesafe
+Compiling 5 files (.ex)
+Generated autonomic_typesafe app
+==> file_system
+Compiling 7 files (.ex)
+Generated file_system app
+==> gen_stage
+Compiling 10 files (.ex)
+     warning: unused require Logger
+     │
+ 103 │   require Logger
+     │   ~
+     │
+     └─ lib/gen_stage/dispatchers/partition_dispatcher.ex:103:3
+
+Generated gen_stage app
+==> mime
+Compiling 1 file (.ex)
+Generated mime app
+==> nimble_options
+Compiling 3 files (.ex)
+Generated nimble_options app
+==> bunt
+Compiling 2 files (.ex)
+Generated bunt app
+==> jason
+Compiling 10 files (.ex)
+Generated jason app
+==> hpax
+Compiling 4 files (.ex)
+Generated hpax app
+==> mint
+Compiling 1 file (.erl)
+Compiling 20 files (.ex)
+Generated mint app
+==> ground_plane_contracts
+Compiling 25 files (.ex)
+Generated ground_plane_contracts app
+==> erlex
+Compiling 2 files (.erl)
+Compiling 2 files (.ex)
+Generated erlex app
+==> multipart_ex
+Compiling 8 files (.ex)
+Generated multipart_ex app
+==> autonomic_typesafe
+===> Analyzing applications...
+===> Compiling idna
+==> nimble_parsec
+Compiling 4 files (.ex)
+Generated nimble_parsec app
+==> autonomic_typesafe
+===> Analyzing applications...
+===> Compiling telemetry
+==> foundation
+Compiling 19 files (.ex)
+    warning: TelemetryReporter.start_link/1 is undefined (module TelemetryReporter is not available or is yet to be defined). Make sure the module name is correct and has been specified in full (or that an alias has been defined)
+    │
+ 62 │       reporter.start_link(opts)
+    │                ~
+    │
+    └─ lib/foundation/telemetry.ex:62:16: Foundation.Telemetry.start_reporter/1
+
+    warning: TelemetryReporter.log/4 is undefined (module TelemetryReporter is not available or is yet to be defined). Make sure the module name is correct and has been specified in full (or that an alias has been defined)
+    │
+ 73 │       reporter_mod.log(reporter, name, data, severity)
+    │                    ~
+    │
+    └─ lib/foundation/telemetry.ex:73:20: Foundation.Telemetry.log/4
+
+    warning: TelemetryReporter.TelemetryAdapter.attach_many/1 is undefined (module TelemetryReporter.TelemetryAdapter is not available or is yet to be defined)
+    │
+ 85 │       {:ok, adapter.attach_many(opts)}
+    │                     ~
+    │
+    └─ lib/foundation/telemetry.ex:85:21: Foundation.Telemetry.attach_reporter/1
+
+    warning: TelemetryReporter.TelemetryAdapter.detach/1 is undefined (module TelemetryReporter.TelemetryAdapter is not available or is yet to be defined)
+    │
+ 95 │       adapter.detach(handler_id)
+    │               ~
+    │
+    └─ lib/foundation/telemetry.ex:95:15: Foundation.Telemetry.detach_reporter/1
+
+Generated foundation app
+==> abnf_parsec
+Compiling 4 files (.ex)
+Generated abnf_parsec app
+==> texture
+Compiling 7 files (.ex)
+Generated texture app
+==> ground_plane_persistence_policy
+Compiling 11 files (.ex)
+Generated ground_plane_persistence_policy app
+==> execution_plane
+Compiling 44 files (.ex)
+==> execution_plane
+Compiling 44 files (.ex)
+Generated execution_plane app
+==> dialyxir
+Compiling 70 files (.ex)
+Generated dialyxir app
+==> jsv
+Compiling 74 files (.ex)
+Generated jsv app
+==> sinter
+Compiling 11 files (.ex)
+Generated sinter app
+==> credo
+Compiling 257 files (.ex)
+Generated credo app
+==> nimble_pool
+Compiling 2 files (.ex)
+Generated nimble_pool app
+==> finch
+Compiling 23 files (.ex)
+Generated finch app
+==> autonomic
+Compiling 26 files (.ex)
+Generated autonomic app
+==> execution_plane_http
+Compiling 5 files (.ex)
+Generated execution_plane_http app
+==> uuid
+Compiling 1 file (.ex)
+    warning: use Bitwise is deprecated. import Bitwise instead
+    │
+  2 │   use Bitwise, only_operators: true
+    │   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    │
+    └─ lib/uuid.ex:2: UUID (module)
+
+Generated uuid app
+==> pristine
+Compiling 110 files (.ex)
+     warning: the variable "start" is accessed inside size(...) of a bitstring but it was defined outside of the match. You must precede it with the pin operator
+     │
+ 136 │         <<event_block::binary-size(start), _boundary::binary-size(length), rest::binary>> = data
+     │                                    ~
+     │
+     └─ lib/pristine/streaming/sse_decoder.ex:136:36: Pristine.Streaming.SSEDecoder.split_event_block/1
+
+     warning: the variable "length" is accessed inside size(...) of a bitstring but it was defined outside of the match. You must precede it with the pin operator
+     │
+ 136 │         <<event_block::binary-size(start), _boundary::binary-size(length), rest::binary>> = data
+     │                                                                   ~
+     │
+     └─ lib/pristine/streaming/sse_decoder.ex:136:67: Pristine.Streaming.SSEDecoder.split_event_block/1
+
+     warning: this clause of defp unavailable_error/1 is never used (or it will always fail/warn when invoked)
+     │
+ 153 │   defp unavailable_error(%Error{} = error), do: error
+     │        ~
+     │
+     └─ lib/pristine/runtime_gateway/local.ex:153:8: Pristine.RuntimeGateway.Local.unavailable_error/1
+
+     warning: the following clause cannot match because the previous clauses already matched all possible values:
+
+         _ ->
+
+     it attempts to match on the result of:
+
+         items
+
+     which has the already matched type:
+
+         dynamic(empty_list() or non_empty_list(term(), term()))
+
+     type warning found at:
+     │
+ 365 │       _ -> nil
+     │         ~
+     │
+     └─ lib/pristine/operation.ex:365:9: Pristine.Operation.infer_page_number/3
+
+     warning: the following clause is redundant:
+
+         nil ->
+
+     previous clauses have already matched on the following types:
+
+         binary()
+         atom()
+
+     type warning found at:
+     │
+ 232 │       nil -> nil
+     │           ~
+     │
+     └─ lib/pristine/governed_authority.ex:232:11: Pristine.GovernedAuthority.optional_string/2
+
+      warning: this clause of defp normalize_backoff_opts/1 is never used (or it will always fail/warn when invoked)
+      │
+ 1082 │   defp normalize_backoff_opts(_opts), do: []
+      │        ~
+      │
+      └─ lib/pristine/core/pipeline.ex:1082:8: Pristine.Core.Pipeline.normalize_backoff_opts/1
+
+      warning: this clause of defp resolve_auth/3 is never used (or it will always fail/warn when invoked)
+      │
+ 1283 │   defp resolve_auth(_auth, [], _override), do: []
+      │        ~
+      │
+      └─ lib/pristine/core/pipeline.ex:1283:8: Pristine.Core.Pipeline.resolve_auth/3
+
+      warning: this clause of defp resolve_auth/3 is never used (or it will always fail/warn when invoked)
+      │
+ 1285 │   defp resolve_auth(auth, security, _override) when is_list(security) do
+      │        ~
+      │
+      └─ lib/pristine/core/pipeline.ex:1285:8: Pristine.Core.Pipeline.resolve_auth/3
+
+      warning: this clause of defp resolve_auth/3 is never used (or it will always fail/warn when invoked)
+      │
+ 1289 │   defp resolve_auth(_auth, nil, _override), do: []
+      │        ~
+      │
+      └─ lib/pristine/core/pipeline.ex:1289:8: Pristine.Core.Pipeline.resolve_auth/3
+
+      warning: this clause of defp strip_header/2 is never used (or it will always fail/warn when invoked)
+      │
+ 2128 │   defp strip_header(headers, _name), do: headers
+      │        ~
+      │
+      └─ lib/pristine/core/pipeline.ex:2128:8: Pristine.Core.Pipeline.strip_header/2
+
+Generated pristine app
+==> typesafe_sdk
+Compiling 71 files (.ex)
+Generated typesafe_sdk app
+==> autonomic_typesafe
+Compiling 5 files (.ex)
+Generated autonomic_typesafe app
+Running ExUnit with seed: 55540, max_cases: 48
+Excluding tags: [:live]
+
+...
+12:50:32.175 [warning] Ignoring a TypeSafe answer with an unrecognized future type; inspect response.raw explicitly
+....
+Finished in 0.1 seconds (0.00s async, 0.1s sync)
+
+Result: 7 passed, 1 excluded
+Generating docs...
+View html docs at "doc/index.html"
+View markdown docs at "doc/llms.txt"
+View epub docs at "doc/Autonomic TypeSafe.epub"

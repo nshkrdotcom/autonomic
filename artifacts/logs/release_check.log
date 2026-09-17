@@ -1,0 +1,20 @@
+=== Running Autonomic Release Pre-Flight Checks ===
+Architectural Boundary Lint PASSED:
+  - autonomic: standalone core kernel (no adapter dependencies)
+  - autonomic_linux: depends only on autonomic
+  - autonomic_postgres: depends only on autonomic (no cross-adapter coupling)
+  - autonomic_typesafe: depends only on autonomic (no cross-adapter coupling)
+
+Validating package metadata in source monorepo:
+  [OK] autonomic: valid metadata, README, LICENSE, CHANGELOG
+  [OK] autonomic_linux: valid metadata, README, LICENSE, CHANGELOG
+  [OK] autonomic_postgres: valid metadata, README, LICENSE, CHANGELOG
+  [OK] autonomic_typesafe: valid metadata, README, LICENSE, CHANGELOG
+
+Topological publish order:
+  1. autonomic
+  2. autonomic_linux
+  3. autonomic_postgres
+  4. autonomic_typesafe
+
+Pre-flight check passed.

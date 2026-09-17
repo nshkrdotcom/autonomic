@@ -9,8 +9,13 @@ permissions:
   contents: read
 
 jobs:
-  beam-and-postgres:
+  packages:
+    name: ${{ matrix.package }}
     runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        package: [autonomic, autonomic_linux, autonomic_postgres, autonomic_typesafe]
     services:
       postgres:
         image: postgres:17
@@ -36,21 +41,98 @@ jobs:
         with:
           elixir-version: '1.20.4'
           otp-version: '29.0.6'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
       - uses: actions/cache@v4
         with:
           path: |
-            deps
-            _build
-          key: ${{ runner.os }}-mix-${{ hashFiles('**/mix.exs', 'mix.lock') }}
-      - run: mix deps.get
-      - run: mix format --check-formatted
-      - run: mix compile --warnings-as-errors
-      - run: mix ecto.migrate -r Autonomic.Store.Repo
-      - run: mix test
-      - run: mix test apps/autonomic_store/test/integration --include postgres --exclude linux --exclude reference --exclude db_outage
-      - run: mix credo --strict
-      - run: mix dialyzer
-      - run: MIX_ENV=dev mix docs --warnings-as-errors
+            packages/*/_build
+            packages/*/deps
+            integration/*/_build
+            integration/*/deps
+          key: ${{ runner.os }}-mix-${{ hashFiles('packages/*/mix.exs', 'packages/*/mix.lock', 'integration/*/mix.exs', 'integration/*/mix.lock') }}
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.90.0
+      - name: Package checks and docs
+        working-directory: packages/${{ matrix.package }}
+        run: |
+          mix local.hex --force
+          mix local.rebar --force
+          MIX_ENV=dev mix deps.get
+          mix deps.get
+          mix format --check-formatted
+          mix compile --warnings-as-errors
+          mix test
+          mix credo --strict
+          mix dialyzer
+          MIX_ENV=dev mix docs --warnings-as-errors
+      - name: PostgreSQL integration and races
+        if: matrix.package == 'autonomic_postgres'
+        working-directory: packages/autonomic_postgres
+        run: |
+          mix ecto.migrate -r Autonomic.Store.Repo
+          mix test test/integration --include postgres --exclude linux --exclude reference --exclude db_outage
+
+  acceptance:
+    runs-on: ubuntu-24.04
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: autonomic
+          POSTGRES_PASSWORD: autonomic
+          POSTGRES_DB: autonomic_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U autonomic -d autonomic_test"
+          --health-interval 10s --health-timeout 5s --health-retries 10
+    env:
+      MIX_ENV: test
+      AUTONOMIC_TEST_DATABASE_URL: ecto://autonomic:autonomic@127.0.0.1/autonomic_test
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: erlef/setup-beam@v1
+        with:
+          elixir-version: '1.20.4'
+          otp-version: '29.0.6'
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.90.0
+      - name: Cross-package PostgreSQL acceptance
+        working-directory: integration/autonomic_acceptance
+        run: |
+          mix local.hex --force
+          mix local.rebar --force
+          mix deps.get
+          mix format --check-formatted
+          mix compile --warnings-as-errors
+          mix ecto.migrate -r Autonomic.Store.Repo
+          mix test test/class4_horizon_test.exs --include postgres
+
+  hex:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: erlef/setup-beam@v1
+        with:
+          elixir-version: '1.20.4'
+          otp-version: '29.0.6'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Package boundaries and Hex dry build
+        run: |
+          mix local.hex --force
+          python3 scripts/lint_package_boundaries.py
+          python3 scripts/release.py check
+          python3 scripts/release.py build 0.1.0
+          python3 scripts/release.py inspect 0.1.0
 
   rust:
     runs-on: ubuntu-24.04
@@ -62,6 +144,29 @@ jobs:
         with:
           toolchain: 1.90.0
           components: rustfmt, clippy
-      - run: cargo fmt --manifest-path native/autonomic_launcher/Cargo.toml -- --check
-      - run: cargo clippy --manifest-path native/autonomic_launcher/Cargo.toml --all-targets -- -D warnings
-      - run: cargo test --manifest-path native/autonomic_launcher/Cargo.toml
+      - name: Rust Launcher Checks
+        run: |
+          MANIFEST="packages/autonomic_linux/native/autonomic_launcher/Cargo.toml"
+          cargo fmt --manifest-path "$MANIFEST" -- --check
+          cargo clippy --locked --manifest-path "$MANIFEST" --all-targets -- -D warnings
+          cargo test --locked --manifest-path "$MANIFEST"
+
+  independent-packages:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: erlef/setup-beam@v1
+        with:
+          elixir-version: '1.20.4'
+          otp-version: '29.0.6'
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.90.0
+      - uses: astral-sh/setup-uv@v6
+      - name: Verify installations outside the checkout
+        run: |
+          mix local.hex --force
+          mix local.rebar --force
+          uv run --no-project python scripts/verify_packages.py

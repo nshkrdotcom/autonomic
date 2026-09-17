@@ -1,4 +1,28 @@
+
+=== [autonomic] in packages/autonomic ===
+$ /home/home/.asdf/shims/mix docs --warnings-as-errors
 Generating docs...
 View html docs at "doc/index.html"
 View markdown docs at "doc/llms.txt"
-View epub docs at "doc/Autonomic Kernel.epub"
+View epub docs at "doc/Autonomic.epub"
+
+=== [autonomic_linux] in packages/autonomic_linux ===
+$ /home/home/.asdf/shims/mix docs --warnings-as-errors
+Generating docs...
+View html docs at "doc/index.html"
+View markdown docs at "doc/llms.txt"
+View epub docs at "doc/Autonomic Linux.epub"
+
+=== [autonomic_postgres] in packages/autonomic_postgres ===
+$ /home/home/.asdf/shims/mix docs --warnings-as-errors
+Generating docs...
+View html docs at "doc/index.html"
+View markdown docs at "doc/llms.txt"
+View epub docs at "doc/Autonomic Postgres.epub"
+
+=== [autonomic_typesafe] in packages/autonomic_typesafe ===
+$ /home/home/.asdf/shims/mix docs --warnings-as-errors
+Generating docs...
+View html docs at "doc/index.html"
+View markdown docs at "doc/llms.txt"
+View epub docs at "doc/Autonomic TypeSafe.epub"

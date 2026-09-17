@@ -19,13 +19,26 @@ jobs:
         with:
           persist-credentials: false
       - run: bash scripts/preflight.sh
-      - run: mix deps.get
       - run: bash scripts/build_launcher.sh
-      - run: mix ecto.migrate -r Autonomic.Store.Repo
-      - run: mix test apps/autonomic_linux/test/integration --include linux
-      - run: mix test apps/autonomic_store/test/reference/coding_agent_test.exs --include reference --include postgres --include linux
-      - run: bash scripts/run_db_outage_gate.sh
-      - run: python3 scripts/qc.py --strict
+      - name: Linux Isolation Tests
+        run: |
+          cd packages/autonomic_linux
+          mix deps.get
+          mix test test/integration --include linux
+      - name: PostgreSQL Migrations
+        run: |
+          cd packages/autonomic_postgres
+          mix deps.get
+          mix ecto.migrate -r Autonomic.Store.Repo
+      - name: Coding Agent Acceptance Scenario
+        run: |
+          cd integration/autonomic_acceptance
+          mix deps.get
+          mix test test/coding_agent_test.exs --include reference --include postgres --include linux
+      - name: Database Outage Gate
+        run: bash scripts/run_db_outage_gate.sh
+      - name: Full Strict Monorepo QC
+        run: python3 scripts/qc.py --strict
       - uses: actions/upload-artifact@v4
         if: always()
         with:

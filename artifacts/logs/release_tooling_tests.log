@@ -1,0 +1,19 @@
+..ERROR: Requested compatibility version does not match core version
+.
+----------------------------------------------------------------------
+Ran 3 tests in 0.018s
+
+OK
+=== Staging Autonomic Hex Packages for version 0.1.0 ===
+Destination: /tmp/tmp_pcu3ule/0.1.0
+
+Staging package 'autonomic'...
+  [OK] Staged 'autonomic' with versioned Hex dependencies
+Staging package 'autonomic_linux'...
+  [OK] Staged 'autonomic_linux' with versioned Hex dependencies
+Staging package 'autonomic_postgres'...
+  [OK] Staged 'autonomic_postgres' with versioned Hex dependencies
+Staging package 'autonomic_typesafe'...
+  [OK] Staged 'autonomic_typesafe' with versioned Hex dependencies
+
+All 4 packages staged successfully at /tmp/tmp_pcu3ule/0.1.0

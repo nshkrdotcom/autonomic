@@ -46,5 +46,5 @@ export AUTONOMIC_EPHEMERAL_PGDATA="$pgdata"
 export AUTONOMIC_PG_CTL="$pg_bindir/pg_ctl"
 if [[ -n "$run_as" ]]; then export AUTONOMIC_PG_RUN_AS="$run_as"; fi
 
-MIX_ENV=test mix ecto.migrate -r Autonomic.Store.Repo
-mix test apps/autonomic_store/test/integration/db_outage_test.exs --include postgres --include db_outage
+(cd packages/autonomic_postgres && MIX_ENV=test mix ecto.migrate -r Autonomic.Store.Repo)
+(cd packages/autonomic_postgres && mix test test/integration/db_outage_test.exs --include postgres --include db_outage)

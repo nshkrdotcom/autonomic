@@ -1,0 +1,5 @@
+Architectural Boundary Lint PASSED:
+  - autonomic: standalone core kernel (no adapter dependencies)
+  - autonomic_linux: depends only on autonomic
+  - autonomic_postgres: depends only on autonomic (no cross-adapter coupling)
+  - autonomic_typesafe: depends only on autonomic (no cross-adapter coupling)

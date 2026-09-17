@@ -13,3 +13,14 @@
 
 __pycache__/
 *.pyc
+
+# Standalone Poncho build outputs and local release delivery.
+_build/
+deps/
+doc/
+cover/
+target/
+var/
+_release_stage/
+/packages/autonomic_linux/priv/autonomic_launcher
+/artifacts/*.zip

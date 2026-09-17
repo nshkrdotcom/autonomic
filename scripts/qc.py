@@ -1,9 +1,20 @@
 #!/usr/bin/env python3
-"""Autonomic Kernel QC and conformance reporter.
+"""Autonomic Poncho Monorepo QC and Conformance Suite.
 
-Strict mode is release gating: every mandatory external gate must pass.
-Handoff mode records honest pending gates but exits zero so an implementation
-artifact can be packaged on an incapable build host without misrepresenting it.
+Orchestrates quality control, static analysis, boundary linting, compilation,
+formatting, testing, documentation, type checking, release inspection, and
+security gates across all four published Hex packages and the internal
+acceptance test suite:
+  - packages/autonomic
+  - packages/autonomic_linux
+  - packages/autonomic_postgres
+  - packages/autonomic_typesafe
+  - integration/autonomic_acceptance
+
+Strict mode (--strict) is release gating: every mandatory gate must pass.
+Handoff mode (--handoff) records honest pending states for environmental gates
+(such as live network, unconfigured DB, or non-privileged kernel namespaces)
+and exits zero only when no executed gate failed.
 """
 from __future__ import annotations
 
@@ -26,9 +37,26 @@ ARTIFACTS = ROOT / "artifacts"
 LOGS = ARTIFACTS / "logs"
 REPORT = ARTIFACTS / "conformance_report.json"
 
+PACKAGES = [
+    "packages/autonomic",
+    "packages/autonomic_linux",
+    "packages/autonomic_postgres",
+    "packages/autonomic_typesafe",
+]
+
+INTEGRATION_PROJECTS = [
+    "integration/autonomic_acceptance",
+]
+
+ALL_PROJECTS = PACKAGES + INTEGRATION_PROJECTS
+
 MANDATORY = {
     "source_contract_inventory",
     "secret_scan",
+    "package_boundary_lint",
+    "release_check",
+    "hex_release_inspect",
+    "release_tooling_tests",
     "mix_deps_get",
     "format",
     "compile_warnings_as_errors",
@@ -60,16 +88,28 @@ MANDATORY = {
 }
 
 REQUIRED_FILES = [
-    "README.md", "HANDOFF.md", "docs/ARCHITECTURE.md", "docs/SECURITY.md",
-    "docs/OPERATIONS.md", "docs/DEVELOPMENT.md", "docs/PERSISTENCE_RECOVERY.md",
-    "docs/EFFECT_ADAPTERS.md", "docs/TYPESAFE_SENSORS.md",
-    "docs/IMPLEMENTATION_CHECKLIST.md", "scripts/preflight.sh",
-    "apps/autonomic_kernel/lib/autonomic/effect_broker.ex",
-    "apps/autonomic_store/priv/repo/migrations/20260917000000_create_autonomic_tables.exs",
-    "apps/autonomic_linux/lib/autonomic/linux/backend.ex",
-    "apps/autonomic_typesafe/lib/autonomic/typesafe/bank.ex",
-    "native/autonomic_launcher/src/main.rs",
-    "apps/autonomic_store/test/reference/coding_agent_test.exs",
+    "README.md",
+    "HANDOFF.md",
+    "docs/ARCHITECTURE.md",
+    "docs/SECURITY.md",
+    "docs/OPERATIONS.md",
+    "docs/DEVELOPMENT.md",
+    "docs/PERSISTENCE_RECOVERY.md",
+    "docs/EFFECT_ADAPTERS.md",
+    "docs/TYPESAFE_SENSORS.md",
+    "docs/IMPLEMENTATION_CHECKLIST.md",
+    "docs/PONCHO_MIGRATION.md",
+    "docs/PONCHO_IMPLEMENTATION_CHECKLIST.md",
+    "scripts/preflight.sh",
+    "scripts/lint_package_boundaries.py",
+    "scripts/release.py",
+    "packages/autonomic/lib/autonomic/effect_broker.ex",
+    "packages/autonomic_postgres/priv/repo/migrations/20260917000000_create_autonomic_tables.exs",
+    "packages/autonomic_linux/lib/autonomic/linux/backend.ex",
+    "packages/autonomic_typesafe/lib/autonomic/typesafe/bank.ex",
+    "packages/autonomic_linux/native/autonomic_launcher/src/main.rs",
+    "integration/autonomic_acceptance/test/coding_agent_test.exs",
+    "integration/autonomic_acceptance/test/class4_horizon_test.exs",
 ]
 
 SECRET_PATTERNS = {
@@ -79,7 +119,19 @@ SECRET_PATTERNS = {
     "openai_key": re.compile(rb"\bsk-[A-Za-z0-9_-]{32,}\b"),
 }
 
-SKIP_DIRS = {"_build", "deps", "target", ".git", "artifacts", "doc", "__pycache__", "var", "cover", ".elixir_ls"}
+SKIP_DIRS = {
+    "_build",
+    "deps",
+    "target",
+    ".git",
+    "artifacts",
+    "doc",
+    "__pycache__",
+    "var",
+    "cover",
+    ".elixir_ls",
+    "_release_stage",
+}
 
 
 def now_iso() -> str:
@@ -91,78 +143,54 @@ def tool_version(cmd: str, args: list[str] | None = None) -> str | None:
     if not path:
         return None
     try:
-        cp = subprocess.run([path] + (args or ["--version"]), cwd=ROOT, text=True,
-                            stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                            timeout=10, check=False)
+        cp = subprocess.run(
+            [path] + (args or ["--version"]),
+            cwd=ROOT,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            timeout=10,
+            check=False,
+        )
         return cp.stdout.strip().splitlines()[0] if cp.stdout.strip() else path
-    except Exception as exc:  # pragma: no cover - diagnostic path
+    except Exception as exc:
         return f"present but version failed: {exc}"
 
 
-def run_gate(gate_id: str, command: list[str], *, env: dict[str, str] | None = None,
-             timeout: int = 1800) -> dict[str, Any]:
-    LOGS.mkdir(parents=True, exist_ok=True)
-    log_path = LOGS / f"{gate_id}.log"
-    started = now_iso()
-    merged = os.environ.copy()
-    if env:
-        merged.update(env)
-    if gate_id == "exdoc_warnings_as_errors":
-        merged["MIX_ENV"] = "dev"
-    try:
-        with log_path.open("wb") as log:
-            cp = subprocess.run(command, cwd=ROOT, env=merged, stdout=log,
-                                stderr=subprocess.STDOUT, timeout=timeout, check=False)
-        log_bytes = log_path.read_bytes()
-        status = "passed" if cp.returncode == 0 else "failed"
-        # ExUnit can exit zero with every test excluded; that is never evidence.
-        if Path(command[0]).name == "mix" and "test" in command and not re.search(rb"Result: [1-9][0-9]*(?:/[0-9]+)? passed", log_bytes):
-            status = "failed"
-        return {
-            "id": gate_id, "status": status, "mandatory": gate_id in MANDATORY,
-            "command": command, "exit_code": cp.returncode, "started_at": started,
-            "log_sha256": hashlib.sha256(log_bytes).hexdigest(),
-            "finished_at": now_iso(), "log": str(log_path.relative_to(ROOT)),
-        }
-    except subprocess.TimeoutExpired:
-        return {
-            "id": gate_id, "status": "failed", "mandatory": gate_id in MANDATORY,
-            "command": command, "reason": f"timeout after {timeout}s", "started_at": started,
-            "finished_at": now_iso(), "log": str(log_path.relative_to(ROOT)),
-        }
-    except Exception as exc:
-        return {
-            "id": gate_id, "status": "failed", "mandatory": gate_id in MANDATORY,
-            "command": command, "reason": repr(exc), "started_at": started,
-            "finished_at": now_iso(),
-        }
+def source_files():
+    for p in ROOT.rglob("*"):
+        if not p.is_file() or any(part in SKIP_DIRS for part in p.relative_to(ROOT).parts):
+            continue
+        yield p
 
 
-def pending(gate_id: str, reason: str, command: list[str] | None = None) -> dict[str, Any]:
-    item: dict[str, Any] = {
-        "id": gate_id, "status": "not_run", "mandatory": gate_id in MANDATORY,
-        "reason": reason,
-    }
-    if command:
-        item["command"] = command
-    return item
+def source_digest() -> str:
+    h = hashlib.sha256()
+    for p in sorted(source_files(), key=lambda x: str(x.relative_to(ROOT))):
+        rel = str(p.relative_to(ROOT)).encode()
+        h.update(rel)
+        h.update(b"\0")
+        h.update(p.read_bytes())
+        h.update(b"\0")
+    return h.hexdigest()
 
 
 def static_inventory() -> dict[str, Any]:
     missing = [path for path in REQUIRED_FILES if not (ROOT / path).is_file()]
-    # Parse JSON/TOML that is expected to be machine-readable.
     parse_errors: list[str] = []
     for p in ROOT.rglob("*.json"):
         if any(part in SKIP_DIRS for part in p.parts):
             continue
         try:
-            json.loads(p.read_text())
+            json.loads(p.read_text(encoding="utf-8"))
         except Exception as exc:
             parse_errors.append(f"{p.relative_to(ROOT)}: {exc}")
+
+    manifest_path = ROOT / "packages/autonomic_linux/native/autonomic_launcher/Cargo.toml"
     try:
-        tomllib.loads((ROOT / "native/autonomic_launcher/Cargo.toml").read_text())
+        tomllib.loads(manifest_path.read_text(encoding="utf-8"))
     except Exception as exc:
-        parse_errors.append(f"native/autonomic_launcher/Cargo.toml: {exc}")
+        parse_errors.append(f"{manifest_path.relative_to(ROOT)}: {exc}")
 
     bad_whitespace: list[str] = []
     for p in source_files():
@@ -181,23 +209,18 @@ def static_inventory() -> dict[str, Any]:
 
     status = "passed" if not missing and not parse_errors and not bad_whitespace else "failed"
     return {
-        "id": "source_contract_inventory", "status": status, "mandatory": True,
-        "missing_required_files": missing, "parse_errors": parse_errors,
+        "id": "source_contract_inventory",
+        "status": status,
+        "mandatory": True,
+        "missing_required_files": missing,
+        "parse_errors": parse_errors,
         "trailing_whitespace": bad_whitespace,
     }
-
-
-def source_files():
-    for p in ROOT.rglob("*"):
-        if not p.is_file() or any(part in SKIP_DIRS for part in p.relative_to(ROOT).parts):
-            continue
-        yield p
 
 
 def secret_scan() -> dict[str, Any]:
     findings: list[dict[str, str]] = []
     for p in source_files():
-        # Hostile fixture mentions secret *paths* intentionally; patterns only match actual credential formats.
         try:
             data = p.read_bytes()
         except OSError:
@@ -208,17 +231,155 @@ def secret_scan() -> dict[str, Any]:
             if pattern.search(data):
                 findings.append({"path": str(p.relative_to(ROOT)), "pattern": name})
     return {
-        "id": "secret_scan", "status": "passed" if not findings else "failed",
-        "mandatory": True, "findings": findings,
+        "id": "secret_scan",
+        "status": "passed" if not findings else "failed",
+        "mandatory": True,
+        "findings": findings,
     }
 
 
-def source_digest() -> str:
-    h = hashlib.sha256()
-    for p in sorted(source_files(), key=lambda x: str(x.relative_to(ROOT))):
-        rel = str(p.relative_to(ROOT)).encode()
-        h.update(rel); h.update(b"\0"); h.update(p.read_bytes()); h.update(b"\0")
-    return h.hexdigest()
+def run_gate(
+    gate_id: str,
+    command: list[str],
+    *,
+    cwd: Path | None = None,
+    env: dict[str, str] | None = None,
+    timeout: int = 1800,
+) -> dict[str, Any]:
+    LOGS.mkdir(parents=True, exist_ok=True)
+    log_path = LOGS / f"{gate_id}.log"
+    started = now_iso()
+    merged = os.environ.copy()
+    if env:
+        merged.update(env)
+    if gate_id == "exdoc_warnings_as_errors":
+        merged["MIX_ENV"] = "dev"
+
+    effective_cwd = cwd or ROOT
+    try:
+        with log_path.open("wb") as log:
+            cp = subprocess.run(
+                command,
+                cwd=str(effective_cwd),
+                env=merged,
+                stdout=log,
+                stderr=subprocess.STDOUT,
+                timeout=timeout,
+                check=False,
+            )
+        log_bytes = log_path.read_bytes()
+        status = "passed" if cp.returncode == 0 else "failed"
+        if len(command) > 1 and Path(command[0]).name == "mix" and command[1] == "test" and not re.search(
+            rb"Result: [1-9][0-9]*(?:/[0-9]+)? passed", log_bytes
+        ):
+            status = "failed"
+        return {
+            "id": gate_id,
+            "status": status,
+            "mandatory": gate_id in MANDATORY,
+            "command": command,
+            "exit_code": cp.returncode,
+            "started_at": started,
+            "log_sha256": hashlib.sha256(log_bytes).hexdigest(),
+            "finished_at": now_iso(),
+            "log": str(log_path.relative_to(ROOT)),
+        }
+    except subprocess.TimeoutExpired:
+        return {
+            "id": gate_id,
+            "status": "failed",
+            "mandatory": gate_id in MANDATORY,
+            "command": command,
+            "reason": f"timeout after {timeout}s",
+            "started_at": started,
+            "finished_at": now_iso(),
+            "log": str(log_path.relative_to(ROOT)),
+        }
+    except Exception as exc:
+        return {
+            "id": gate_id,
+            "status": "failed",
+            "mandatory": gate_id in MANDATORY,
+            "command": command,
+            "reason": repr(exc),
+            "started_at": started,
+            "finished_at": now_iso(),
+        }
+
+
+def run_compound_gate(
+    gate_id: str,
+    steps: list[tuple[str, list[str], Path]],
+    *,
+    env: dict[str, str] | None = None,
+    timeout_per_step: int = 600,
+) -> dict[str, Any]:
+    """Runs a command across multiple package directories and records combined output."""
+    LOGS.mkdir(parents=True, exist_ok=True)
+    log_path = LOGS / f"{gate_id}.log"
+    started = now_iso()
+    merged = os.environ.copy()
+    if env:
+        merged.update(env)
+    if gate_id == "exdoc_warnings_as_errors":
+        merged["MIX_ENV"] = "dev"
+
+    overall_code = 0
+    all_commands = []
+    with log_path.open("wb") as log:
+        for label, cmd, cwd in steps:
+            header = f"\n=== [{label}] in {cwd.relative_to(ROOT)} ===\n$ {' '.join(cmd)}\n".encode()
+            log.write(header)
+            log.flush()
+            all_commands.append(f"{label}: {' '.join(cmd)}")
+            try:
+                cp = subprocess.run(
+                    cmd,
+                    cwd=str(cwd),
+                    env=merged,
+                    stdout=log,
+                    stderr=subprocess.STDOUT,
+                    timeout=timeout_per_step,
+                    check=False,
+                )
+                if cp.returncode != 0:
+                    overall_code = cp.returncode
+            except Exception as exc:
+                log.write(f"\nERROR: {exc}\n".encode())
+                overall_code = 1
+                break
+
+    log_bytes = log_path.read_bytes()
+    status = "passed" if overall_code == 0 else "failed"
+
+    # For ExUnit test runs: ensure at least one test passed across the projects
+    if gate_id == "exunit_full" and status == "passed":
+        if not re.search(rb"Result: [1-9][0-9]*(?:/[0-9]+)? passed", log_bytes):
+            status = "failed"
+
+    return {
+        "id": gate_id,
+        "status": status,
+        "mandatory": gate_id in MANDATORY,
+        "commands": all_commands,
+        "exit_code": overall_code,
+        "started_at": started,
+        "log_sha256": hashlib.sha256(log_bytes).hexdigest(),
+        "finished_at": now_iso(),
+        "log": str(log_path.relative_to(ROOT)),
+    }
+
+
+def pending(gate_id: str, reason: str, command: list[str] | None = None) -> dict[str, Any]:
+    item: dict[str, Any] = {
+        "id": gate_id,
+        "status": "not_run",
+        "mandatory": gate_id in MANDATORY,
+        "reason": reason,
+    }
+    if command:
+        item["command"] = command
+    return item
 
 
 def gate_by_id(gates: list[dict[str, Any]], gate_id: str) -> dict[str, Any] | None:
@@ -231,110 +392,221 @@ def add_alias_gate(gates: list[dict[str, Any]], gate_id: str, source_id: str, no
         gates.append(pending(gate_id, f"source gate {source_id} missing"))
     else:
         gates.append({
-            "id": gate_id, "status": source["status"], "mandatory": gate_id in MANDATORY,
-            "evidence_gate": source_id, "reason": note if source["status"] != "passed" else note,
+            "id": gate_id,
+            "status": source["status"],
+            "mandatory": gate_id in MANDATORY,
+            "evidence_gate": source_id,
+            "reason": note,
         })
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description="Autonomic Poncho Monorepo QC & Conformance Runner")
     mode = parser.add_mutually_exclusive_group()
-    mode.add_argument("--strict", action="store_true", help="release gate (default)")
-    mode.add_argument("--handoff", action="store_true", help="record unavailable gates honestly and exit zero")
+    mode.add_argument("--strict", action="store_true", help="Release gate mode: every mandatory gate must pass (default)")
+    mode.add_argument("--handoff", action="store_true", help="Handoff mode: allow unavailable gates, fail executed errors")
+    parser.add_argument("--package", help="Filter checks/tests to a specific package name")
+    parser.add_argument("--include", help="Include tag for ExUnit tests (e.g. postgres, linux, live)")
+    parser.add_argument("--exclude", help="Exclude tag for ExUnit tests")
     args = parser.parse_args()
     strict = not args.handoff
 
     ARTIFACTS.mkdir(exist_ok=True)
     LOGS.mkdir(exist_ok=True)
+
+    target_projects = ALL_PROJECTS
+    if args.package:
+        matching = [p for p in ALL_PROJECTS if Path(p).name == args.package or p == args.package]
+        if not matching:
+            print(f"ERROR: Unknown package '{args.package}'. Available: {ALL_PROJECTS}", file=sys.stderr)
+            return 1
+        target_projects = matching
+
     gates: list[dict[str, Any]] = [static_inventory(), secret_scan()]
 
     versions = {
-        "os": platform.platform(), "kernel": platform.release(), "architecture": platform.machine(),
-        "python": platform.python_version(), "git": tool_version("git"),
-        "elixir": tool_version("elixir"), "mix": tool_version("mix"),
-        "erlang_otp": tool_version("erl", ["-noshell", "-eval", "io:format(\"~s\", [erlang:system_info(otp_release)]), halt()."]),
-        "rustc": tool_version("rustc"), "cargo": tool_version("cargo"), "psql": tool_version("psql"),
+        "os": platform.platform(),
+        "kernel": platform.release(),
+        "architecture": platform.machine(),
+        "python": platform.python_version(),
+        "git": tool_version("git"),
+        "elixir": tool_version("elixir"),
+        "mix": tool_version("mix"),
+        "erlang_otp": tool_version(
+            "erl",
+            ["-noshell", "-eval", 'io:format("~s", [erlang:system_info(otp_release)]), halt().'],
+        ),
+        "rustc": tool_version("rustc"),
+        "cargo": tool_version("cargo"),
+        "psql": tool_version("psql"),
     }
 
     mix = shutil.which("mix")
     cargo = shutil.which("cargo")
     psql = shutil.which("psql")
 
+    gates.append(run_gate("release_tooling_tests", [sys.executable, "-m", "unittest", "discover", "-s", "scripts", "-p", "test_*.py"]))
+
+    # 1. Package Boundary Lint
+    boundary_script = ROOT / "scripts" / "lint_package_boundaries.py"
+    if boundary_script.is_file():
+        gates.append(run_gate("package_boundary_lint", [sys.executable, str(boundary_script)]))
+    else:
+        gates.append(pending("package_boundary_lint", "scripts/lint_package_boundaries.py missing"))
+
+    # 2. Hex Release Check
+    release_script = ROOT / "scripts" / "release.py"
+    if release_script.is_file():
+        gates.append(run_gate("release_check", [sys.executable, str(release_script), "check"]))
+        gates.append(run_gate("hex_release_inspect", [sys.executable, str(release_script), "inspect", "0.1.0"]))
+    else:
+        gates.append(pending("release_check", "scripts/release.py missing"))
+        gates.append(pending("hex_release_inspect", "scripts/release.py missing"))
+
+    # 3. Mix toolchain checks across Poncho monorepo projects
     if mix:
-        gates.append(run_gate("mix_deps_get", [mix, "deps.get"], timeout=900))
+        deps_steps = [(Path(p).name, [mix, "deps.get"], ROOT / p) for p in target_projects]
+        gates.append(run_compound_gate("mix_deps_get", deps_steps, timeout_per_step=300))
+
         if gate_by_id(gates, "mix_deps_get")["status"] == "passed":
-            for gate_id, command, timeout in [
-                ("format", [mix, "format", "--check-formatted"], 300),
-                ("compile_warnings_as_errors", [mix, "compile", "--warnings-as-errors"], 900),
-                ("exunit_full", [mix, "test"], 1200),
-                ("credo_strict", [mix, "credo", "--strict"], 600),
-                ("dialyzer", [mix, "dialyzer"], 1800),
-                ("exdoc_warnings_as_errors", [mix, "docs", "--warnings-as-errors"], 900),
-            ]:
-                gates.append(run_gate(gate_id, command, timeout=timeout))
+            # Formatting
+            fmt_steps = [(Path(p).name, [mix, "format", "--check-formatted"], ROOT / p) for p in target_projects]
+            gates.append(run_compound_gate("format", fmt_steps, timeout_per_step=120))
+
+            # Compilation with warnings-as-errors
+            compile_steps = [(Path(p).name, [mix, "compile", "--warnings-as-errors"], ROOT / p) for p in target_projects]
+            gates.append(run_compound_gate("compile_warnings_as_errors", compile_steps, timeout_per_step=300))
+
+            # ExUnit tests
+            test_args = [mix, "test"]
+            if args.include:
+                test_args.extend(["--include", args.include])
+            if args.exclude:
+                test_args.extend(["--exclude", args.exclude])
+            test_steps = [(Path(p).name, list(test_args), ROOT / p) for p in target_projects]
+            gates.append(run_compound_gate("exunit_full", test_steps, timeout_per_step=600))
+
+            # Credo strict (across published packages that configure credo)
+            credo_projects = [p for p in target_projects if p in PACKAGES]
+            credo_steps = [(Path(p).name, [mix, "credo", "--strict"], ROOT / p) for p in credo_projects]
+            gates.append(run_compound_gate("credo_strict", credo_steps, timeout_per_step=300))
+
+            # Dialyzer (across published packages)
+            dialyzer_projects = [p for p in target_projects if p in PACKAGES]
+            dialyzer_steps = [(Path(p).name, [mix, "dialyzer"], ROOT / p) for p in dialyzer_projects]
+            gates.append(run_compound_gate("dialyzer", dialyzer_steps, timeout_per_step=900))
+
+            # ExDoc warnings as errors
+            exdoc_projects = [p for p in target_projects if p in PACKAGES]
+            exdoc_steps = [(Path(p).name, [mix, "docs", "--warnings-as-errors"], ROOT / p) for p in exdoc_projects]
+            gates.append(run_compound_gate("exdoc_warnings_as_errors", exdoc_steps, timeout_per_step=300))
         else:
             for gid in ["format", "compile_warnings_as_errors", "exunit_full", "credo_strict", "dialyzer", "exdoc_warnings_as_errors"]:
                 gates.append(pending(gid, "dependency resolution failed", [mix]))
     else:
         for gid, cmd in [
-            ("mix_deps_get", ["mix", "deps.get"]), ("format", ["mix", "format", "--check-formatted"]),
-            ("compile_warnings_as_errors", ["mix", "compile", "--warnings-as-errors"]), ("exunit_full", ["mix", "test"]),
-            ("credo_strict", ["mix", "credo", "--strict"]), ("dialyzer", ["mix", "dialyzer"]),
+            ("mix_deps_get", ["mix", "deps.get"]),
+            ("format", ["mix", "format", "--check-formatted"]),
+            ("compile_warnings_as_errors", ["mix", "compile", "--warnings-as-errors"]),
+            ("exunit_full", ["mix", "test"]),
+            ("credo_strict", ["mix", "credo", "--strict"]),
+            ("dialyzer", ["mix", "dialyzer"]),
             ("exdoc_warnings_as_errors", ["mix", "docs", "--warnings-as-errors"]),
         ]:
             gates.append(pending(gid, "Mix/Elixir toolchain unavailable", cmd))
 
-    manifest = "native/autonomic_launcher/Cargo.toml"
-    if cargo:
-        gates.append(run_gate("rust_launcher_fmt", [cargo, "fmt", "--manifest-path", manifest, "--", "--check"], timeout=300))
-        gates.append(run_gate("rust_launcher_clippy", [cargo, "clippy", "--manifest-path", manifest, "--all-targets", "--", "-D", "warnings"], timeout=900))
-        gates.append(run_gate("rust_launcher_tests", [cargo, "test", "--manifest-path", manifest], timeout=900))
+    # 4. Rust native launcher checks
+    rust_manifest = ROOT / "packages/autonomic_linux/native/autonomic_launcher/Cargo.toml"
+    if cargo and rust_manifest.is_file():
+        gates.append(run_gate("rust_launcher_fmt", [cargo, "fmt", "--manifest-path", str(rust_manifest), "--", "--check"], timeout=120))
+        gates.append(run_gate("rust_launcher_clippy", [cargo, "clippy", "--manifest-path", str(rust_manifest), "--all-targets", "--", "-D", "warnings"], timeout=300))
+        gates.append(run_gate("rust_launcher_tests", [cargo, "test", "--manifest-path", str(rust_manifest)], timeout=300))
     else:
         for gid, cmd in [
-            ("rust_launcher_fmt", ["cargo", "fmt", "--manifest-path", manifest, "--", "--check"]),
-            ("rust_launcher_clippy", ["cargo", "clippy", "--manifest-path", manifest, "--all-targets", "--", "-D", "warnings"]),
-            ("rust_launcher_tests", ["cargo", "test", "--manifest-path", manifest]),
+            ("rust_launcher_fmt", ["cargo", "fmt", "--manifest-path", str(rust_manifest), "--", "--check"]),
+            ("rust_launcher_clippy", ["cargo", "clippy", "--manifest-path", str(rust_manifest), "--all-targets", "--", "-D", "warnings"]),
+            ("rust_launcher_tests", ["cargo", "test", "--manifest-path", str(rust_manifest)]),
         ]:
-            gates.append(pending(gid, "Rust toolchain unavailable", cmd))
+            gates.append(pending(gid, "Rust toolchain unavailable or manifest missing", cmd))
 
+    # 5. PostgreSQL integration gates
     db_url = os.environ.get("AUTONOMIC_TEST_DATABASE_URL")
     db_ready = bool(mix and psql and db_url)
     if db_ready:
+        pg_dir = ROOT / "packages/autonomic_postgres"
         env = {"MIX_ENV": "test", "AUTONOMIC_TEST_DATABASE_URL": db_url}
-        migrate = run_gate("postgresql_migrations", [mix, "ecto.migrate", "-r", "Autonomic.Store.Repo"], env=env, timeout=300)
+        migrate = run_gate("postgresql_migrations", [mix, "ecto.migrate", "-r", "Autonomic.Store.Repo"], cwd=pg_dir, env=env, timeout=300)
         gates.append(migrate)
         if migrate["status"] == "passed":
-            pg = run_gate("postgresql_integration", [mix, "test", "apps/autonomic_store/test/integration", "--include", "postgres", "--exclude", "linux", "--exclude", "reference", "--exclude", "db_outage"], env=env, timeout=1200)
+            pg = run_gate(
+                "postgresql_integration",
+                [mix, "test", "test/integration", "--include", "postgres", "--exclude", "linux", "--exclude", "reference", "--exclude", "db_outage"],
+                cwd=pg_dir,
+                env=env,
+                timeout=1200,
+            )
             gates.append(pg)
+            gates.append(run_gate(
+                "class4_human_horizon",
+                [mix, "test", "test/class4_horizon_test.exs", "--include", "postgres"],
+                cwd=ROOT / "integration/autonomic_acceptance", env=env, timeout=600,
+            ))
             for gid, note in [
                 ("postgresql_epoch_commit_race", "covered by real PostgreSQL concurrency barriers"),
                 ("af_unix_effect_broker", "covered by real AF_UNIX + local HTTP broker integration"),
                 ("git_authoritative_commit_reconciliation", "covered by real local Git CAS/reconciliation tests"),
                 ("stale_epoch_race", "covered by PostgreSQL authority/reconciliation tests"),
                 ("broker_crash_after_external_mutation_reconciliation", "covered by post-mutation crash reconciliation test"),
-                ("class4_human_horizon", "covered by Class-4 signed human/slow/semantic horizon test"),
+
             ]:
                 add_alias_gate(gates, gid, "postgresql_integration", note)
         else:
             gates.append(pending("postgresql_integration", "migration gate failed"))
-            for gid in ["postgresql_epoch_commit_race", "af_unix_effect_broker", "git_authoritative_commit_reconciliation", "stale_epoch_race", "broker_crash_after_external_mutation_reconciliation", "class4_human_horizon"]:
+            for gid in [
+                "postgresql_epoch_commit_race",
+                "af_unix_effect_broker",
+                "git_authoritative_commit_reconciliation",
+                "stale_epoch_race",
+                "broker_crash_after_external_mutation_reconciliation",
+                "class4_human_horizon",
+            ]:
                 gates.append(pending(gid, "PostgreSQL integration prerequisites failed"))
     else:
         reason = "requires Mix, psql and AUTONOMIC_TEST_DATABASE_URL"
         gates.append(pending("postgresql_integration", reason))
-        for gid in ["postgresql_epoch_commit_race", "af_unix_effect_broker", "git_authoritative_commit_reconciliation", "stale_epoch_race", "broker_crash_after_external_mutation_reconciliation", "class4_human_horizon"]:
+        for gid in [
+            "postgresql_epoch_commit_race",
+            "af_unix_effect_broker",
+            "git_authoritative_commit_reconciliation",
+            "stale_epoch_race",
+            "broker_crash_after_external_mutation_reconciliation",
+            "class4_human_horizon",
+        ]:
             gates.append(pending(gid, reason))
 
+    # 6. Database outage gate
     pg_server_tools = all(shutil.which(x) for x in ["pg_config", "runuser"] if os.geteuid() == 0) and shutil.which("pg_config") is not None
     if mix and pg_server_tools:
         gates.append(run_gate("db_outage_blocks_authority", ["bash", "scripts/run_db_outage_gate.sh"], timeout=1200))
     else:
-        gates.append(pending("db_outage_blocks_authority", "requires Mix and PostgreSQL server binaries (pg_config/initdb/pg_ctl/createdb) on a host permitted to start an ephemeral cluster", ["bash", "scripts/run_db_outage_gate.sh"]))
+        gates.append(
+            pending(
+                "db_outage_blocks_authority",
+                "requires Mix and PostgreSQL server binaries (pg_config/initdb/pg_ctl/createdb) on a host permitted to start an ephemeral cluster",
+                ["bash", "scripts/run_db_outage_gate.sh"],
+            )
+        )
 
+    # 7. Linux isolation gate
     linux_enabled = os.environ.get("AUTONOMIC_LINUX") == "1"
-    linux_ready = bool(mix and cargo and linux_enabled and os.geteuid() == 0 or (mix and cargo and linux_enabled and shutil.which("sudo")))
+    linux_ready = bool(mix and cargo and linux_enabled and (os.geteuid() == 0 or shutil.which("sudo")))
     if linux_ready:
-        linux_gate = run_gate("linux_namespaces_cgroup_seccomp_overlay", [mix, "test", "apps/autonomic_linux/test/integration", "--include", "linux"], timeout=1200)
+        linux_gate = run_gate(
+            "linux_namespaces_cgroup_seccomp_overlay",
+            [mix, "test", "test/integration", "--include", "linux"],
+            cwd=ROOT / "packages/autonomic_linux",
+            timeout=1200,
+        )
         gates.append(linux_gate)
         add_alias_gate(gates, "old_process_fork_cleanup", "linux_namespaces_cgroup_seccomp_overlay", "covered by fork-tree cgroup teardown test")
         add_alias_gate(gates, "overlay_rollback", "linux_namespaces_cgroup_seccomp_overlay", "covered by checkpoint/restore upperdir discard test")
@@ -344,21 +616,35 @@ def main() -> int:
         gates.append(pending("old_process_fork_cleanup", reason))
         gates.append(pending("overlay_rollback", reason))
 
-    # Component semantic behavior is part of the normal ExUnit suite. Real broker
-    # saturation/load uses PostgreSQL + the trusted HTTP adapter integration path.
+    # Aliased gates to normal suite
     add_alias_gate(gates, "semantic_outage_degradation", "exunit_full", "covered by TypeSafeSDK.Test outage/model/unknown/capability tests")
     add_alias_gate(gates, "backpressure_load", "postgresql_integration", "covered by real PostgreSQL broker saturation with concurrent trusted HTTP commits")
 
+    # 8. TypeSafe live evaluation gate
     live_key = os.environ.get("TYPESAFE_API_KEY")
     if mix and live_key:
-        gates.append(run_gate("typesafe_live_evaluate_v4", [mix, "test", "apps/autonomic_typesafe/test/live_gate_test.exs", "--include", "live"], timeout=600))
+        gates.append(
+            run_gate(
+                "typesafe_live_evaluate_v4",
+                [mix, "test", "test/live_gate_test.exs", "--include", "live"],
+                cwd=ROOT / "packages/autonomic_typesafe",
+                timeout=600,
+            )
+        )
     else:
         gates.append(pending("typesafe_live_evaluate_v4", "requires Mix, network and intentionally configured TYPESAFE_API_KEY"))
 
+    # 9. Reference coding agent acceptance test
     reference_ready = db_ready and linux_ready
     if reference_ready:
         env = {"MIX_ENV": "test", "AUTONOMIC_TEST_DATABASE_URL": db_url or "", "AUTONOMIC_LINUX": "1"}
-        ref = run_gate("coding_agent_reference", [mix, "test", "apps/autonomic_store/test/reference/coding_agent_test.exs", "--include", "reference", "--include", "postgres", "--include", "linux"], env=env, timeout=1800)
+        ref = run_gate(
+            "coding_agent_reference",
+            [mix, "test", "test/coding_agent_test.exs", "--include", "reference", "--include", "postgres", "--include", "linux"],
+            cwd=ROOT / "integration/autonomic_acceptance",
+            env=env,
+            timeout=1800,
+        )
         gates.append(ref)
         add_alias_gate(gates, "coding_agent_normal_repair", "coding_agent_reference", "normal verified authoritative Git repair variant")
         add_alias_gate(gates, "coding_agent_violation_repair_epoch2", "coding_agent_reference", "hostile direct-network tripwire + epoch-2 repair variant")
@@ -370,12 +656,13 @@ def main() -> int:
         gates.append(pending("coding_agent_violation_repair_epoch2", reason))
         gates.append(pending("sensor_poisoning", reason))
 
+    # 10. Host preflight
     if shutil.which("bash"):
         gates.append(run_gate("host_preflight", ["bash", "scripts/preflight.sh"], timeout=120))
     else:
         gates.append(pending("host_preflight", "bash unavailable"))
 
-    # Remove accidental duplicate IDs while preserving the first concrete execution record.
+    # Dedup gates preserving order
     dedup: dict[str, dict[str, Any]] = {}
     order: list[str] = []
     for gate in gates:
@@ -389,10 +676,11 @@ def main() -> int:
 
     for missing_id in sorted(MANDATORY - {g["id"] for g in gates}):
         gates.append(pending(missing_id, "mandatory gate missing from execution plan"))
+
     mandatory_failures = [g for g in gates if g["id"] in MANDATORY and g["status"] != "passed"]
     report = {
         "schema_version": 1,
-        "project": "autonomic_kernel",
+        "project": "autonomic_poncho_monorepo",
         "generated_at": now_iso(),
         "mode": "strict" if strict else "handoff",
         "status": "release_ready" if not mandatory_failures else "handoff_pending_or_failed",
@@ -400,26 +688,29 @@ def main() -> int:
         "source_sha256": source_digest(),
         "environment": versions,
         "availability": {
-            "elixir_toolchain": bool(mix), "rust_toolchain": bool(cargo),
-            "postgresql_tooling": bool(psql), "postgresql_test_url_configured": bool(db_url),
-            "linux_gate_enabled": linux_enabled, "typesafe_credentials_configured": bool(live_key),
+            "elixir_toolchain": bool(mix),
+            "rust_toolchain": bool(cargo),
+            "postgresql_tooling": bool(psql),
+            "postgresql_test_url_configured": bool(db_url),
+            "linux_gate_enabled": linux_enabled,
+            "typesafe_credentials_configured": bool(live_key),
         },
         "gates": gates,
         "mandatory_not_green": [g["id"] for g in mandatory_failures],
         "determination": (
             "Every mandatory acceptance gate executed and passed on this environment."
-            if not mandatory_failures else
-            "One or more mandatory gates failed or could not execute. This repository is an implementation handoff, not a security-qualified release, until those gates are green on the target host."
+            if not mandatory_failures
+            else "One or more mandatory gates failed or could not execute. This repository is an implementation handoff, not a security-qualified release, until those gates are green on the target host."
         ),
     }
-    REPORT.write_text(json.dumps(report, indent=2, sort_keys=False) + "\n")
+    REPORT.write_text(json.dumps(report, indent=2, sort_keys=False) + "\n", encoding="utf-8")
 
     for gate in gates:
         marker = {"passed": "PASS", "failed": "FAIL", "not_run": "PEND"}.get(gate["status"], gate["status"].upper())
         print(f"{marker:4} {gate['id']}")
     print(f"\nconformance: {REPORT.relative_to(ROOT)}")
     print(f"release_ready: {report['release_ready']}")
-    return 1 if strict and mandatory_failures else 0
+    return 1 if any(g["status"] == "failed" for g in gates) or (strict and mandatory_failures) else 0
 
 
 if __name__ == "__main__":

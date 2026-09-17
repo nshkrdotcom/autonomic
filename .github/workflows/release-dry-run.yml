@@ -1,0 +1,51 @@
+name: Tagged release rehearsal
+
+on:
+  push:
+    tags:
+      - 'autonomic-v*'
+      - 'autonomic_linux-v*'
+      - 'autonomic_postgres-v*'
+      - 'autonomic_typesafe-v*'
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    # Full release QC requires the same provisioned host as privileged acceptance.
+    runs-on: [self-hosted, linux, x64, autonomic-privileged]
+    env:
+      AUTONOMIC_LINUX: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@v6
+      - name: Validate tag against package metadata
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          git diff --exit-code
+          test -z "$(git status --porcelain)"
+          python3 - <<'PY'
+          import os, pathlib, re, subprocess
+          tag = os.environ['RELEASE_TAG']
+          match = re.fullmatch(r'(autonomic(?:_linux|_postgres|_typesafe)?)-v(\d+\.\d+\.\d+)', tag)
+          assert match, f'Invalid release tag: {tag}'
+          package, version = match.groups()
+          source = pathlib.Path('packages', package, 'mix.exs').read_text()
+          assert re.search(r'@version "' + re.escape(version) + '"', source), 'Tag/version mismatch'
+          assert subprocess.check_output(['git', 'rev-parse', tag + '^{commit}']) == subprocess.check_output(['git', 'rev-parse', 'HEAD'])
+          PY
+      - name: Full required quality gates
+        run: ./scripts/qc --strict
+      - name: Independent installation verification
+        run: uv run --no-project python scripts/verify_packages.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: inspected-release-candidates
+          path: _release_stage/*/tarballs/*.tar
+          if-no-files-found: error
+      # No publish step or Hex credentials: this workflow only rehearses a release.

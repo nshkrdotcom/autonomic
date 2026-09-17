@@ -1,0 +1,273 @@
+=== Staging Autonomic Hex Packages for version 0.1.0 ===
+Destination: /home/home/p/g/n/autonomic/_release_stage/0.1.0
+
+Staging package 'autonomic'...
+  [OK] Staged 'autonomic' with versioned Hex dependencies
+Staging package 'autonomic_linux'...
+  [OK] Staged 'autonomic_linux' with versioned Hex dependencies
+Staging package 'autonomic_postgres'...
+  [OK] Staged 'autonomic_postgres' with versioned Hex dependencies
+Staging package 'autonomic_typesafe'...
+  [OK] Staged 'autonomic_typesafe' with versioned Hex dependencies
+
+All 4 packages staged successfully at /home/home/p/g/n/autonomic/_release_stage/0.1.0
+
+=== Building Hex Package Tarballs (mix hex.build) ===
+
+Building 'autonomic' in /home/home/p/g/n/autonomic/_release_stage/0.1.0/autonomic...
+Building autonomic 0.1.0
+  Dependencies:
+    finch ~> 0.23 (app: finch)
+    jason ~> 1.4 (app: jason)
+    gen_stage ~> 1.3 (app: gen_stage)
+    telemetry ~> 1.3 (app: telemetry)
+  App: autonomic
+  Name: autonomic
+  Files:
+    lib
+    lib/autonomic
+    lib/autonomic/application.ex
+    lib/autonomic/contracts.ex
+    lib/autonomic/episode_supervisor.ex
+    lib/autonomic/snapshot_manager.ex
+    lib/autonomic/effect_state.ex
+    lib/autonomic/sensor_array.ex
+    lib/autonomic/homeostat.ex
+    lib/autonomic/runtime.ex
+    lib/autonomic/adapters
+    lib/autonomic/adapters/git.ex
+    lib/autonomic/adapters/http.ex
+    lib/autonomic/adapters/git_remote.ex
+    lib/autonomic/adapters/artifact.ex
+    lib/autonomic/bounded_http.ex
+    lib/autonomic/policy.ex
+    lib/autonomic/rate_limiter.ex
+    lib/autonomic/system_regulator.ex
+    lib/autonomic/repair_manager.ex
+    lib/autonomic/episode_spec.ex
+    lib/autonomic/authority_governor.ex
+    lib/autonomic/canonical.ex
+    lib/autonomic/effect_broker.ex
+    lib/autonomic/verification_runner.ex
+    lib/autonomic/verifier.ex
+    lib/autonomic/effect_socket.ex
+    lib/autonomic/episode_controller.ex
+    lib/autonomic/payloads.ex
+    config
+    config/test.exs
+    config/dev.exs
+    config/config.exs
+    config/prod.exs
+    assets
+    assets/autonomic.svg
+    guides
+    guides/04-adapter-authoring.md
+    guides/02-invariants.md
+    guides/01-architecture.md
+    guides/03-effect-broker.md
+    .formatter.exs
+    CHANGELOG.md
+    LICENSE
+    README.md
+    mix.exs
+  Version: 0.1.0
+  Build tools: mix
+  Description: Production-oriented BEAM/OTP control plane and kernel for untrusted coding workers
+inside disposable execution domains with durable authority, effect brokering,
+homeostatic regulation, and verification recovery.
+  Licenses: MIT
+  Links:
+    Changelog: https://github.com/nshkrdotcom/autonomic/blob/main/packages/autonomic/CHANGELOG.md
+    GitHub: https://github.com/nshkrdotcom/autonomic
+    HexDocs: https://hexdocs.pm/autonomic
+    License: https://github.com/nshkrdotcom/autonomic/blob/main/LICENSE
+  Elixir: ~> 1.20
+Package checksum: ca07ea39d52a8487e223a5a881f9923f1aaef46f1cbf907ac273ae73da16a561
+Saved to autonomic-0.1.0.tar
+  [OK] Built: autonomic-0.1.0.tar (51200 bytes)
+
+Building 'autonomic_linux' in /home/home/p/g/n/autonomic/_release_stage/0.1.0/autonomic_linux...
+Building autonomic_linux 0.1.0
+  Dependencies:
+    autonomic ~> 0.1.0 (app: autonomic)
+  App: autonomic_linux
+  Name: autonomic_linux
+  Files:
+    lib
+    lib/autonomic
+    lib/autonomic/linux
+    lib/autonomic/linux/application.ex
+    lib/autonomic/linux/launcher.ex
+    lib/autonomic/linux/backend.ex
+    lib/autonomic/linux/preflight.ex
+    native/autonomic_launcher/src
+    native/autonomic_launcher/src/main.rs
+    native/autonomic_launcher/Cargo.toml
+    native/autonomic_launcher/Cargo.lock
+    config
+    config/test.exs
+    config/dev.exs
+    config/runtime.exs
+    config/config.exs
+    config/prod.exs
+    assets
+    assets/autonomic.svg
+    guides
+    guides/03-host-provisioning.md
+    guides/01-linux-isolation.md
+    guides/02-launcher-protocol.md
+    .formatter.exs
+    CHANGELOG.md
+    LICENSE
+    README.md
+    mix.exs
+  Version: 0.1.0
+  Build tools: mix
+  Description: Linux isolation execution domain backend for the Autonomic Kernel architecture,
+providing cgroup v2, namespaces, seccomp filtering, and overlayfs sandboxing.
+  Licenses: MIT
+  Links:
+    Changelog: https://github.com/nshkrdotcom/autonomic/blob/main/packages/autonomic_linux/CHANGELOG.md
+    GitHub: https://github.com/nshkrdotcom/autonomic
+    HexDocs: https://hexdocs.pm/autonomic_linux
+    License: https://github.com/nshkrdotcom/autonomic/blob/main/LICENSE
+  Elixir: ~> 1.20
+Package checksum: 8706ac40b060753ad8080d16a7c04ac04b8f7e42768d453f41858d142f26396b
+Saved to autonomic_linux-0.1.0.tar
+  [OK] Built: autonomic_linux-0.1.0.tar (32256 bytes)
+
+Building 'autonomic_postgres' in /home/home/p/g/n/autonomic/_release_stage/0.1.0/autonomic_postgres...
+Building autonomic_postgres 0.1.0
+  Dependencies:
+    autonomic ~> 0.1.0 (app: autonomic)
+    ecto_sql ~> 3.13 (app: ecto_sql)
+    postgrex ~> 0.21 (app: postgrex)
+  App: autonomic_postgres
+  Name: autonomic_postgres
+  Files:
+    lib
+    lib/autonomic
+    lib/autonomic/store
+    lib/autonomic/store/application.ex
+    lib/autonomic/store/postgres.ex
+    lib/autonomic/store/schemas.ex
+    lib/autonomic/store/repo.ex
+    priv
+    priv/repo
+    priv/repo/migrations
+    priv/repo/migrations/20260917000000_create_autonomic_tables.exs
+    config
+    config/test.exs
+    config/dev.exs
+    config/config.exs
+    config/prod.exs
+    assets
+    assets/autonomic.svg
+    guides
+    guides/03-epoch-fencing-and-recovery.md
+    guides/01-postgres-authority.md
+    guides/02-schema-model.md
+    .formatter.exs
+    CHANGELOG.md
+    LICENSE
+    README.md
+    mix.exs
+  Version: 0.1.0
+  Build tools: mix
+  Description: PostgreSQL durable authority store, Ecto repository, transactional ledger,
+and epoch fencing backend for the Autonomic Kernel architecture.
+  Licenses: MIT
+  Links:
+    Changelog: https://github.com/nshkrdotcom/autonomic/blob/main/packages/autonomic_postgres/CHANGELOG.md
+    GitHub: https://github.com/nshkrdotcom/autonomic
+    HexDocs: https://hexdocs.pm/autonomic_postgres
+    License: https://github.com/nshkrdotcom/autonomic/blob/main/LICENSE
+  Elixir: ~> 1.20
+Package checksum: e73e8748b894a5a370f070ae35a8a15d6681950d97377a3806da31ff3e94e7b8
+Saved to autonomic_postgres-0.1.0.tar
+  [OK] Built: autonomic_postgres-0.1.0.tar (23552 bytes)
+
+Building 'autonomic_typesafe' in /home/home/p/g/n/autonomic/_release_stage/0.1.0/autonomic_typesafe...
+Building autonomic_typesafe 0.1.0
+  Dependencies:
+    autonomic ~> 0.1.0 (app: autonomic)
+    typesafe_sdk ~> 0.2.0 (app: typesafe_sdk)
+  App: autonomic_typesafe
+  Name: autonomic_typesafe
+  Files:
+    lib
+    lib/autonomic
+    lib/autonomic/typesafe
+    lib/autonomic/typesafe/application.ex
+    lib/autonomic/typesafe/evidence.ex
+    lib/autonomic/typesafe/sensor_bank.ex
+    lib/autonomic/typesafe/bank.ex
+    lib/autonomic/typesafe/sensor.ex
+    config
+    config/test.exs
+    config/dev.exs
+    config/config.exs
+    config/prod.exs
+    assets
+    assets/autonomic.svg
+    guides
+    guides/03-evidence-budgeting-and-drift.md
+    guides/02-typesafe-sdk-integration.md
+    guides/01-semantic-sensors.md
+    .formatter.exs
+    CHANGELOG.md
+    LICENSE
+    README.md
+    mix.exs
+  Version: 0.1.0
+  Build tools: mix
+  Description: TypeSafe/Jev semantic sensor bank backend for the Autonomic Kernel architecture,
+providing evidence redaction, drift monitoring, and anomaly detection.
+  Licenses: MIT
+  Links:
+    Changelog: https://github.com/nshkrdotcom/autonomic/blob/main/packages/autonomic_typesafe/CHANGELOG.md
+    GitHub: https://github.com/nshkrdotcom/autonomic
+    HexDocs: https://hexdocs.pm/autonomic_typesafe
+    License: https://github.com/nshkrdotcom/autonomic/blob/main/LICENSE
+  Elixir: ~> 1.20
+Package checksum: 6fa851a2e46d577cade866f2947763afb48b83dcc6bf179da83f70e1bdfcdc1a
+Saved to autonomic_typesafe-0.1.0.tar
+  [OK] Built: autonomic_typesafe-0.1.0.tar (17408 bytes)
+
+All 4 package tarballs built in /home/home/p/g/n/autonomic/_release_stage/0.1.0/tarballs
+
+=== Inspecting Unpacked Hex Package Tarballs ===
+
+Inspecting 'autonomic' (autonomic-0.1.0.tar):
+  Tarball archive members: ['VERSION', 'CHECKSUM', 'metadata.config', 'contents.tar.gz']
+  Extracted 40 files into /home/home/p/g/n/autonomic/_release_stage/0.1.0/unpacked/autonomic
+  [OK] Found README.md
+  [OK] Found LICENSE
+  [OK] Found CHANGELOG.md
+  [PASS] Package 'autonomic' meets all Hex distribution criteria.
+
+Inspecting 'autonomic_linux' (autonomic_linux-0.1.0.tar):
+  Tarball archive members: ['VERSION', 'CHECKSUM', 'metadata.config', 'contents.tar.gz']
+  Extracted 21 files into /home/home/p/g/n/autonomic/_release_stage/0.1.0/unpacked/autonomic_linux
+  [OK] Found README.md
+  [OK] Found LICENSE
+  [OK] Found CHANGELOG.md
+  [PASS] Package 'autonomic_linux' meets all Hex distribution criteria.
+
+Inspecting 'autonomic_postgres' (autonomic_postgres-0.1.0.tar):
+  Tarball archive members: ['VERSION', 'CHECKSUM', 'metadata.config', 'contents.tar.gz']
+  Extracted 18 files into /home/home/p/g/n/autonomic/_release_stage/0.1.0/unpacked/autonomic_postgres
+  [OK] Found README.md
+  [OK] Found LICENSE
+  [OK] Found CHANGELOG.md
+  [PASS] Package 'autonomic_postgres' meets all Hex distribution criteria.
+
+Inspecting 'autonomic_typesafe' (autonomic_typesafe-0.1.0.tar):
+  Tarball archive members: ['VERSION', 'CHECKSUM', 'metadata.config', 'contents.tar.gz']
+  Extracted 18 files into /home/home/p/g/n/autonomic/_release_stage/0.1.0/unpacked/autonomic_typesafe
+  [OK] Found README.md
+  [OK] Found LICENSE
+  [OK] Found CHANGELOG.md
+  [PASS] Package 'autonomic_typesafe' meets all Hex distribution criteria.
+
+All 4 packages PASSED Hex release inspection.

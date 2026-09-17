@@ -22,8 +22,11 @@ jobs:
           elixir-version: '1.20.4'
           otp-version: '29.0.6'
       - run: test -n "$TYPESAFE_API_KEY"
-      - run: mix deps.get
-      - run: mix test apps/autonomic_typesafe/test/live_gate_test.exs --include live
+      - name: Run live TypeSafe evaluation gate
+        run: |
+          cd packages/autonomic_typesafe
+          mix deps.get
+          mix test test/live_gate_test.exs --include live
       - uses: actions/upload-artifact@v4
         if: always()
         with:

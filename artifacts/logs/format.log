@@ -1,0 +1,15 @@
+
+=== [autonomic] in packages/autonomic ===
+$ /home/home/.asdf/shims/mix format --check-formatted
+
+=== [autonomic_linux] in packages/autonomic_linux ===
+$ /home/home/.asdf/shims/mix format --check-formatted
+
+=== [autonomic_postgres] in packages/autonomic_postgres ===
+$ /home/home/.asdf/shims/mix format --check-formatted
+
+=== [autonomic_typesafe] in packages/autonomic_typesafe ===
+$ /home/home/.asdf/shims/mix format --check-formatted
+
+=== [autonomic_acceptance] in integration/autonomic_acceptance ===
+$ /home/home/.asdf/shims/mix format --check-formatted

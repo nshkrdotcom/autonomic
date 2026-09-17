@@ -1,0 +1,127 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "project": "autonomic",
+  "architecture": "poncho_monorepo",
+  "version": "0.1.0",
+  "topological_publish_order": [
+    "autonomic",
+    "autonomic_linux",
+    "autonomic_postgres",
+    "autonomic_typesafe"
+  ],
+  "packages": {
+    "autonomic": {
+      "path": "packages/autonomic",
+      "app": "autonomic",
+      "version": "0.1.0",
+      "publishable": true,
+      "hex_name": "autonomic",
+      "hex_available": true,
+      "internal_dependencies": [],
+      "external_dependencies": [
+        "finch",
+        "jason",
+        "gen_stage",
+        "telemetry"
+      ],
+      "forbidden_dependencies": [
+        "autonomic_linux",
+        "autonomic_postgres",
+        "autonomic_typesafe",
+        "ecto_sql",
+        "postgrex",
+        "typesafe_sdk"
+      ],
+      "hex_check_http_status": 404,
+      "hex_checked_at": "2026-09-17T22:43:34.603061+00:00"
+    },
+    "autonomic_linux": {
+      "path": "packages/autonomic_linux",
+      "app": "autonomic_linux",
+      "version": "0.1.0",
+      "publishable": true,
+      "hex_name": "autonomic_linux",
+      "hex_available": true,
+      "internal_dependencies": [
+        "autonomic"
+      ],
+      "external_dependencies": [],
+      "forbidden_dependencies": [
+        "autonomic_postgres",
+        "autonomic_typesafe",
+        "ecto_sql",
+        "postgrex",
+        "typesafe_sdk"
+      ],
+      "native_components": [
+        "packages/autonomic_linux/native/autonomic_launcher"
+      ],
+      "hex_check_http_status": 404,
+      "hex_checked_at": "2026-09-17T22:43:34.854163+00:00"
+    },
+    "autonomic_postgres": {
+      "path": "packages/autonomic_postgres",
+      "app": "autonomic_postgres",
+      "version": "0.1.0",
+      "publishable": true,
+      "hex_name": "autonomic_postgres",
+      "hex_available": true,
+      "internal_dependencies": [
+        "autonomic"
+      ],
+      "external_dependencies": [
+        "ecto_sql",
+        "postgrex"
+      ],
+      "forbidden_dependencies": [
+        "autonomic_linux",
+        "autonomic_typesafe",
+        "typesafe_sdk"
+      ],
+      "hex_check_http_status": 404,
+      "hex_checked_at": "2026-09-17T22:43:35.099845+00:00"
+    },
+    "autonomic_typesafe": {
+      "path": "packages/autonomic_typesafe",
+      "app": "autonomic_typesafe",
+      "version": "0.1.0",
+      "publishable": true,
+      "hex_name": "autonomic_typesafe",
+      "hex_available": true,
+      "internal_dependencies": [
+        "autonomic"
+      ],
+      "external_dependencies": [
+        "typesafe_sdk"
+      ],
+      "forbidden_dependencies": [
+        "autonomic_linux",
+        "autonomic_postgres",
+        "ecto_sql",
+        "postgrex"
+      ],
+      "hex_check_http_status": 404,
+      "hex_checked_at": "2026-09-17T22:43:35.349294+00:00"
+    },
+    "autonomic_acceptance": {
+      "path": "integration/autonomic_acceptance",
+      "app": "autonomic_acceptance",
+      "version": "0.1.0",
+      "publishable": false,
+      "hex_name": null,
+      "hex_available": null,
+      "internal_dependencies": [
+        "autonomic",
+        "autonomic_linux",
+        "autonomic_postgres",
+        "autonomic_typesafe"
+      ],
+      "external_dependencies": [
+        "ecto_sql",
+        "postgrex",
+        "typesafe_sdk"
+      ],
+      "forbidden_dependencies": []
+    }
+  }
+}
