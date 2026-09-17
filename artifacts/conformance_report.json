@@ -1,11 +1,11 @@
 {
   "schema_version": 1,
   "project": "autonomic_kernel",
-  "generated_at": "2026-09-17T21:50:26.552344+00:00",
-  "mode": "strict",
-  "status": "release_ready",
-  "release_ready": true,
-  "source_sha256": "e9bbb50057e78f4fff49c64d1b5693b3ea9d059d7fca33802f0cf2e4740c504b",
+  "generated_at": "2026-09-17T21:55:34.532685+00:00",
+  "mode": "handoff",
+  "status": "handoff_pending_or_failed",
+  "release_ready": false,
+  "source_sha256": "91bc5cfd367bd2df8eb44ba0dba7236a1291a0a3b36d1f736a3c13b2c81389f7",
   "environment": {
     "os": "Linux-6.18.33.2-microsoft-standard-WSL2-x86_64-with-glibc2.43",
     "kernel": "6.18.33.2-microsoft-standard-WSL2",
@@ -23,8 +23,8 @@
     "elixir_toolchain": true,
     "rust_toolchain": true,
     "postgresql_tooling": true,
-    "postgresql_test_url_configured": true,
-    "linux_gate_enabled": true,
+    "postgresql_test_url_configured": false,
+    "linux_gate_enabled": false,
     "typesafe_credentials_configured": true
   },
   "gates": [
@@ -51,9 +51,9 @@
         "deps.get"
       ],
       "exit_code": 0,
-      "started_at": "2026-09-17T21:49:25.684132+00:00",
-      "log_sha256": "2d02d957f9bb4431ef82184ec890b6809bdf9a755e2b378c7755fcac46f26a48",
-      "finished_at": "2026-09-17T21:49:26.850425+00:00",
+      "started_at": "2026-09-17T21:55:19.650179+00:00",
+      "log_sha256": "0f642e01ee4bef0ba352862fb2a0f21748268c333274e66f59e741c132673fa9",
+      "finished_at": "2026-09-17T21:55:20.715901+00:00",
       "log": "artifacts/logs/mix_deps_get.log"
     },
     {
@@ -66,9 +66,9 @@
         "--check-formatted"
       ],
       "exit_code": 0,
-      "started_at": "2026-09-17T21:49:26.850552+00:00",
+      "started_at": "2026-09-17T21:55:20.715989+00:00",
       "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "finished_at": "2026-09-17T21:49:27.365512+00:00",
+      "finished_at": "2026-09-17T21:55:21.180937+00:00",
       "log": "artifacts/logs/format.log"
     },
     {
@@ -81,9 +81,9 @@
         "--warnings-as-errors"
       ],
       "exit_code": 0,
-      "started_at": "2026-09-17T21:49:27.365622+00:00",
+      "started_at": "2026-09-17T21:55:21.181019+00:00",
       "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "finished_at": "2026-09-17T21:49:28.081033+00:00",
+      "finished_at": "2026-09-17T21:55:21.845985+00:00",
       "log": "artifacts/logs/compile_warnings_as_errors.log"
     },
     {
@@ -95,9 +95,9 @@
         "test"
       ],
       "exit_code": 0,
-      "started_at": "2026-09-17T21:49:28.081121+00:00",
-      "log_sha256": "9ebaf61f8be443968d6ebd683688951cf325a414720a45847062cfa4edd39d09",
-      "finished_at": "2026-09-17T21:49:31.570111+00:00",
+      "started_at": "2026-09-17T21:55:21.846064+00:00",
+      "log_sha256": "273c085f8dddb84d91b711eef82e4374c7888d2035cca209d2a86e01d493ec53",
+      "finished_at": "2026-09-17T21:55:23.262802+00:00",
       "log": "artifacts/logs/exunit_full.log"
     },
     {
@@ -110,9 +110,9 @@
         "--strict"
       ],
       "exit_code": 0,
-      "started_at": "2026-09-17T21:49:31.570201+00:00",
-      "log_sha256": "78b7138540328c021fcddf74b3ca760488c7c5f04c649c3cf1342551842b49e7",
-      "finished_at": "2026-09-17T21:49:32.538321+00:00",
+      "started_at": "2026-09-17T21:55:23.262878+00:00",
+      "log_sha256": "48764dc80af0c7790bc578748d761ac5edcb74e51ef070c914b7f9a98c1ba9a1",
+      "finished_at": "2026-09-17T21:55:24.228875+00:00",
       "log": "artifacts/logs/credo_strict.log"
     },
     {
@@ -124,9 +124,9 @@
         "dialyzer"
       ],
       "exit_code": 0,
-      "started_at": "2026-09-17T21:49:32.538418+00:00",
-      "log_sha256": "28d722715a6137e99ac5c46c805bd9dbfeb1f4579a0d013cad9e6d68676f7a47",
-      "finished_at": "2026-09-17T21:49:36.462250+00:00",
+      "started_at": "2026-09-17T21:55:24.228969+00:00",
+      "log_sha256": "7134867146250125eaf247c1f39572948d666f7fd6e4a0cb6e78a74a27d6da24",
+      "finished_at": "2026-09-17T21:55:28.201177+00:00",
       "log": "artifacts/logs/dialyzer.log"
     },
     {
@@ -139,9 +139,9 @@
         "--warnings-as-errors"
       ],
       "exit_code": 0,
-      "started_at": "2026-09-17T21:49:36.462339+00:00",
+      "started_at": "2026-09-17T21:55:28.201266+00:00",
       "log_sha256": "76150446bfde71b69210a4b9d95489e47a6722b8fa4d70771a47f245b44ef692",
-      "finished_at": "2026-09-17T21:49:37.478268+00:00",
+      "finished_at": "2026-09-17T21:55:29.567897+00:00",
       "log": "artifacts/logs/exdoc_warnings_as_errors.log"
     },
     {
@@ -157,9 +157,9 @@
         "--check"
       ],
       "exit_code": 0,
-      "started_at": "2026-09-17T21:49:37.478359+00:00",
+      "started_at": "2026-09-17T21:55:29.568015+00:00",
       "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "finished_at": "2026-09-17T21:49:37.592540+00:00",
+      "finished_at": "2026-09-17T21:55:29.682212+00:00",
       "log": "artifacts/logs/rust_launcher_fmt.log"
     },
     {
@@ -177,9 +177,9 @@
         "warnings"
       ],
       "exit_code": 0,
-      "started_at": "2026-09-17T21:49:37.592627+00:00",
-      "log_sha256": "e97c40db48db1d1656ea7e4c8dc94c7f28f9fa21abcd65a5d663b59f941c017f",
-      "finished_at": "2026-09-17T21:49:37.857047+00:00",
+      "started_at": "2026-09-17T21:55:29.682301+00:00",
+      "log_sha256": "3bfc173e5cbc2c34dada58241c611b6bcefbe9127f9cdf1f11c8b83708c81212",
+      "finished_at": "2026-09-17T21:55:29.947106+00:00",
       "log": "artifacts/logs/rust_launcher_clippy.log"
     },
     {
@@ -193,91 +193,52 @@
         "native/autonomic_launcher/Cargo.toml"
       ],
       "exit_code": 0,
-      "started_at": "2026-09-17T21:49:37.857135+00:00",
-      "log_sha256": "fde1f78a658c239e61ed4439198979914fe4477072989ff06ab2c01c2f9d0aa1",
-      "finished_at": "2026-09-17T21:49:37.921046+00:00",
+      "started_at": "2026-09-17T21:55:29.947210+00:00",
+      "log_sha256": "a5bde2c2448335a0decf58cf9f3119f17d44c800aefa6860497fa30ee8f82f6d",
+      "finished_at": "2026-09-17T21:55:30.011355+00:00",
       "log": "artifacts/logs/rust_launcher_tests.log"
     },
     {
-      "id": "postgresql_migrations",
-      "status": "passed",
-      "mandatory": false,
-      "command": [
-        "/home/home/.asdf/shims/mix",
-        "ecto.migrate",
-        "-r",
-        "Autonomic.Store.Repo"
-      ],
-      "exit_code": 0,
-      "started_at": "2026-09-17T21:49:37.921140+00:00",
-      "log_sha256": "815f0e11a85935e38d93663ef9a119c495d1ea0a383916cc00bb4ff29e5fa152",
-      "finished_at": "2026-09-17T21:49:38.686600+00:00",
-      "log": "artifacts/logs/postgresql_migrations.log"
-    },
-    {
       "id": "postgresql_integration",
-      "status": "passed",
+      "status": "not_run",
       "mandatory": true,
-      "command": [
-        "/home/home/.asdf/shims/mix",
-        "test",
-        "apps/autonomic_store/test/integration",
-        "--include",
-        "postgres",
-        "--exclude",
-        "linux",
-        "--exclude",
-        "reference",
-        "--exclude",
-        "db_outage"
-      ],
-      "exit_code": 0,
-      "started_at": "2026-09-17T21:49:38.686685+00:00",
-      "log_sha256": "3240b7d35f19f19b4044a440188c8161c11bdca604c3a3a3e6f7764455bc019f",
-      "finished_at": "2026-09-17T21:49:42.407468+00:00",
-      "log": "artifacts/logs/postgresql_integration.log"
+      "reason": "requires Mix, psql and AUTONOMIC_TEST_DATABASE_URL"
     },
     {
       "id": "postgresql_epoch_commit_race",
-      "status": "passed",
+      "status": "not_run",
       "mandatory": true,
-      "evidence_gate": "postgresql_integration",
-      "reason": "covered by real PostgreSQL concurrency barriers"
+      "reason": "requires Mix, psql and AUTONOMIC_TEST_DATABASE_URL"
     },
     {
       "id": "af_unix_effect_broker",
-      "status": "passed",
+      "status": "not_run",
       "mandatory": true,
-      "evidence_gate": "postgresql_integration",
-      "reason": "covered by real AF_UNIX + local HTTP broker integration"
+      "reason": "requires Mix, psql and AUTONOMIC_TEST_DATABASE_URL"
     },
     {
       "id": "git_authoritative_commit_reconciliation",
-      "status": "passed",
+      "status": "not_run",
       "mandatory": true,
-      "evidence_gate": "postgresql_integration",
-      "reason": "covered by real local Git CAS/reconciliation tests"
+      "reason": "requires Mix, psql and AUTONOMIC_TEST_DATABASE_URL"
     },
     {
       "id": "stale_epoch_race",
-      "status": "passed",
+      "status": "not_run",
       "mandatory": true,
-      "evidence_gate": "postgresql_integration",
-      "reason": "covered by PostgreSQL authority/reconciliation tests"
+      "reason": "requires Mix, psql and AUTONOMIC_TEST_DATABASE_URL"
     },
     {
       "id": "broker_crash_after_external_mutation_reconciliation",
-      "status": "passed",
+      "status": "not_run",
       "mandatory": true,
-      "evidence_gate": "postgresql_integration",
-      "reason": "covered by post-mutation crash reconciliation test"
+      "reason": "requires Mix, psql and AUTONOMIC_TEST_DATABASE_URL"
     },
     {
       "id": "class4_human_horizon",
-      "status": "passed",
+      "status": "not_run",
       "mandatory": true,
-      "evidence_gate": "postgresql_integration",
-      "reason": "covered by Class-4 signed human/slow/semantic horizon test"
+      "reason": "requires Mix, psql and AUTONOMIC_TEST_DATABASE_URL"
     },
     {
       "id": "db_outage_blocks_authority",
@@ -288,41 +249,28 @@
         "scripts/run_db_outage_gate.sh"
       ],
       "exit_code": 0,
-      "started_at": "2026-09-17T21:49:42.407741+00:00",
-      "log_sha256": "061584a2e14787e90cf8baead55328786981a3f136ab1cbcfb4d4ca6e7a79508",
-      "finished_at": "2026-09-17T21:49:44.876119+00:00",
+      "started_at": "2026-09-17T21:55:30.011577+00:00",
+      "log_sha256": "fdccfc2d6db3de449ce6ec4908d355dde8f8fc944b6f097b9eb7444df84836ee",
+      "finished_at": "2026-09-17T21:55:32.731422+00:00",
       "log": "artifacts/logs/db_outage_blocks_authority.log"
     },
     {
       "id": "linux_namespaces_cgroup_seccomp_overlay",
-      "status": "passed",
+      "status": "not_run",
       "mandatory": true,
-      "command": [
-        "/home/home/.asdf/shims/mix",
-        "test",
-        "apps/autonomic_linux/test/integration",
-        "--include",
-        "linux"
-      ],
-      "exit_code": 0,
-      "started_at": "2026-09-17T21:49:44.876314+00:00",
-      "log_sha256": "4e7262c244123f98d4bec3e717ab8be7e6f814518f180b459f00a8c5d4156ecf",
-      "finished_at": "2026-09-17T21:49:46.643541+00:00",
-      "log": "artifacts/logs/linux_namespaces_cgroup_seccomp_overlay.log"
+      "reason": "requires Mix, Rust launcher build and AUTONOMIC_LINUX=1 on a privileged cgroup-v2 host"
     },
     {
       "id": "old_process_fork_cleanup",
-      "status": "passed",
+      "status": "not_run",
       "mandatory": true,
-      "evidence_gate": "linux_namespaces_cgroup_seccomp_overlay",
-      "reason": "covered by fork-tree cgroup teardown test"
+      "reason": "requires Mix, Rust launcher build and AUTONOMIC_LINUX=1 on a privileged cgroup-v2 host"
     },
     {
       "id": "overlay_rollback",
-      "status": "passed",
+      "status": "not_run",
       "mandatory": true,
-      "evidence_gate": "linux_namespaces_cgroup_seccomp_overlay",
-      "reason": "covered by checkpoint/restore upperdir discard test"
+      "reason": "requires Mix, Rust launcher build and AUTONOMIC_LINUX=1 on a privileged cgroup-v2 host"
     },
     {
       "id": "semantic_outage_degradation",
@@ -333,7 +281,7 @@
     },
     {
       "id": "backpressure_load",
-      "status": "passed",
+      "status": "not_run",
       "mandatory": true,
       "evidence_gate": "postgresql_integration",
       "reason": "covered by real PostgreSQL broker saturation with concurrent trusted HTTP commits"
@@ -350,52 +298,34 @@
         "live"
       ],
       "exit_code": 0,
-      "started_at": "2026-09-17T21:49:46.643691+00:00",
-      "log_sha256": "36a1588e7f68ab26e6e251be7e435d3c1d627376d287b0b262f7b36d295e58e1",
-      "finished_at": "2026-09-17T21:49:48.512514+00:00",
+      "started_at": "2026-09-17T21:55:32.731584+00:00",
+      "log_sha256": "c1a4ab53bdf200b98f7b002e0a4749c0f2d1a3cac4a8ad9dc60db633725bb5c9",
+      "finished_at": "2026-09-17T21:55:34.500447+00:00",
       "log": "artifacts/logs/typesafe_live_evaluate_v4.log"
     },
     {
       "id": "coding_agent_reference",
-      "status": "passed",
+      "status": "not_run",
       "mandatory": false,
-      "command": [
-        "/home/home/.asdf/shims/mix",
-        "test",
-        "apps/autonomic_store/test/reference/coding_agent_test.exs",
-        "--include",
-        "reference",
-        "--include",
-        "postgres",
-        "--include",
-        "linux"
-      ],
-      "exit_code": 0,
-      "started_at": "2026-09-17T21:49:48.512598+00:00",
-      "log_sha256": "3a5b84670dc65d14981a831a74f165e4a4fe9b7b07f5b6e6f39bf9986f464bd5",
-      "finished_at": "2026-09-17T21:50:26.487831+00:00",
-      "log": "artifacts/logs/coding_agent_reference.log"
+      "reason": "requires real PostgreSQL plus privileged Linux launcher gate"
     },
     {
       "id": "coding_agent_normal_repair",
-      "status": "passed",
+      "status": "not_run",
       "mandatory": true,
-      "evidence_gate": "coding_agent_reference",
-      "reason": "normal verified authoritative Git repair variant"
+      "reason": "requires real PostgreSQL plus privileged Linux launcher gate"
     },
     {
       "id": "coding_agent_violation_repair_epoch2",
-      "status": "passed",
+      "status": "not_run",
       "mandatory": true,
-      "evidence_gate": "coding_agent_reference",
-      "reason": "hostile direct-network tripwire + epoch-2 repair variant"
+      "reason": "requires real PostgreSQL plus privileged Linux launcher gate"
     },
     {
       "id": "sensor_poisoning",
-      "status": "passed",
+      "status": "not_run",
       "mandatory": true,
-      "evidence_gate": "coding_agent_reference",
-      "reason": "hostile repository prompt-injection fixture plus deterministic containment"
+      "reason": "requires real PostgreSQL plus privileged Linux launcher gate"
     },
     {
       "id": "host_preflight",
@@ -406,12 +336,27 @@
         "scripts/preflight.sh"
       ],
       "exit_code": 0,
-      "started_at": "2026-09-17T21:50:26.488017+00:00",
-      "log_sha256": "47dd14f789b71f59ceb42403620df552ec3afcb9968c72cb72eed9d5a8fbaaa2",
-      "finished_at": "2026-09-17T21:50:26.552265+00:00",
+      "started_at": "2026-09-17T21:55:34.500597+00:00",
+      "log_sha256": "00f05d1caaead227f773666ab9eb9072a31216f81c816a3844b3e6d514f2c001",
+      "finished_at": "2026-09-17T21:55:34.532596+00:00",
       "log": "artifacts/logs/host_preflight.log"
     }
   ],
-  "mandatory_not_green": [],
-  "determination": "Every mandatory acceptance gate executed and passed on this environment."
+  "mandatory_not_green": [
+    "postgresql_integration",
+    "postgresql_epoch_commit_race",
+    "af_unix_effect_broker",
+    "git_authoritative_commit_reconciliation",
+    "stale_epoch_race",
+    "broker_crash_after_external_mutation_reconciliation",
+    "class4_human_horizon",
+    "linux_namespaces_cgroup_seccomp_overlay",
+    "old_process_fork_cleanup",
+    "overlay_rollback",
+    "backpressure_load",
+    "coding_agent_normal_repair",
+    "coding_agent_violation_repair_epoch2",
+    "sensor_poisoning"
+  ],
+  "determination": "One or more mandatory gates failed or could not execute. This repository is an implementation handoff, not a security-qualified release, until those gates are green on the target host."
 }

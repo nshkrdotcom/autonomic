@@ -1,36 +1,84 @@
 ==> autonomic_kernel
-Running ExUnit with seed: 897896, max_cases: 48
+Running ExUnit with seed: 626025, max_cases: 48
 Excluding tags: [:postgres, :linux, :live, :reference, :db_outage]
 
+
+11:55:22.666 [error] Postgrex.Protocol (#PID<0.340.0> ("db_conn_3")) failed to connect: ** (Postgrex.Error) FATAL 28P01 (invalid_password) password authentication failed for user "autonomic"
+
+11:55:22.666 [error] Postgrex.Protocol (#PID<0.359.0> ("db_conn_22")) failed to connect: ** (Postgrex.Error) FATAL 28P01 (invalid_password) password authentication failed for user "autonomic"
+
+11:55:22.666 [error] Postgrex.Protocol (#PID<0.346.0> ("db_conn_9")) failed to connect: ** (Postgrex.Error) FATAL 28P01 (invalid_password) password authentication failed for user "autonomic"
+
+11:55:22.666 [error] Postgrex.Protocol (#PID<0.358.0> ("db_conn_21")) failed to connect: ** (Postgrex.Error) FATAL 28P01 (invalid_password) password authentication failed for user "autonomic"
+
+11:55:22.666 [error] Postgrex.Protocol (#PID<0.357.0> ("db_conn_20")) failed to connect: ** (Postgrex.Error) FATAL 28P01 (invalid_password) password authentication failed for user "autonomic"
+
+11:55:22.666 [error] Postgrex.Protocol (#PID<0.360.0> ("db_conn_23")) failed to connect: ** (Postgrex.Error) FATAL 28P01 (invalid_password) password authentication failed for user "autonomic"
+
+11:55:22.666 [error] Postgrex.Protocol (#PID<0.341.0> ("db_conn_4")) failed to connect: ** (Postgrex.Error) FATAL 28P01 (invalid_password) password authentication failed for user "autonomic"
+
+11:55:22.666 [error] Postgrex.Protocol (#PID<0.352.0> ("db_conn_15")) failed to connect: ** (Postgrex.Error) FATAL 28P01 (invalid_password) password authentication failed for user "autonomic"
+
+11:55:22.666 [error] Postgrex.Protocol (#PID<0.344.0> ("db_conn_7")) failed to connect: ** (Postgrex.Error) FATAL 28P01 (invalid_password) password authentication failed for user "autonomic"
+
+11:55:22.666 [error] Postgrex.Protocol (#PID<0.351.0> ("db_conn_14")) failed to connect: ** (Postgrex.Error) FATAL 28P01 (invalid_password) password authentication failed for user "autonomic"
+
+11:55:22.666 [error] Postgrex.Protocol (#PID<0.342.0> ("db_conn_5")) failed to connect: ** (Postgrex.Error) FATAL 28P01 (invalid_password) password authentication failed for user "autonomic"
+
+11:55:22.666 [error] Postgrex.Protocol (#PID<0.347.0> ("db_conn_10")) failed to connect: ** (Postgrex.Error) FATAL 28P01 (invalid_password) password authentication failed for user "autonomic"
+
+11:55:22.666 [error] Postgrex.Protocol (#PID<0.350.0> ("db_conn_13")) failed to connect: ** (Postgrex.Error) FATAL 28P01 (invalid_password) password authentication failed for user "autonomic"
+
+11:55:22.666 [error] Postgrex.Protocol (#PID<0.353.0> ("db_conn_16")) failed to connect: ** (Postgrex.Error) FATAL 28P01 (invalid_password) password authentication failed for user "autonomic"
+
+11:55:22.666 [error] Postgrex.Protocol (#PID<0.343.0> ("db_conn_6")) failed to connect: ** (Postgrex.Error) FATAL 28P01 (invalid_password) password authentication failed for user "autonomic"
+
+11:55:22.666 [error] Postgrex.Protocol (#PID<0.338.0> ("db_conn_1")) failed to connect: ** (Postgrex.Error) FATAL 28P01 (invalid_password) password authentication failed for user "autonomic"
+
+11:55:22.666 [error] Postgrex.Protocol (#PID<0.339.0> ("db_conn_2")) failed to connect: ** (Postgrex.Error) FATAL 28P01 (invalid_password) password authentication failed for user "autonomic"
+
+11:55:22.666 [error] Postgrex.Protocol (#PID<0.355.0> ("db_conn_18")) failed to connect: ** (Postgrex.Error) FATAL 28P01 (invalid_password) password authentication failed for user "autonomic"
+
+11:55:22.666 [error] Postgrex.Protocol (#PID<0.356.0> ("db_conn_19")) failed to connect: ** (Postgrex.Error) FATAL 28P01 (invalid_password) password authentication failed for user "autonomic"
+
+11:55:22.666 [error] Postgrex.Protocol (#PID<0.345.0> ("db_conn_8")) failed to connect: ** (Postgrex.Error) FATAL 28P01 (invalid_password) password authentication failed for user "autonomic"
+
+11:55:22.666 [error] Postgrex.Protocol (#PID<0.361.0> ("db_conn_24")) failed to connect: ** (Postgrex.Error) FATAL 28P01 (invalid_password) password authentication failed for user "autonomic"
+
+11:55:22.666 [error] Postgrex.Protocol (#PID<0.354.0> ("db_conn_17")) failed to connect: ** (Postgrex.Error) FATAL 28P01 (invalid_password) password authentication failed for user "autonomic"
+
+11:55:22.666 [error] Postgrex.Protocol (#PID<0.348.0> ("db_conn_11")) failed to connect: ** (Postgrex.Error) FATAL 28P01 (invalid_password) password authentication failed for user "autonomic"
+
+11:55:22.666 [error] Postgrex.Protocol (#PID<0.349.0> ("db_conn_12")) failed to connect: ** (Postgrex.Error) FATAL 28P01 (invalid_password) password authentication failed for user "autonomic"
 ..........
-Finished in 0.1 seconds (0.01s async, 0.1s sync)
+Finished in 0.1 seconds (0.03s async, 0.1s sync)
 
 Result: 10 passed
 ==> autonomic_linux
-Running ExUnit with seed: 897896, max_cases: 48
+Running ExUnit with seed: 626025, max_cases: 48
 Excluding tags: [:postgres, :linux, :live, :reference, :db_outage]
 
 All tests have been excluded.
 
-Finished in 0.08 seconds (0.00s async, 0.08s sync)
+Finished in 0.07 seconds (0.00s async, 0.07s sync)
 
 Result: 0 tests, 3 excluded
 ==> autonomic_typesafe
-Running ExUnit with seed: 897896, max_cases: 48
+Running ExUnit with seed: 626025, max_cases: 48
 Excluding tags: [:live]
 
-..
-11:49:31.306 [warning] Ignoring a TypeSafe answer with an unrecognized future type; inspect response.raw explicitly
-.....
+.
+11:55:23.029 [warning] Ignoring a TypeSafe answer with an unrecognized future type; inspect response.raw explicitly
+......
 Finished in 0.1 seconds (0.00s async, 0.1s sync)
 
 Result: 7 passed, 1 excluded
 ==> autonomic_store
-Running ExUnit with seed: 897896, max_cases: 48
+Running ExUnit with seed: 626025, max_cases: 48
 Excluding tags: [:postgres, :linux, :live, :reference, :db_outage]
 
 All tests have been excluded.
 
-Finished in 0.2 seconds (0.00s async, 0.2s sync)
+Finished in 0.1 seconds (0.00s async, 0.1s sync)
 
 Result: 0 tests, 14 excluded

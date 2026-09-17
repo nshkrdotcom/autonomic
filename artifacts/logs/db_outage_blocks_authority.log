@@ -1,70 +1,70 @@
 
-11:49:43.678 [info] == Running 20260917000000 Autonomic.Store.Repo.Migrations.CreateAutonomicTables.change/0 forward
+11:55:31.401 [info] == Running 20260917000000 Autonomic.Store.Repo.Migrations.CreateAutonomicTables.change/0 forward
 
-11:49:43.681 [info] create table episodes
+11:55:31.405 [info] create table episodes
 
-11:49:43.685 [info] create check constraint epoch_positive on table episodes
+11:55:31.410 [info] create check constraint epoch_positive on table episodes
 
-11:49:43.686 [info] create check constraint trajectory_version_nonnegative on table episodes
+11:55:31.410 [info] create check constraint trajectory_version_nonnegative on table episodes
 
-11:49:43.686 [info] create table capability_leases
+11:55:31.411 [info] create table capability_leases
 
-11:49:43.689 [info] create index leases_authority_lookup
+11:55:31.413 [info] create index leases_authority_lookup
 
-11:49:43.689 [info] create table checkpoints
+11:55:31.413 [info] create table checkpoints
 
-11:49:43.691 [info] create index checkpoints_episode_id_trust_level_created_at_ms_index
+11:55:31.415 [info] create index checkpoints_episode_id_trust_level_created_at_ms_index
 
-11:49:43.691 [info] create table effects
+11:55:31.416 [info] create table effects
 
-11:49:43.693 [info] create index effects_episode_id_id_index
+11:55:31.418 [info] create index effects_episode_id_id_index
 
-11:49:43.694 [info] create index effects_idempotency_key_index
+11:55:31.419 [info] create index effects_idempotency_key_index
 
-11:49:43.694 [info] create index effects_episode_id_epoch_state_index
+11:55:31.420 [info] create index effects_episode_id_epoch_state_index
 
-11:49:43.695 [info] create index effects_state_commit_attempt_id_index
+11:55:31.421 [info] create index effects_state_commit_attempt_id_index
 
-11:49:43.696 [info] create table effect_decisions
+11:55:31.422 [info] create table effect_decisions
 
-11:49:43.697 [info] create index effect_decision_identity
+11:55:31.424 [info] create index effect_decision_identity
 
-11:49:43.698 [info] create index effect_decisions_effect_id_effect_revision_decision_index
+11:55:31.425 [info] create index effect_decisions_effect_id_effect_revision_decision_index
 
-11:49:43.699 [info] create table episode_events
+11:55:31.426 [info] create table episode_events
 
-11:49:43.700 [info] create index episode_events_episode_id_sequence_index
+11:55:31.427 [info] create index episode_events_episode_id_sequence_index
 
-11:49:43.700 [info] create table observation_frames
+11:55:31.429 [info] create table observation_frames
 
-11:49:43.702 [info] create index observation_frames_episode_id_epoch_sequence_index
+11:55:31.430 [info] create index observation_frames_episode_id_epoch_sequence_index
 
-11:49:43.703 [info] create table recovery_records
+11:55:31.431 [info] create table recovery_records
 
-11:49:43.704 [info] create index recovery_records_episode_id_created_at_ms_index
+11:55:31.433 [info] create index recovery_records_episode_id_created_at_ms_index
 
-11:49:43.706 [info] == Migrated 20260917000000 in 0.0s
+11:55:31.436 [info] == Migrated 20260917000000 in 0.0s
 ==> autonomic_store
-Running ExUnit with seed: 478916, max_cases: 48
+Running ExUnit with seed: 299954, max_cases: 48
 Excluding tags: [:linux, :live, :reference]
 Including tags: [:postgres, :db_outage]
 
 
-11:49:44.717 [error] Postgrex.Protocol (#PID<0.359.0> ({Postgrex.Protocol, "autonomic_outage"})) disconnected: ** (DBConnection.ConnectionError) tcp recv (idle): closed
+11:55:32.588 [error] Postgrex.Protocol (#PID<0.352.0> ({Postgrex.Protocol, "autonomic_outage"})) disconnected: ** (DBConnection.ConnectionError) tcp recv (idle): closed
 
-11:49:44.717 [error] Postgrex.Protocol (#PID<0.345.0> ({Postgrex.Protocol, "autonomic_outage"})) disconnected: ** (DBConnection.ConnectionError) tcp recv (idle): closed
+11:55:32.588 [error] Postgrex.Protocol (#PID<0.358.0> ({Postgrex.Protocol, "autonomic_outage"})) disconnected: ** (DBConnection.ConnectionError) tcp recv (idle): closed
 
-11:49:44.717 [error] Postgrex.Protocol (#PID<0.341.0> ({Postgrex.Protocol, "autonomic_outage"})) disconnected: ** (DBConnection.ConnectionError) tcp recv (idle): closed
+11:55:32.588 [error] Postgrex.Protocol (#PID<0.363.0> ({Postgrex.Protocol, "autonomic_outage"})) disconnected: ** (DBConnection.ConnectionError) tcp recv (idle): closed
 
-11:49:44.717 [error] Postgrex.Protocol (#PID<0.353.0> ({Postgrex.Protocol, "autonomic_outage"})) disconnected: ** (DBConnection.ConnectionError) tcp recv (idle): closed
+11:55:32.588 [error] Postgrex.Protocol (#PID<0.341.0> ({Postgrex.Protocol, "autonomic_outage"})) disconnected: ** (DBConnection.ConnectionError) tcp recv (idle): closed
 
-11:49:44.719 [error] Postgrex.Protocol (#PID<0.359.0> ({Postgrex.Protocol, "autonomic_outage"})) failed to connect: ** (DBConnection.ConnectionError) tcp connect (127.0.0.1:47449): connection refused - :econnrefused
+11:55:32.591 [error] Postgrex.Protocol (#PID<0.358.0> ({Postgrex.Protocol, "autonomic_outage"})) failed to connect: ** (DBConnection.ConnectionError) tcp connect (127.0.0.1:44657): connection refused - :econnrefused
 
-11:49:44.719 [error] Postgrex.Protocol (#PID<0.345.0> ({Postgrex.Protocol, "autonomic_outage"})) failed to connect: ** (DBConnection.ConnectionError) tcp connect (127.0.0.1:47449): connection refused - :econnrefused
+11:55:32.591 [error] Postgrex.Protocol (#PID<0.341.0> ({Postgrex.Protocol, "autonomic_outage"})) failed to connect: ** (DBConnection.ConnectionError) tcp connect (127.0.0.1:44657): connection refused - :econnrefused
 
-11:49:44.719 [error] Postgrex.Protocol (#PID<0.341.0> ({Postgrex.Protocol, "autonomic_outage"})) failed to connect: ** (DBConnection.ConnectionError) tcp connect (127.0.0.1:47449): connection refused - :econnrefused
+11:55:32.591 [error] Postgrex.Protocol (#PID<0.363.0> ({Postgrex.Protocol, "autonomic_outage"})) failed to connect: ** (DBConnection.ConnectionError) tcp connect (127.0.0.1:44657): connection refused - :econnrefused
 
-11:49:44.720 [error] Postgrex.Protocol (#PID<0.353.0> ({Postgrex.Protocol, "autonomic_outage"})) failed to connect: ** (DBConnection.ConnectionError) tcp connect (127.0.0.1:47449): connection refused - :econnrefused
+11:55:32.591 [error] Postgrex.Protocol (#PID<0.352.0> ({Postgrex.Protocol, "autonomic_outage"})) failed to connect: ** (DBConnection.ConnectionError) tcp connect (127.0.0.1:44657): connection refused - :econnrefused
 .
 Finished in 0.3 seconds (0.00s async, 0.3s sync)
 

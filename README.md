@@ -1,4 +1,15 @@
+<p align="center">
+  <img src="assets/autonomic.svg" alt="Autonomic Kernel Logo" width="200" height="200">
+</p>
+
 # Autonomic Kernel
+
+<p align="center">
+  <a href="https://github.com/nshkrdotcom/autonomic"><img src="https://img.shields.io/badge/GitHub-nshkrdotcom%2Fautonomic-24292e?logo=github" alt="GitHub"/></a>
+  <a href="https://hex.pm/packages/autonomic"><img src="https://img.shields.io/hexpm/v/autonomic.svg" alt="Hex.pm"/></a>
+  <a href="https://hexdocs.pm/autonomic"><img src="https://img.shields.io/badge/hex-docs-blue.svg" alt="HexDocs"/></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT License"/></a>
+</p>
 
 A production-oriented BEAM/OTP autonomy kernel for running an untrusted coding worker inside a disposable Linux execution domain while keeping durable authority, policy, effects, verification, recovery, and audit state in a trusted control plane.
 
