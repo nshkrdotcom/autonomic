@@ -1,0 +1,196 @@
+<svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Background Gradient -->
+    <linearGradient id="bgGrad" x1="100" y1="8" x2="100" y2="192" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0F172A" />
+      <stop offset="45%" stop-color="#0A0E1A" />
+      <stop offset="100%" stop-color="#060913" />
+    </linearGradient>
+
+    <!-- Outer Rim Gradient -->
+    <linearGradient id="rimGrad" x1="20" y1="8" x2="180" y2="192" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#38BDF8" />
+      <stop offset="30%" stop-color="#6366F1" />
+      <stop offset="70%" stop-color="#8B5CF6" />
+      <stop offset="100%" stop-color="#06B6D4" />
+    </linearGradient>
+
+    <!-- Inner Core Ambient Glow -->
+    <radialGradient id="coreGlow" cx="100" cy="100" r="75" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#38BDF8" stop-opacity="0.35" />
+      <stop offset="35%" stop-color="#6366F1" stop-opacity="0.18" />
+      <stop offset="70%" stop-color="#8B5CF6" stop-opacity="0.06" />
+      <stop offset="100%" stop-color="#0F172A" stop-opacity="0" />
+    </radialGradient>
+
+    <!-- Nucleus Radial Glow -->
+    <radialGradient id="nucleusGlow" cx="100" cy="100" r="24" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFFFFF" />
+      <stop offset="25%" stop-color="#38BDF8" />
+      <stop offset="65%" stop-color="#6366F1" />
+      <stop offset="100%" stop-color="#4F46E5" stop-opacity="0" />
+    </radialGradient>
+
+    <!-- Conduit / Effect Trace Gradient -->
+    <linearGradient id="traceGradVert" x1="100" y1="20" x2="100" y2="180" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#06B6D4" stop-opacity="0.8" />
+      <stop offset="50%" stop-color="#A855F7" stop-opacity="0.9" />
+      <stop offset="100%" stop-color="#06B6D4" stop-opacity="0.8" />
+    </linearGradient>
+
+    <linearGradient id="accentCyan" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#22D3EE" />
+      <stop offset="100%" stop-color="#0284C7" />
+    </linearGradient>
+
+    <linearGradient id="shieldGrad" x1="100" y1="65" x2="100" y2="135" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#1E1B4B" stop-opacity="0.9" />
+      <stop offset="50%" stop-color="#0F172A" stop-opacity="0.95" />
+      <stop offset="100%" stop-color="#1E293B" stop-opacity="0.9" />
+    </linearGradient>
+
+    <!-- Clip Path for the Hexagon -->
+    <clipPath id="hexClip">
+      <path d="M 94.00,11.46 A 12.00 12.00 0 0 1 106.00,11.46 L 173.67,50.54 A 12.00 12.00 0 0 1 179.67,60.93 L 179.67,139.07 A 12.00 12.00 0 0 1 173.67,149.46 L 106.00,188.54 A 12.00 12.00 0 0 1 94.00,188.54 L 26.33,149.46 A 12.00 12.00 0 0 1 20.33,139.07 L 20.33,60.93 A 12.00 12.00 0 0 1 26.33,50.54 Z" />
+    </clipPath>
+
+    <!-- Glow Filter -->
+    <filter id="softGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="3" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+
+    <filter id="intenseGlow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="4.5" result="blur1" />
+      <feGaussianBlur stdDeviation="1.5" result="blur2" />
+      <feMerge>
+        <feMergeNode in="blur1" />
+        <feMergeNode in="blur2" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- 1. BASE HEXAGON (Fill & Subtle Depth) -->
+  <path d="M 94.00,11.46 A 12.00 12.00 0 0 1 106.00,11.46 L 173.67,50.54 A 12.00 12.00 0 0 1 179.67,60.93 L 179.67,139.07 A 12.00 12.00 0 0 1 173.67,149.46 L 106.00,188.54 A 12.00 12.00 0 0 1 94.00,188.54 L 26.33,149.46 A 12.00 12.00 0 0 1 20.33,139.07 L 20.33,60.93 A 12.00 12.00 0 0 1 26.33,50.54 Z" fill="url(#bgGrad)" />
+
+  <!-- Clipped internal elements -->
+  <g clip-path="url(#hexClip)">
+    <!-- Radial Ambient Atmosphere -->
+    <circle cx="100" cy="100" r="85" fill="url(#coreGlow)" />
+
+    <!-- Subtle Circuit / Neural Grid Lines -->
+    <g opacity="0.18" stroke="#38BDF8" stroke-width="0.75" stroke-dasharray="2 4">
+      <line x1="100" y1="15" x2="100" y2="185" />
+      <line x1="26" y1="57" x2="174" y2="143" />
+      <line x1="26" y1="143" x2="174" y2="57" />
+      <circle cx="100" cy="100" r="76" fill="none" />
+      <circle cx="100" cy="100" r="60" fill="none" stroke-dasharray="1 5" />
+    </g>
+
+    <!-- 2. CONTAINMENT FENCE (Intermediate Layer) -->
+    <path d="M 96.00,20.31 A 8.00 8.00 0 0 1 104.00,20.31 L 167.01,56.69 A 8.00 8.00 0 0 1 171.01,63.62 L 171.01,136.38 A 8.00 8.00 0 0 1 167.01,143.31 L 104.00,179.69 A 8.00 8.00 0 0 1 96.00,179.69 L 32.99,143.31 A 8.00 8.00 0 0 1 28.99,136.38 L 28.99,63.62 A 8.00 8.00 0 0 1 32.99,56.69 Z" fill="none" stroke="#1E293B" stroke-width="1.5" />
+    <path d="M 96.00,20.31 A 8.00 8.00 0 0 1 104.00,20.31 L 167.01,56.69 A 8.00 8.00 0 0 1 171.01,63.62 L 171.01,136.38 A 8.00 8.00 0 0 1 167.01,143.31 L 104.00,179.69 A 8.00 8.00 0 0 1 96.00,179.69 L 32.99,143.31 A 8.00 8.00 0 0 1 28.99,136.38 L 28.99,63.62 A 8.00 8.00 0 0 1 32.99,56.69 Z" fill="none" stroke="url(#rimGrad)" stroke-width="1" stroke-opacity="0.45" stroke-dasharray="14 8" />
+
+    <!-- 3. EPOCH FENCE RING (Durable Episode Epoch) -->
+    <path d="M 97.00,33.73 A 6.00 6.00 0 0 1 103.00,33.73 L 155.89,64.27 A 6.00 6.00 0 0 1 158.89,69.46 L 158.89,130.54 A 6.00 6.00 0 0 1 155.89,135.73 L 103.00,166.27 A 6.00 6.00 0 0 1 97.00,166.27 L 44.11,135.73 A 6.00 6.00 0 0 1 41.11,130.54 L 41.11,69.46 A 6.00 6.00 0 0 1 44.11,64.27 Z" fill="none" stroke="#38BDF8" stroke-opacity="0.3" stroke-width="1" />
+    
+    <!-- Outer Corner Accent Nodes (6 Vertices) -->
+    <g fill="#0EA5E9" opacity="0.8">
+      <circle cx="100" cy="24" r="2" />
+      <circle cx="166" cy="62" r="2" />
+      <circle cx="166" cy="138" r="2" />
+      <circle cx="100" cy="176" r="2" />
+      <circle cx="34" cy="138" r="2" />
+      <circle cx="34" cy="62" r="2" />
+    </g>
+
+    <!-- Epoch Tick Marks (Radial ticks around Epoch boundary) -->
+    <g stroke="#818CF8" stroke-width="1.2" opacity="0.65">
+      <!-- Top / Bottom ticks -->
+      <line x1="100" y1="32" x2="100" y2="38" />
+      <line x1="100" y1="162" x2="100" y2="168" />
+      <!-- Side ticks -->
+      <line x1="42" y1="67" x2="47" y2="70" />
+      <line x1="158" y1="67" x2="153" y2="70" />
+      <line x1="42" y1="133" x2="47" y2="130" />
+      <line x1="158" y1="133" x2="153" y2="130" />
+    </g>
+
+    <!-- 4. AUTONOMIC EFFECT BROKER CONDUITS (Radial Channels) -->
+    <!-- Primary Conduits linking Core to Boundary Nodes -->
+    <g stroke="url(#traceGradVert)" stroke-width="1.75" stroke-linecap="round">
+      <!-- Vertical Authority Spine -->
+      <line x1="100" y1="42" x2="100" y2="70" />
+      <line x1="100" y1="130" x2="100" y2="158" />
+      <!-- Diagonal Channels -->
+      <line x1="74" y1="85" x2="52" y2="72" />
+      <line x1="126" y1="85" x2="148" y2="72" />
+      <line x1="74" y1="115" x2="52" y2="128" />
+      <line x1="126" y1="115" x2="148" y2="128" />
+    </g>
+
+    <!-- Conduit Gateway Chips / Class 2+ Effect Filters -->
+    <g fill="#0F172A" stroke="#38BDF8" stroke-width="1.25">
+      <circle cx="100" cy="46" r="3.5" />
+      <circle cx="100" cy="154" r="3.5" />
+      <polygon points="49,70 54,67 54,75" stroke="#818CF8" />
+      <polygon points="151,70 146,67 146,75" stroke="#818CF8" />
+      <polygon points="49,130 54,127 54,135" stroke="#818CF8" />
+      <polygon points="151,130 146,127 146,135" stroke="#818CF8" />
+    </g>
+    <circle cx="100" cy="46" r="1.5" fill="#38BDF8" />
+    <circle cx="100" cy="154" r="1.5" fill="#38BDF8" />
+
+    <!-- 5. CENTRAL HOMEOSTAT & TRUSTED CONTROL PLANE -->
+    <!-- Outer Hexagonal Iris Shield -->
+    <polygon points="100.00,56.00 138.11,78.00 138.11,122.00 100.00,144.00 61.89,122.00 61.89,78.00" fill="url(#shieldGrad)" stroke="#312E81" stroke-width="2" />
+    <polygon points="100.00,56.00 138.11,78.00 138.11,122.00 100.00,144.00 61.89,122.00 61.89,78.00" fill="none" stroke="url(#rimGrad)" stroke-width="1.2" stroke-opacity="0.8" />
+
+    <!-- Technical Sector Brackets (Control Plane Perimeter) -->
+    <g stroke="#22D3EE" stroke-width="1.5" stroke-linecap="round" fill="none" opacity="0.85">
+      <!-- Upper Bracket -->
+      <path d="M 86,66 L 100,58 L 114,66" />
+      <!-- Lower Bracket -->
+      <path d="M 86,134 L 100,142 L 114,134" />
+      <!-- Left / Right Accents -->
+      <path d="M 68,90 L 62,100 L 68,110" />
+      <path d="M 132,90 L 138,100 L 132,110" />
+    </g>
+
+    <!-- Intermediate Orbit Ring (Speculation Horizon / Gate) -->
+    <circle cx="100" cy="100" r="30" fill="none" stroke="#6366F1" stroke-width="1.5" stroke-dasharray="5 7" opacity="0.8" />
+    <circle cx="100" cy="100" r="23" fill="#0B0F19" stroke="#06B6D4" stroke-width="1.5" opacity="0.95" />
+
+    <!-- Inverted Diamond Kernel (Deterministic Authority Envelope) -->
+    <polygon points="100,79 121,100 100,121 79,100" fill="#1E1B4B" stroke="url(#rimGrad)" stroke-width="1.5" />
+
+    <!-- Central Radiant Homeostat Nucleus (The Kernel Authority Engine) -->
+    <circle cx="100" cy="100" r="13" fill="url(#nucleusGlow)" filter="url(#intenseGlow)" />
+    <circle cx="100" cy="100" r="7" fill="#FFFFFF" />
+    <circle cx="100" cy="100" r="3.5" fill="#0284C7" />
+
+    <!-- Symmetrical Precision Coordinates / Micro Indicators -->
+    <g fill="#A5B4FC" opacity="0.9">
+      <!-- Crosshairs on the Kernel Core -->
+      <circle cx="100" cy="74" r="1.25" />
+      <circle cx="100" cy="126" r="1.25" />
+      <circle cx="74" cy="100" r="1.25" />
+      <circle cx="126" cy="100" r="1.25" />
+    </g>
+  </g>
+
+  <!-- 6. OUTER HEXAGON RIM & CORNER ACCENTS (On top of clip) -->
+  <path d="M 94.00,11.46 A 12.00 12.00 0 0 1 106.00,11.46 L 173.67,50.54 A 12.00 12.00 0 0 1 179.67,60.93 L 179.67,139.07 A 12.00 12.00 0 0 1 173.67,149.46 L 106.00,188.54 A 12.00 12.00 0 0 1 94.00,188.54 L 26.33,149.46 A 12.00 12.00 0 0 1 20.33,139.07 L 20.33,60.93 A 12.00 12.00 0 0 1 26.33,50.54 Z" fill="none" stroke="url(#rimGrad)" stroke-width="2" filter="url(#softGlow)" opacity="0.6" />
+  <path d="M 94.00,11.46 A 12.00 12.00 0 0 1 106.00,11.46 L 173.67,50.54 A 12.00 12.00 0 0 1 179.67,60.93 L 179.67,139.07 A 12.00 12.00 0 0 1 173.67,149.46 L 106.00,188.54 A 12.00 12.00 0 0 1 94.00,188.54 L 26.33,149.46 A 12.00 12.00 0 0 1 20.33,139.07 L 20.33,60.93 A 12.00 12.00 0 0 1 26.33,50.54 Z" fill="none" stroke="url(#rimGrad)" stroke-width="1.5" />
+
+  <!-- Precision Corner Dots on the outer rim -->
+  <g fill="#F0F9FF" opacity="0.95">
+    <circle cx="100" cy="11" r="1.75" />
+    <circle cx="174.67" cy="54" r="1.75" />
+    <circle cx="174.67" cy="146" r="1.75" />
+    <circle cx="100" cy="189" r="1.75" />
+    <circle cx="25.33" cy="146" r="1.75" />
+    <circle cx="25.33" cy="54" r="1.75" />
+  </g>
+</svg>
