@@ -22,6 +22,18 @@ Autonomic runs untrusted coding workers inside disposable Linux execution domain
 
 It is not a prompt-safety wrapper and it does not ask a language model whether another language model is behaving. Deterministic mechanisms — Linux namespaces, cgroup v2, seccomp, overlayfs, signed policy, row-locked epoch fencing — hold authority. Semantic model output is admitted only as a **sensor**: it can narrow, yield, or preempt, and it can never mint a capability or widen an envelope.
 
+### Try it in 60 seconds
+
+The laptop examples use the real core control plane with an explicitly unsafe local execution backend so you can inspect kernel-plane behavior without PostgreSQL, a privileged Linux host, or an API key:
+
+```bash
+cd examples/01_first_episode
+mix deps.get
+mix run
+```
+
+`UnsafeLocalDomain` is **not** production isolation. See [`examples/README.md`](examples/README.md) for the trust delta and the complete runnable suite.
+
 **Contents**
 
 [Why](#why) · [What it does](#what-it-does) · [Architecture](#architecture) · [Effect classes](#effect-classes) · [The commit horizon](#the-commit-horizon) · [Install](#install) · [Worked example](#worked-example) · [Worker protocol](#worker-protocol) · [Packages](#packages) · [Configuration](#configuration) · [Invariants](#invariants) · [Security](#security-posture) · [Verification](#verification-and-conformance) · [Repository](#repository-layout) · [Development](#development-and-quality-control) · [Docs](#documentation-map) · [Requirements](#requirements) · [Status](#status)

@@ -1,0 +1,42 @@
+name: Examples
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  runnable-examples:
+    name: mix run (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: erlef/setup-beam@v1
+        with:
+          elixir-version: '1.20.4'
+          otp-version: '29.0.6'
+      - name: Install Hex and Rebar
+        run: |
+          mix local.hex --force
+          mix local.rebar --force
+      - name: Run numbered examples
+        shell: bash
+        run: |
+          set -euo pipefail
+          for example in examples/0[1-8]_*/; do
+            echo "==> ${example}"
+            (
+              cd "${example}"
+              mix deps.get
+              mix run
+            )
+          done

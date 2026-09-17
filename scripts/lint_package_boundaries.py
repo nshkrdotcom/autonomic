@@ -7,6 +7,8 @@ Enforces strict dependency rules:
 - `autonomic_postgres` depends only on `autonomic` (no linux, no typesafe).
 - `autonomic_typesafe` depends only on `autonomic` (no linux, no postgres).
 - Staged releases must contain ZERO `path:` or `in_umbrella:` dependencies.
+- Example-only applications can never become dependencies of publishable packages.
+- `Autonomic.Dev.*` code is confined to `examples/`.
 """
 from __future__ import annotations
 
@@ -59,6 +61,17 @@ def check_boundaries() -> int:
         if "apps_path" in content:
             violations.append(f"Package '{pkg}' retains forbidden 'apps_path' reference")
 
+        if "autonomic_examples_dev" in actual_deps:
+            violations.append(f"Publishable package '{pkg}' depends on example-only autonomic_examples_dev")
+
+    dev_marker = "Autonomic" + ".Dev."
+    for source in ROOT.rglob("*.ex*"):
+        parts = source.relative_to(ROOT).parts
+        if "examples" in parts or any(part in {"deps", "_build", "_release_stage"} for part in parts):
+            continue
+        if dev_marker in source.read_text(encoding="utf-8", errors="ignore"):
+            violations.append(f"Example-only module reference escaped examples/: {source.relative_to(ROOT)}")
+
     if violations:
         print("Architectural Boundary Lint FAILED:", file=sys.stderr)
         for v in violations:
@@ -70,6 +83,8 @@ def check_boundaries() -> int:
     print("  - autonomic_linux: depends only on autonomic")
     print("  - autonomic_postgres: depends only on autonomic (no cross-adapter coupling)")
     print("  - autonomic_typesafe: depends only on autonomic (no cross-adapter coupling)")
+    print("  - examples: no publishable package depends on autonomic_examples_dev")
+    print("  - Autonomic.Dev.*: confined to examples/")
     return 0
 
 
