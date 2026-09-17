@@ -1,0 +1,36 @@
+==> autonomic_kernel
+Running ExUnit with seed: 897896, max_cases: 48
+Excluding tags: [:postgres, :linux, :live, :reference, :db_outage]
+
+..........
+Finished in 0.1 seconds (0.01s async, 0.1s sync)
+
+Result: 10 passed
+==> autonomic_linux
+Running ExUnit with seed: 897896, max_cases: 48
+Excluding tags: [:postgres, :linux, :live, :reference, :db_outage]
+
+All tests have been excluded.
+
+Finished in 0.08 seconds (0.00s async, 0.08s sync)
+
+Result: 0 tests, 3 excluded
+==> autonomic_typesafe
+Running ExUnit with seed: 897896, max_cases: 48
+Excluding tags: [:live]
+
+..
+11:49:31.306 [warning] Ignoring a TypeSafe answer with an unrecognized future type; inspect response.raw explicitly
+.....
+Finished in 0.1 seconds (0.00s async, 0.1s sync)
+
+Result: 7 passed, 1 excluded
+==> autonomic_store
+Running ExUnit with seed: 897896, max_cases: 48
+Excluding tags: [:postgres, :linux, :live, :reference, :db_outage]
+
+All tests have been excluded.
+
+Finished in 0.2 seconds (0.00s async, 0.2s sync)
+
+Result: 0 tests, 14 excluded

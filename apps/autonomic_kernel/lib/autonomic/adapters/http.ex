@@ -11,6 +11,7 @@ defmodule Autonomic.Adapters.HTTP do
          true <- uri.scheme == "https" or Map.get(target, "allow_http", false),
          true <- is_nil(uri.userinfo),
          true <- uri.host == Map.fetch!(target, "host"),
+         true <- same_origin?(uri, target),
          true <- String.starts_with?(uri.path || "/", Map.get(target, "path_prefix", "/")),
          true <- method in Enum.map(Map.get(target, "methods", ["GET"]), &String.upcase/1) do
       :ok
@@ -29,8 +30,7 @@ defmodule Autonomic.Adapters.HTTP do
          :ok <- rate_limit(effect, target),
          {:ok, body} <- request_body(effect, method, target),
          {:ok, headers} <- headers(effect, target),
-         request <- request_tuple(uri, method, headers, body),
-         {:ok, response} <- request(effect, method, request, target) do
+         {:ok, response} <- request(effect, method, uri, headers, body, target) do
       {:ok, response}
     else
       {:error, {:transport, reason}} -> {:unknown, reason}
@@ -46,13 +46,20 @@ defmodule Autonomic.Adapters.HTTP do
          true <- uri.scheme == "https" or Map.get(target, "allow_http", false),
          true <- is_nil(uri.userinfo),
          true <- uri.host == Map.get(target, "host"),
+         true <- same_origin?(uri, target),
          true <- String.starts_with?(uri.path || "/", Map.get(target, "path_prefix", "/")),
          {:ok, headers} <- headers(effect, target),
-         {:ok, {{_, status, _}, _response_headers, body}} <- :httpc.request(:get, {String.to_charlist(url), headers}, http_options(target), body_format: :binary) do
+         {:ok, status, _response_headers, body} <-
+           Autonomic.BoundedHTTP.request(:get, url, headers, "", target) do
       cond do
-        status in 200..299 and String.contains?(body, effect.idempotency_key || effect.id) -> {:committed, %{status: status, reconciliation: true}}
-        status == 404 -> :not_committed
-        true -> {:unknown, {:reconcile_status, status}}
+        status in 200..299 and String.contains?(body, effect.idempotency_key || effect.id) ->
+          {:committed, %{status: status, reconciliation: true}}
+
+        status == 404 ->
+          :not_committed
+
+        true ->
+          {:unknown, {:reconcile_status, status}}
       end
     else
       _ -> {:unknown, :target_has_no_reconciliation_contract}
@@ -62,14 +69,23 @@ defmodule Autonomic.Adapters.HTTP do
   defp resolved_request(effect, target) do
     base = Map.fetch!(target, "base_url")
     path = Map.get(effect.target, "path", "/")
-    method = String.upcase(to_string(Map.get(effect.target, "method", if(effect.kind == :http_read, do: "GET", else: "POST"))))
+
+    method =
+      String.upcase(
+        to_string(
+          Map.get(effect.target, "method", if(effect.kind == :http_read, do: "GET", else: "POST"))
+        )
+      )
+
     uri = URI.merge(base, path)
     {:ok, uri, method}
   rescue
     error -> {:error, {:invalid_url, error}}
   end
 
-  defp request_body(_effect, method, _target) when method in ["GET", "HEAD", "DELETE"], do: {:ok, ""}
+  defp request_body(_effect, method, _target) when method in ["GET", "HEAD", "DELETE"],
+    do: {:ok, ""}
+
   defp request_body(effect, _method, target) do
     with {:ok, body} <- Payloads.get(effect.episode_id, effect.payload_ref),
          true <- byte_size(body) <= Map.get(target, "max_body_bytes", 1_048_576) do
@@ -84,45 +100,78 @@ defmodule Autonomic.Adapters.HTTP do
     base = [{~c"accept", ~c"application/json"}]
 
     base =
-      if effect.class in [:class_3_authoritative_external_mutation, :class_4_irreversible_high_impact],
-        do: [{~c"idempotency-key", String.to_charlist(effect.idempotency_key || effect.id)} | base],
-        else: base
+      if effect.class in [
+           :class_3_authoritative_external_mutation,
+           :class_4_irreversible_high_impact
+         ],
+         do: [
+           {~c"idempotency-key", String.to_charlist(effect.idempotency_key || effect.id)} | base
+         ],
+         else: base
 
     case Map.get(target, "credential_env") do
-      nil -> {:ok, base}
+      nil ->
+        {:ok, base}
+
       env ->
-        case System.get_env(env) do
-          nil -> if(Map.get(target, "credential_required", true), do: {:error, :trusted_credential_unavailable}, else: {:ok, base})
-          value -> {:ok, [{~c"authorization", String.to_charlist("Bearer " <> value)} | base]}
-        end
+        credential_header(env, target, base)
     end
   end
 
-  defp request_tuple(uri, method, headers, body) do
-    url = uri |> URI.to_string() |> String.to_charlist()
-    if method in ["GET", "HEAD", "DELETE"], do: {url, headers}, else: {url, headers, ~c"application/octet-stream", body}
+  defp credential_header(env, target, base) do
+    case System.get_env(env) do
+      nil ->
+        if(Map.get(target, "credential_required", true),
+          do: {:error, :trusted_credential_unavailable},
+          else: {:ok, base}
+        )
+
+      value ->
+        {:ok, [{~c"authorization", String.to_charlist("Bearer " <> value)} | base]}
+    end
   end
 
-  defp request(effect, method, request, target) do
-    :inets.start()
-    :ssl.start()
-    with {:ok, atom} <- http_method(method) do
-      case :httpc.request(atom, request, http_options(target), body_format: :binary) do
-      {:ok, {{_version, status, _reason}, response_headers, body}} when status in 200..299 ->
-        max = Map.get(target, "max_response_bytes", 1_048_576)
-        if byte_size(body) <= max do
-          digest = :crypto.hash(:sha256, body) |> Base.encode16(case: :lower)
+  defp request(effect, method, uri, headers, body, target) do
+    with {:ok, atom} <- http_method(method),
+         {:ok, status, response_headers, response_body} <-
+           Autonomic.BoundedHTTP.request(atom, URI.to_string(uri), headers, body, target) do
+      handle_response(effect, status, response_headers, response_body, target)
+    end
+  end
 
-          with {:ok, response_ref} <- Payloads.put(effect.episode_id, body, max) do
-            {:ok, %{status: status, headers: safe_headers(response_headers), body_digest: digest, body_bytes: byte_size(body), response_ref: response_ref, receipt_ref: response_ref}}
-          end
-        else
-          {:error, :http_response_too_large}
-        end
-      {:ok, {{_version, status, _reason}, _headers, body}} ->
-        {:error, {:http_status, status, %{body_digest: :crypto.hash(:sha256, body) |> Base.encode16(case: :lower), body_bytes: byte_size(body)}}}
-        {:error, reason} -> {:error, {:transport, reason}}
+  defp handle_response(effect, status, headers, body, target) when status in 200..299,
+    do: materialize_response(effect, status, headers, body, target)
+
+  defp handle_response(_effect, status, _headers, body, _target),
+    do:
+      {:error,
+       {:http_status, status,
+        %{body_digest: Autonomic.Canonical.hash(body), body_bytes: byte_size(body)}}}
+
+  defp same_origin?(uri, target) do
+    base = URI.parse(Map.fetch!(target, "base_url"))
+    {uri.scheme, uri.host, uri.port} == {base.scheme, base.host, base.port}
+  end
+
+  defp materialize_response(effect, status, response_headers, body, target) do
+    max = Map.get(target, "max_response_bytes", 1_048_576)
+
+    if byte_size(body) <= max do
+      digest = :crypto.hash(:sha256, body) |> Base.encode16(case: :lower)
+
+      with {:ok, response_ref} <- Payloads.put(effect.episode_id, body, max) do
+        {:ok,
+         %{
+           status: status,
+           headers: safe_headers(response_headers),
+           body_digest: digest,
+           body_bytes: byte_size(body),
+           response_ref: response_ref,
+           receipt_ref: response_ref
+         }}
       end
+    else
+      {:error, :http_response_too_large}
     end
   end
 
@@ -142,20 +191,15 @@ defmodule Autonomic.Adapters.HTTP do
     RateLimiter.check({:http, target_id}, limit, window_ms)
   end
 
-  defp http_options(target) do
-    [
-      timeout: Map.get(target, "timeout_ms", 10_000),
-      connect_timeout: Map.get(target, "connect_timeout_ms", 5_000),
-      autoredirect: false,
-      ssl: [verify: :verify_peer, cacerts: :public_key.cacerts_get(), customize_hostname_check: [match_fun: :public_key.pkix_verify_hostname_match_fun(:https)]]
-    ]
-  end
-
   defp safe_headers(headers) do
     headers
-    |> Enum.reject(fn {name, _} -> String.downcase(to_string(name)) in ["authorization", "set-cookie", "cookie"] end)
+    |> Enum.reject(fn {name, _} ->
+      String.downcase(to_string(name)) in ["authorization", "set-cookie", "cookie"]
+    end)
     |> Enum.take(64)
-    |> Enum.map(fn {name, value} -> {to_string(name), to_string(value) |> String.slice(0, 512)} end)
+    |> Enum.map(fn {name, value} ->
+      %{name: to_string(name), value: to_string(value) |> String.slice(0, 512)}
+    end)
   end
 
   defp trusted_target(opts) do

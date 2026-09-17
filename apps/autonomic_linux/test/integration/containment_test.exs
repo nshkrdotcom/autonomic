@@ -9,7 +9,12 @@ defmodule Autonomic.Linux.ContainmentTest do
   setup do
     assert {:ok, _} = Preflight.verify()
 
-    root = Path.join(System.tmp_dir!(), "autonomic-linux-#{System.unique_integer([:positive])}")
+    root =
+      Path.join(
+        System.tmp_dir!(),
+        "autonomic-linux-#{Base.encode16(:crypto.strong_rand_bytes(6), case: :lower)}"
+      )
+
     lower = Path.join(root, "lower")
     state_root = Path.join(root, "state")
     socket_path = Path.join(root, "effect.sock")
@@ -18,13 +23,13 @@ defmodule Autonomic.Linux.ContainmentTest do
     File.write!(Path.join(lower, "README"), "immutable base\n")
 
     {:ok, listener} =
-      :gen_tcp.listen(0,
-        binary: true,
+      :gen_tcp.listen(0, [
+        :binary,
         packet: :raw,
         active: false,
         reuseaddr: true,
         ifaddr: {:local, String.to_charlist(socket_path)}
-      )
+      ])
 
     episode_id = :crypto.strong_rand_bytes(16) |> Base.encode16(case: :lower)
 
@@ -64,7 +69,8 @@ defmodule Autonomic.Linux.ContainmentTest do
      domain: domain}
   end
 
-  test "namespaces, cgroup limits, no_new_privs, AF_UNIX and direct-network denial are real", ctx do
+  test "namespaces, cgroup limits, no_new_privs, AF_UNIX and direct-network denial are real",
+       ctx do
     domain = ctx.domain
 
     python = """
@@ -86,7 +92,7 @@ defmodule Autonomic.Linux.ContainmentTest do
     """
 
     assert {:ok, result} = exec(ctx, ["/usr/bin/python3", "-c", python])
-    assert result["exit_status"] == 0
+    assert result["exit_status"] == 0, inspect(result)
     payload = result["stdout"] |> String.trim() |> Jason.decode!()
     assert payload["no_new_privs"] =~ "1"
     refute payload["docker_socket_present"]
@@ -97,7 +103,10 @@ defmodule Autonomic.Linux.ContainmentTest do
     refute payload["mnt"] == host_mnt
 
     cgroup = domain["cgroup"]
-    assert String.trim(File.read!(Path.join(cgroup, "memory.max"))) == Integer.to_string(128 * 1024 * 1024)
+
+    assert String.trim(File.read!(Path.join(cgroup, "memory.max"))) ==
+             Integer.to_string(128 * 1024 * 1024)
+
     assert String.trim(File.read!(Path.join(cgroup, "pids.max"))) == "48"
     assert File.read!(Path.join(cgroup, "cpu.max")) |> String.trim() == "100000 100000"
 
@@ -146,7 +155,9 @@ defmodule Autonomic.Linux.ContainmentTest do
                30_000
              )
 
-    assert {:ok, mutation} = exec(ctx, ["/bin/sh", "-c", "printf tainted > /workspace/tainted.txt"])
+    assert {:ok, mutation} =
+             exec(ctx, ["/bin/sh", "-c", "printf tainted > /workspace/tainted.txt"])
+
     assert mutation["exit_status"] == 0
 
     assert {:ok, _} =
@@ -171,7 +182,10 @@ defmodule Autonomic.Linux.ContainmentTest do
     assert {:ok, restored} = Launcher.request("restore_domain", restore, 90_000)
 
     restored_ctx = %{ctx | domain: restored}
-    assert {:ok, clean} = exec(restored_ctx, ["/bin/sh", "-c", "test ! -e /workspace/tainted.txt"])
+
+    assert {:ok, clean} =
+             exec(restored_ctx, ["/bin/sh", "-c", "test ! -e /workspace/tainted.txt"])
+
     assert clean["exit_status"] == 0
 
     assert {:ok, proof} =

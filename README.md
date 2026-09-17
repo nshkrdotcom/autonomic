@@ -50,8 +50,8 @@ export DATABASE_URL='ecto://autonomic:...@127.0.0.1/autonomic_prod'
 export AUTONOMIC_CONFIG=/etc/autonomic/kernel.json
 export AUTONOMIC_STATE_DIR=/var/lib/autonomic/kernel
 export AUTONOMIC_LINUX_STATE_ROOT=/var/lib/autonomic
-export AUTONOMIC_ROOTFS=/var/lib/autonomic/rootfs
-export AUTONOMIC_LAUNCHER="$PWD/native/autonomic_launcher/target/release/autonomic_launcher"
+export AUTONOMIC_ROOTFS=/opt/autonomic/rootfs
+export AUTONOMIC_LAUNCHER=/usr/local/libexec/autonomic_launcher
 export AUTONOMIC_LINUX=1
 # only when running the mandatory live semantic gate:
 export TYPESAFE_API_KEY='...'

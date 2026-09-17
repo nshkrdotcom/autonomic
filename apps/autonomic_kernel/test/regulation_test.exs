@@ -8,6 +8,7 @@ defmodule Autonomic.RegulationTest do
 
     def start_link(test_pid), do: GenStage.start_link(__MODULE__, test_pid)
     def init(test_pid), do: {:consumer, test_pid}
+
     def handle_events(events, _from, test_pid) do
       send(test_pid, {:probe_events, events})
       {:noreply, [], test_pid}
@@ -16,7 +17,10 @@ defmodule Autonomic.RegulationTest do
 
   setup do
     for source <- [:semantic, :store, :launcher], do: SystemRegulator.health(source, :healthy)
-    for source <- [:semantic_queue, :effect_queue, :verifier_queue], do: SystemRegulator.report(source, 0.0)
+
+    for source <- [:semantic_queue, :effect_queue, :verifier_queue],
+        do: SystemRegulator.report(source, 0.0)
+
     # Recovery is deliberately hysteretic; three recalculations return to normal.
     SystemRegulator.report(:semantic_queue, 0.0)
     SystemRegulator.report(:semantic_queue, 0.0)
@@ -44,9 +48,15 @@ defmodule Autonomic.RegulationTest do
     :ok = SensorArray.publish(episode_id, hard, :critical)
 
     {:ok, probe} = Probe.start_link(self())
-    GenStage.sync_subscribe(probe, to: Autonomic.Runtime.via(episode_id, :sensor_array), max_demand: 3, min_demand: 0)
+
+    GenStage.sync_subscribe(probe,
+      to: Autonomic.Runtime.via(episode_id, :sensor_array),
+      max_demand: 3,
+      min_demand: 0
+    )
 
     assert_receive {:probe_events, events}, 1_000
+
     assert Enum.any?(events, fn event ->
              Enum.any?(event.deterministic, fn fact -> fact[:type] == :direct_network_attempt end)
            end)

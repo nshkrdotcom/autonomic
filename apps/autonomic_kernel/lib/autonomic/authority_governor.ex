@@ -9,10 +9,21 @@ defmodule Autonomic.AuthorityGovernor do
     GenServer.start_link(__MODULE__, opts, name: Runtime.via(episode_id, :authority))
   end
 
-  def issue(episode_id, attrs), do: GenServer.call(Runtime.via(episode_id, :authority), {:issue, attrs})
-  def validate(episode_id, lease_id, kind, target, class), do: GenServer.call(Runtime.via(episode_id, :authority), {:validate, lease_id, kind, target, class})
-  def revoke(episode_id, lease_id, reason), do: GenServer.call(Runtime.via(episode_id, :authority), {:revoke, lease_id, reason})
-  def advance_epoch(episode_id, reason), do: GenServer.call(Runtime.via(episode_id, :authority), {:advance_epoch, reason}, 30_000)
+  def issue(episode_id, attrs),
+    do: GenServer.call(Runtime.via(episode_id, :authority), {:issue, attrs})
+
+  def validate(episode_id, lease_id, kind, target, class),
+    do:
+      GenServer.call(
+        Runtime.via(episode_id, :authority),
+        {:validate, lease_id, kind, target, class}
+      )
+
+  def revoke(episode_id, lease_id, reason),
+    do: GenServer.call(Runtime.via(episode_id, :authority), {:revoke, lease_id, reason})
+
+  def advance_epoch(episode_id, reason),
+    do: GenServer.call(Runtime.via(episode_id, :authority), {:advance_epoch, reason}, 30_000)
 
   @impl true
   def init(opts) do
@@ -20,21 +31,28 @@ defmodule Autonomic.AuthorityGovernor do
     policy = Keyword.fetch!(opts, :policy)
     hard_envelope = Keyword.fetch!(opts, :hard_envelope)
 
-    with {:ok, epoch} <- Runtime.store().current_epoch(episode_id) do
-      {:ok, %{episode_id: episode_id, epoch: epoch, policy: policy, hard_envelope: hard_envelope}}
-    else
-      error -> {:stop, error}
+    case Runtime.store().current_epoch(episode_id) do
+      {:ok, epoch} ->
+        {:ok,
+         %{episode_id: episode_id, epoch: epoch, policy: policy, hard_envelope: hard_envelope}}
+
+      error ->
+        {:stop, error}
     end
   end
 
   @impl true
   def handle_call({:issue, attrs}, _from, state) do
     authority_source = Map.fetch!(attrs, :authority_source)
-    requested_capabilities = Map.get(attrs, :capabilities, []) |> Enum.map(&normalize_capability/1)
+
+    requested_capabilities =
+      Map.get(attrs, :capabilities, []) |> Enum.map(&normalize_capability/1)
+
     requested_class = Map.get(attrs, :max_effect_class, :class_1_isolated_mutable)
 
     with :ok <- expansion_source_allowed(authority_source),
-         true <- within_hard_envelope?(state.hard_envelope, requested_capabilities, requested_class),
+         true <-
+           within_hard_envelope?(state.hard_envelope, requested_capabilities, requested_class),
          {:ok, epoch} <- Runtime.store().current_epoch(state.episode_id),
          true <- epoch == state.epoch do
       now = Canonical.now()
@@ -98,11 +116,14 @@ defmodule Autonomic.AuthorityGovernor do
     end
   end
 
-  defp expansion_source_allowed(source) when source in [:signed_policy, :slow_verifier, :human, :parent_capability], do: :ok
+  defp expansion_source_allowed(source)
+       when source in [:signed_policy, :slow_verifier, :human, :parent_capability], do: :ok
+
   defp expansion_source_allowed(:semantic), do: {:error, :semantic_cannot_expand_authority}
   defp expansion_source_allowed(_), do: {:error, :invalid_authority_source}
 
   def normalize_capability(%Capability{} = capability), do: capability
+
   def normalize_capability(capability) when is_map(capability) do
     kind = Map.get(capability, :kind, Map.get(capability, "kind"))
     scope = Map.get(capability, :scope, Map.get(capability, "scope", %{}))
@@ -112,47 +133,76 @@ defmodule Autonomic.AuthorityGovernor do
 
   defp within_hard_envelope?(hard, capabilities, class) do
     max_class = Map.get(hard, "max_effect_class", Map.get(hard, :max_effect_class, 1))
-    allowed = Map.get(hard, "capabilities", Map.get(hard, :capabilities, [])) |> Enum.map(&normalize_capability/1)
+
+    allowed =
+      Map.get(hard, "capabilities", Map.get(hard, :capabilities, []))
+      |> Enum.map(&normalize_capability/1)
 
     Policy.class_rank(class) <= Policy.class_rank(max_class) and
       Enum.all?(capabilities, fn requested ->
         Enum.any?(allowed, fn envelope ->
           requested.kind == envelope.kind and scope_within?(requested.scope, envelope.scope) and
-            Policy.class_rank(Map.get(requested.constraints, :max_effect_class, Map.get(requested.constraints, "max_effect_class", class))) <=
-              Policy.class_rank(Map.get(envelope.constraints, :max_effect_class, Map.get(envelope.constraints, "max_effect_class", max_class)))
+            Policy.class_rank(
+              Map.get(
+                requested.constraints,
+                :max_effect_class,
+                Map.get(requested.constraints, "max_effect_class", class)
+              )
+            ) <=
+              Policy.class_rank(
+                Map.get(
+                  envelope.constraints,
+                  :max_effect_class,
+                  Map.get(envelope.constraints, "max_effect_class", max_class)
+                )
+              )
         end)
       end)
   end
 
   defp scope_within?(requested, envelope) when is_map(requested) and is_map(envelope),
-    do: Enum.all?(envelope, fn {k, v} -> Map.get(requested, k, Map.get(requested, to_string(k))) == v end)
+    do:
+      Enum.all?(envelope, fn {k, v} ->
+        Map.get(requested, k, Map.get(requested, to_string(k))) == v
+      end)
+
   defp scope_within?(requested, envelope), do: requested == envelope
 
   defp normalize_kind(kind) when is_atom(kind), do: kind
-  defp normalize_kind(kind) when is_binary(kind) do
-    case kind do
-      "workspace_read" -> :workspace_read
-      "workspace_write" -> :workspace_write
-      "workspace_write_allowed_paths" -> :workspace_write_allowed_paths
-      "shell_bounded" -> :shell_bounded
-      "git_commit" -> :git_commit
-      "git_remote" -> :git_remote
-      "http_read" -> :http_read
-      "http_mutation" -> :http_mutation
-      "publish" -> :publish
-      other -> raise ArgumentError, "unknown capability kind: #{other}"
-    end
-  end
+
+  defp normalize_kind("workspace_read"), do: :workspace_read
+  defp normalize_kind("workspace_write"), do: :workspace_write
+  defp normalize_kind("workspace_write_allowed_paths"), do: :workspace_write_allowed_paths
+  defp normalize_kind("shell_bounded"), do: :shell_bounded
+  defp normalize_kind("git_commit"), do: :git_commit
+  defp normalize_kind("git_remote"), do: :git_remote
+  defp normalize_kind("http_read"), do: :http_read
+  defp normalize_kind("http_mutation"), do: :http_mutation
+  defp normalize_kind("publish"), do: :publish
+
+  defp normalize_kind(kind) when is_binary(kind),
+    do: raise(ArgumentError, "unknown capability kind: #{kind}")
 
   defp capability_allows?(capabilities, kind, target, class) do
     Enum.any?(capabilities, fn capability ->
       capability.kind == kind and
         scope_match?(capability.scope, target) and
         Policy.class_rank(class) <=
-          Policy.class_rank(Map.get(capability.constraints, :max_effect_class, Map.get(capability.constraints, "max_effect_class", class)))
+          Policy.class_rank(
+            Map.get(
+              capability.constraints,
+              :max_effect_class,
+              Map.get(capability.constraints, "max_effect_class", class)
+            )
+          )
     end)
   end
 
-  defp scope_match?(scope, target) when is_map(scope) and is_map(target), do: Enum.all?(scope, fn {k, v} -> Map.get(target, k) == v or Map.get(target, to_string(k)) == v end)
+  defp scope_match?(scope, target) when is_map(scope) and is_map(target),
+    do:
+      Enum.all?(scope, fn {k, v} ->
+        Map.get(target, k) == v or Map.get(target, to_string(k)) == v
+      end)
+
   defp scope_match?(scope, target), do: scope == target
 end

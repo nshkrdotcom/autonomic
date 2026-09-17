@@ -14,7 +14,9 @@ defmodule Autonomic.Store.ReconciliationTest do
       []
     )
 
-    root = Path.join(System.tmp_dir!(), "autonomic-reconcile-#{System.unique_integer([:positive])}")
+    root =
+      Path.join(System.tmp_dir!(), "autonomic-reconcile-#{System.unique_integer([:positive])}")
+
     repo = Path.join(root, "repo")
     state = Path.join(root, "state")
     File.mkdir_p!(repo)
@@ -22,7 +24,17 @@ defmodule Autonomic.Store.ReconciliationTest do
     File.write!(Path.join(repo, "value.txt"), "old\n")
     git!(repo, ["init", "-b", "main"])
     git!(repo, ["add", "."])
-    git!(repo, ["-c", "user.name=Fixture", "-c", "user.email=fixture@localhost", "commit", "-m", "base"])
+
+    git!(repo, [
+      "-c",
+      "user.name=Fixture",
+      "-c",
+      "user.email=fixture@localhost",
+      "commit",
+      "-m",
+      "base"
+    ])
+
     base = git!(repo, ["rev-parse", "HEAD"]) |> String.trim()
 
     target = %{
@@ -48,13 +60,16 @@ defmodule Autonomic.Store.ReconciliationTest do
     {:ok, repo: repo, base: base, target: target}
   end
 
-  test "external mutation survives broker crash and is reconciled from durable commit intent", ctx do
+  test "external mutation survives broker crash and is reconciled from durable commit intent",
+       ctx do
     {episode_id, lease} = episode_and_lease()
     patch = patch("old", "new")
     effect = prepared_effect(episode_id, lease.id, ctx.base, patch)
     ready = ready_with_bound_decisions(effect)
 
-    assert {:ok, intent} = Postgres.begin_effect_commit(ready.id, [:deterministic, :semantic, :slow_verifier])
+    assert {:ok, intent} =
+             Postgres.begin_effect_commit(ready.id, [:deterministic, :semantic, :slow_verifier])
+
     assert intent.state == :commit_intent
     assert {:ok, committing} = Postgres.mark_committing(intent.id)
 
@@ -67,10 +82,11 @@ defmodule Autonomic.Store.ReconciliationTest do
 
     assert {:ok, reconciled} = EffectBroker.reconcile(effect.id)
     assert reconciled.state == :committed
-    assert String.trim(File.read!(Path.join(ctx.repo, "value.txt"))) == "new"
+    assert String.trim(git!(ctx.repo, ["show", "refs/heads/main:value.txt"])) == "new"
   end
 
-  test "revision change invalidates old approvals and unresolved commit state cannot be blindly recommitted", ctx do
+  test "revision change invalidates old approvals and unresolved commit state cannot be blindly recommitted",
+       ctx do
     {episode_id, lease} = episode_and_lease()
     effect = prepared_effect(episode_id, lease.id, ctx.base, patch("old", "new"))
     ready = ready_with_bound_decisions(effect)
@@ -93,12 +109,24 @@ defmodule Autonomic.Store.ReconciliationTest do
 
     # Rebind decisions, then cross the commit horizon and force an ambiguous external ref.
     ready2 = ready_with_bound_decisions(ready2)
-    assert {:ok, intent} = Postgres.begin_effect_commit(ready2.id, [:deterministic, :semantic, :slow_verifier])
+
+    assert {:ok, intent} =
+             Postgres.begin_effect_commit(ready2.id, [:deterministic, :semantic, :slow_verifier])
+
     assert {:ok, _} = Postgres.mark_committing(intent.id)
 
     File.write!(Path.join(ctx.repo, "other.txt"), "other\n")
     git!(ctx.repo, ["add", "other.txt"])
-    git!(ctx.repo, ["-c", "user.name=Other", "-c", "user.email=other@localhost", "commit", "-m", "concurrent"])
+
+    git!(ctx.repo, [
+      "-c",
+      "user.name=Other",
+      "-c",
+      "user.email=other@localhost",
+      "commit",
+      "-m",
+      "concurrent"
+    ])
 
     assert {:ok, unknown} = EffectBroker.reconcile(effect.id)
     assert unknown.state == :commit_unknown
@@ -108,13 +136,22 @@ defmodule Autonomic.Store.ReconciliationTest do
 
   defp episode_and_lease do
     id = Canonical.id()
+
     policy = %{
       "id" => "git-policy",
       "version" => 1,
       "max_effect_class" => 3,
-      "capabilities" => [%{"kind" => "git_commit", "scope" => %{"id" => "repo"}, "max_class" => 3}]
+      "capabilities" => [
+        %{"kind" => "git_commit", "scope" => %{"id" => "repo"}, "max_class" => 3}
+      ]
     }
-    cap = %{"kind" => "git_commit", "scope" => %{"id" => "repo"}, "constraints" => %{"max_effect_class" => 3}}
+
+    cap = %{
+      "kind" => "git_commit",
+      "scope" => %{"id" => "repo"},
+      "constraints" => %{"max_effect_class" => 3}
+    }
+
     envelope = %{"max_effect_class" => 3, "capabilities" => [cap]}
 
     assert {:ok, _} =
@@ -132,7 +169,10 @@ defmodule Autonomic.Store.ReconciliationTest do
                metadata: %{}
              })
 
-    start_supervised!({AuthorityGovernor, episode_id: id, policy: policy, hard_envelope: envelope})
+    start_supervised!(
+      {AuthorityGovernor, episode_id: id, policy: policy, hard_envelope: envelope}
+    )
+
     assert {:ok, lease} =
              AuthorityGovernor.issue(id, %{
                authority_source: :signed_policy,
@@ -152,7 +192,11 @@ defmodule Autonomic.Store.ReconciliationTest do
                lease_id: lease_id,
                kind: :git_commit,
                target_id: "repo",
-               target: %{"base_ref" => base, "ref" => "refs/heads/main", "message" => "update value"},
+               target: %{
+                 "base_ref" => base,
+                 "ref" => "refs/heads/main",
+                 "message" => "update value"
+               },
                payload: patch
              })
 
@@ -190,7 +234,7 @@ defmodule Autonomic.Store.ReconciliationTest do
                  policy_version: effect.version_vector.policy_version,
                  trajectory_version: effect.version_vector.trajectory_version,
                  payload_digest: effect.payload_digest,
-                 evidence_ref: "sha256:#{Canonical.digest({kind, effect.revision})}",
+                 evidence_ref: "sha256:#{Canonical.digest([kind, effect.revision])}",
                  expires_at: Canonical.now() + 60_000
                })
     end

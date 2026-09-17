@@ -4,10 +4,29 @@ defmodule Autonomic.Store.Postgres do
 
   import Ecto.Query
 
-  alias Autonomic.{Canonical, Capability, CapabilityLease, EffectState, EpisodeCheckpoint, ProposedEffect, SemanticObservation, VersionVector}
+  alias Autonomic.{
+    Canonical,
+    Capability,
+    CapabilityLease,
+    EffectState,
+    EpisodeCheckpoint,
+    ProposedEffect,
+    SemanticObservation,
+    VersionVector
+  }
+
   alias Autonomic.Store.Repo
   alias Autonomic.Store.Schema.CapabilityLease, as: LeaseRow
-  alias Autonomic.Store.Schema.{Checkpoint, Effect, EffectDecision, Episode, EpisodeEvent, ObservationFrame, RecoveryRecord}
+
+  alias Autonomic.Store.Schema.{
+    Checkpoint,
+    Effect,
+    EffectDecision,
+    Episode,
+    EpisodeEvent,
+    ObservationFrame,
+    RecoveryRecord
+  }
 
   @uncommitted ~w(proposed prepared evaluating ready)
   @commit_states ~w(commit_intent committing commit_unknown)
@@ -75,7 +94,12 @@ defmodule Autonomic.Store.Postgres do
     Repo.transaction(fn ->
       episode = lock_episode!(episode_id)
       {:ok, episode} = episode |> Episode.changeset(%{state: to_string(state)}) |> Repo.update()
-      append_event_locked!(episode, :episode_state, %{state: to_string(state), metadata: plain(metadata)})
+
+      append_event_locked!(episode, :episode_state, %{
+        state: to_string(state),
+        metadata: plain(metadata)
+      })
+
       :ok
     end)
     |> tx_result()
@@ -87,7 +111,12 @@ defmodule Autonomic.Store.Postgres do
 
       {:ok, episode} =
         episode
-        |> Episode.changeset(%{domain_ref: nil, domain_generation: nil, domain_os_ref: nil, domain_metadata: %{}})
+        |> Episode.changeset(%{
+          domain_ref: nil,
+          domain_generation: nil,
+          domain_os_ref: nil,
+          domain_metadata: %{}
+        })
         |> Repo.update()
 
       append_event_locked!(episode, :domain_cleared, %{})
@@ -109,7 +138,13 @@ defmodule Autonomic.Store.Postgres do
       }
 
       {:ok, episode} = episode |> Episode.changeset(attrs) |> Repo.update()
-      append_event_locked!(episode, :domain_bound, %{domain_ref: domain.id, generation: domain.generation, epoch: domain.epoch})
+
+      append_event_locked!(episode, :domain_bound, %{
+        domain_ref: domain.id,
+        generation: domain.generation,
+        epoch: domain.epoch
+      })
+
       :ok
     end)
     |> tx_result()
@@ -136,7 +171,8 @@ defmodule Autonomic.Store.Postgres do
 
       in_flight =
         from(e in Effect,
-          where: e.episode_id == ^episode_id and e.epoch < ^new_epoch and e.state in ^@commit_states,
+          where:
+            e.episode_id == ^episode_id and e.epoch < ^new_epoch and e.state in ^@commit_states,
           select: e.id
         )
         |> Repo.all()
@@ -169,10 +205,16 @@ defmodule Autonomic.Store.Postgres do
 
       case %LeaseRow{} |> LeaseRow.changeset(attrs) |> Repo.insert() do
         {:ok, _} ->
-          append_event_locked!(episode, :lease_issued, %{lease_id: lease.id, epoch: lease.epoch, max_effect_class: lease.max_effect_class})
+          append_event_locked!(episode, :lease_issued, %{
+            lease_id: lease.id,
+            epoch: lease.epoch,
+            max_effect_class: lease.max_effect_class
+          })
+
           :ok
 
-        {:error, changeset} -> Repo.rollback({:invalid_lease, changeset})
+        {:error, changeset} ->
+          Repo.rollback({:invalid_lease, changeset})
       end
     end)
     |> tx_result()
@@ -191,18 +233,30 @@ defmodule Autonomic.Store.Postgres do
   end
 
   def revoke_lease(id, reason) do
-    with %LeaseRow{} = preliminary <- Repo.get(LeaseRow, id) do
-      Repo.transaction(fn ->
-        episode = lock_episode!(preliminary.episode_id)
-        lease = lock_lease!(id)
-        now = Canonical.now()
-        {:ok, _} = lease |> LeaseRow.changeset(%{revoked_at_ms: now, reason: to_string(reason)}) |> Repo.update()
-        append_event_locked!(episode, :lease_revoked, %{lease_id: id, reason: to_string(reason), at: now})
-        :ok
-      end)
-      |> tx_result()
-    else
-      nil -> :not_found
+    case Repo.get(LeaseRow, id) do
+      %LeaseRow{} = preliminary ->
+        Repo.transaction(fn ->
+          episode = lock_episode!(preliminary.episode_id)
+          lease = lock_lease!(id)
+          now = Canonical.now()
+
+          {:ok, _} =
+            lease
+            |> LeaseRow.changeset(%{revoked_at_ms: now, reason: to_string(reason)})
+            |> Repo.update()
+
+          append_event_locked!(episode, :lease_revoked, %{
+            lease_id: id,
+            reason: to_string(reason),
+            at: now
+          })
+
+          :ok
+        end)
+        |> tx_result()
+
+      nil ->
+        :not_found
     end
   rescue
     error -> {:error, {:store_error, error}}
@@ -216,9 +270,18 @@ defmodule Autonomic.Store.Postgres do
 
       case %Effect{} |> Effect.changeset(effect_to_attrs(effect)) |> Repo.insert() do
         {:ok, row} ->
-          append_event_locked!(episode, :effect_proposed, %{effect_id: row.id, revision: row.revision, class: row.class, kind: row.kind, payload_digest: row.payload_digest})
+          append_event_locked!(episode, :effect_proposed, %{
+            effect_id: row.id,
+            revision: row.revision,
+            class: row.class,
+            kind: row.kind,
+            payload_digest: row.payload_digest
+          })
+
           :ok
-        {:error, changeset} -> Repo.rollback({:invalid_effect, changeset})
+
+        {:error, changeset} ->
+          Repo.rollback({:invalid_effect, changeset})
       end
     end)
     |> tx_result()
@@ -230,47 +293,45 @@ defmodule Autonomic.Store.Postgres do
   def prepare_effect(%ProposedEffect{} = effect) do
     proposed = %{effect | state: :proposed}
 
-    with :ok <- put_effect(proposed),
-         {:ok, prepared} <- prepare_existing_effect(proposed.id) do
-      {:ok, prepared}
-    end
+    with :ok <- put_effect(proposed), do: prepare_existing_effect(proposed.id)
   end
 
   def prepare_existing_effect(effect_id) do
-    with {:ok, preliminary} <- effect_row(effect_id) do
-      Repo.transaction(fn ->
-        episode = lock_episode!(preliminary.episode_id)
-        effect = lock_effect!(effect_id)
-        lease = lock_lease!(effect.lease_id)
-        now = Canonical.now()
-        vector = effect.version_vector
+    with_locked_effect(effect_id, fn episode, effect ->
+      lease = lock_lease!(effect.lease_id)
+      now = Canonical.now()
+      vector = effect.version_vector
 
-        checks = [
-          {effect.state == "proposed", :effect_not_proposed},
-          {episode.current_epoch == effect.epoch, :stale_authority},
-          {lease.episode_id == effect.episode_id and lease.epoch == effect.epoch, :stale_lease},
-          {is_nil(lease.revoked_at_ms) and lease.expires_at_ms > now, :expired_or_revoked_lease},
-          {vector["epoch"] == episode.current_epoch, :stale_version_epoch},
-          {vector["policy_version"] == episode.policy_version, :stale_policy},
-          {vector["trajectory_version"] == episode.trajectory_version, :stale_trajectory},
-          {vector["effect_revision"] == effect.revision, :stale_effect_revision}
-        ]
+      checks = [
+        {effect.state == "proposed", :effect_not_proposed},
+        {episode.current_epoch == effect.epoch, :stale_authority},
+        {lease.episode_id == effect.episode_id and lease.epoch == effect.epoch, :stale_lease},
+        {is_nil(lease.revoked_at_ms) and lease.expires_at_ms > now, :expired_or_revoked_lease},
+        {vector["epoch"] == episode.current_epoch, :stale_version_epoch},
+        {vector["policy_version"] == episode.policy_version, :stale_policy},
+        {vector["trajectory_version"] == episode.trajectory_version, :stale_trajectory},
+        {vector["effect_revision"] == effect.revision, :stale_effect_revision}
+      ]
 
-        case Enum.find(checks, fn {ok?, _} -> not ok? end) do
-          nil -> :ok
-          {_, reason} -> Repo.rollback(reason)
-        end
+      require_checks!(checks)
 
-        {:ok, updated} = effect |> Effect.changeset(%{state: "prepared"}) |> Repo.update()
-        append_event_locked!(episode, :effect_prepared, %{effect_id: effect.id, revision: effect.revision, class: effect.class, kind: effect.kind, payload_digest: effect.payload_digest})
-        effect_from_row(updated)
-      end)
-      |> tx_result()
-    end
+      {:ok, updated} = effect |> Effect.changeset(%{state: "prepared"}) |> Repo.update()
+
+      append_event_locked!(episode, :effect_prepared, %{
+        effect_id: effect.id,
+        revision: effect.revision,
+        class: effect.class,
+        kind: effect.kind,
+        payload_digest: effect.payload_digest
+      })
+
+      effect_from_row(updated)
+    end)
   end
 
   def list_effects(episode_id, states \\ nil) do
-    query = from(e in Effect, where: e.episode_id == ^episode_id, order_by: [asc: e.created_at_ms])
+    query =
+      from(e in Effect, where: e.episode_id == ^episode_id, order_by: [asc: e.created_at_ms])
 
     query =
       if is_list(states) do
@@ -279,30 +340,40 @@ defmodule Autonomic.Store.Postgres do
       else
         query
       end
+
     {:ok, Enum.map(Repo.all(query), &effect_from_row/1)}
   rescue
     error -> {:error, {:store_error, error}}
   end
 
   def abort_effect(effect_id, reason) do
-    with {:ok, preliminary} <- effect_row(effect_id) do
-      Repo.transaction(fn ->
-        episode = lock_episode!(preliminary.episode_id)
-        effect = lock_effect!(effect_id)
-        state = EffectState.parse_state(effect.state)
+    with_locked_effect(effect_id, fn episode, effect ->
+      state = EffectState.parse_state(effect.state)
 
-        cond do
-          state in [:aborted, :expired, :stale, :failed] -> effect_from_row(effect)
-          EffectState.in_flight?(state) -> Repo.rollback(:commit_horizon_crossed)
-          EffectState.allowed?(state, :aborted) ->
-            {:ok, updated} = effect |> Effect.changeset(%{state: "aborted", failure: %{"reason" => to_string(reason)}}) |> Repo.update()
-            append_event_locked!(episode, :effect_aborted, %{effect_id: effect.id, reason: to_string(reason)})
-            effect_from_row(updated)
-          true -> Repo.rollback({:invalid_effect_transition, state, :aborted})
-        end
-      end)
-      |> tx_result()
-    end
+      cond do
+        state in [:aborted, :expired, :stale, :failed] ->
+          effect_from_row(effect)
+
+        EffectState.in_flight?(state) ->
+          Repo.rollback(:commit_horizon_crossed)
+
+        EffectState.allowed?(state, :aborted) ->
+          {:ok, updated} =
+            effect
+            |> Effect.changeset(%{state: "aborted", failure: %{"reason" => to_string(reason)}})
+            |> Repo.update()
+
+          append_event_locked!(episode, :effect_aborted, %{
+            effect_id: effect.id,
+            reason: to_string(reason)
+          })
+
+          effect_from_row(updated)
+
+        true ->
+          Repo.rollback({:invalid_effect_transition, state, :aborted})
+      end
+    end)
   end
 
   @impl true
@@ -316,38 +387,37 @@ defmodule Autonomic.Store.Postgres do
   end
 
   def update_effect_revision(effect_id, attrs) when is_map(attrs) do
-    with {:ok, row} <- effect_row(effect_id) do
-      Repo.transaction(fn ->
-        episode = lock_episode!(row.episode_id)
-        effect = lock_effect!(effect_id)
+    with_locked_effect(effect_id, fn episode, effect ->
+      if effect.state not in ~w(prepared evaluating ready) do
+        Repo.rollback(:effect_not_revisable)
+      end
 
-        if effect.state not in ~w(prepared evaluating ready) do
-          Repo.rollback(:effect_not_revisable)
-        end
+      revision = effect.revision + 1
+      target = plain(Map.get(attrs, :target, effect.target))
+      payload_ref = Map.get(attrs, :payload_ref, effect.payload_ref)
+      payload_digest = Map.get(attrs, :payload_digest, effect.payload_digest)
+      vector = Map.put(effect.version_vector, "effect_revision", revision)
 
-        revision = effect.revision + 1
-        target = plain(Map.get(attrs, :target, effect.target))
-        payload_ref = Map.get(attrs, :payload_ref, effect.payload_ref)
-        payload_digest = Map.get(attrs, :payload_digest, effect.payload_digest)
-        vector = Map.put(effect.version_vector, "effect_revision", revision)
+      {:ok, updated} =
+        effect
+        |> Effect.changeset(%{
+          revision: revision,
+          target: target,
+          payload_ref: payload_ref,
+          payload_digest: payload_digest,
+          version_vector: vector,
+          state: "prepared"
+        })
+        |> Repo.update()
 
-        {:ok, updated} =
-          effect
-          |> Effect.changeset(%{
-            revision: revision,
-            target: target,
-            payload_ref: payload_ref,
-            payload_digest: payload_digest,
-            version_vector: vector,
-            state: "prepared"
-          })
-          |> Repo.update()
+      append_event_locked!(episode, :effect_revised, %{
+        effect_id: effect_id,
+        revision: revision,
+        payload_digest: payload_digest
+      })
 
-        append_event_locked!(episode, :effect_revised, %{effect_id: effect_id, revision: revision, payload_digest: payload_digest})
-        effect_from_row(updated)
-      end)
-      |> tx_result()
-    end
+      effect_from_row(updated)
+    end)
   end
 
   def mark_effect_evaluating(effect_id) do
@@ -359,70 +429,81 @@ defmodule Autonomic.Store.Postgres do
   end
 
   def record_effect_decision(effect_id, decision) when is_map(decision) do
-    with {:ok, preliminary} <- effect_row(effect_id) do
-      Repo.transaction(fn ->
-        episode = lock_episode!(preliminary.episode_id)
-        effect = lock_effect!(effect_id)
-        validate_decision_binding!(episode, effect, decision)
+    with_locked_effect(effect_id, fn episode, effect ->
+      validate_decision_binding!(episode, effect, decision)
 
-        attrs = %{
-          id: Map.get(decision, :id, Canonical.id()),
-          effect_id: effect.id,
-          effect_revision: effect.revision,
-          kind: decision |> fetch(:kind) |> to_string(),
-          decision: decision |> fetch(:decision) |> to_string(),
-          source_ref: Map.get(decision, :source_ref),
-          episode_id: effect.episode_id,
-          epoch: effect.epoch,
-          policy_version: get_in(effect.version_vector, ["policy_version"]),
-          trajectory_version: get_in(effect.version_vector, ["trajectory_version"]),
-          snapshot_ref: Map.get(decision, :snapshot_ref),
-          expires_at_ms: Map.get(decision, :expires_at),
-          payload_digest: effect.payload_digest,
-          evidence_ref: Map.get(decision, :evidence_ref),
-          signature: plain(Map.get(decision, :signature)),
-          created_at_ms: Map.get(decision, :created_at, Canonical.now()),
-          metadata: plain(Map.get(decision, :metadata, %{}))
-        }
+      attrs = %{
+        id: Map.get(decision, :id, Canonical.id()),
+        effect_id: effect.id,
+        effect_revision: effect.revision,
+        kind: decision |> fetch(:kind) |> to_string(),
+        decision: decision |> fetch(:decision) |> to_string(),
+        source_ref: Map.get(decision, :source_ref),
+        episode_id: effect.episode_id,
+        epoch: effect.epoch,
+        policy_version: get_in(effect.version_vector, ["policy_version"]),
+        trajectory_version: get_in(effect.version_vector, ["trajectory_version"]),
+        snapshot_ref: Map.get(decision, :snapshot_ref),
+        expires_at_ms: Map.get(decision, :expires_at),
+        payload_digest: effect.payload_digest,
+        evidence_ref: Map.get(decision, :evidence_ref),
+        signature: plain(Map.get(decision, :signature)),
+        created_at_ms: Map.get(decision, :created_at, Canonical.now()),
+        metadata: plain(Map.get(decision, :metadata, %{}))
+      }
 
-        decision_kind = attrs.kind
-        source_ref = attrs.source_ref
+      decision_kind = attrs.kind
+      source_ref = attrs.source_ref
 
-        existing =
-          from(d in EffectDecision,
-            where:
-              d.effect_id == ^effect.id and d.effect_revision == ^effect.revision and
-                d.kind == ^decision_kind and d.source_ref == ^source_ref,
-            lock: "FOR UPDATE"
-          )
-          |> Repo.one()
+      existing =
+        from(d in EffectDecision,
+          where:
+            d.effect_id == ^effect.id and d.effect_revision == ^effect.revision and
+              d.kind == ^decision_kind and d.source_ref == ^source_ref,
+          lock: "FOR UPDATE"
+        )
+        |> Repo.one()
 
-        if existing do
-          if same_decision?(existing, attrs), do: decision_to_map(existing), else: Repo.rollback(:conflicting_effect_decision)
-        else
-          case %EffectDecision{} |> EffectDecision.changeset(attrs) |> Repo.insert() do
-            {:ok, row} ->
-              append_event_locked!(episode, :effect_decision, %{
-                effect_id: effect.id,
-                revision: effect.revision,
-                kind: row.kind,
-                decision: row.decision,
-                evidence_ref: row.evidence_ref
-              })
+      persist_decision(existing, attrs, episode, effect)
+    end)
+  end
 
-              decision_to_map(row)
+  defp persist_decision(existing, attrs, episode, effect) do
+    if existing do
+      if same_decision?(existing, attrs),
+        do: decision_to_map(existing),
+        else: Repo.rollback(:conflicting_effect_decision)
+    else
+      case %EffectDecision{} |> EffectDecision.changeset(attrs) |> Repo.insert() do
+        {:ok, row} ->
+          append_event_locked!(episode, :effect_decision, %{
+            effect_id: effect.id,
+            revision: effect.revision,
+            kind: row.kind,
+            decision: row.decision,
+            evidence_ref: row.evidence_ref
+          })
 
-            {:error, changeset} -> Repo.rollback({:invalid_decision, changeset})
-          end
-        end
-      end)
-      |> tx_result()
+          decision_to_map(row)
+
+        {:error, changeset} ->
+          Repo.rollback({:invalid_decision, changeset})
+      end
     end
   end
 
   def effect_decisions(effect_id, revision \\ nil) do
-    query = from(d in EffectDecision, where: d.effect_id == ^effect_id, order_by: [asc: d.created_at_ms])
-    query = if is_nil(revision), do: query, else: from(d in query, where: d.effect_revision == ^revision)
+    query =
+      from(d in EffectDecision,
+        where: d.effect_id == ^effect_id,
+        order_by: [asc: d.created_at_ms]
+      )
+
+    query =
+      if is_nil(revision),
+        do: query,
+        else: from(d in query, where: d.effect_revision == ^revision)
+
     {:ok, Enum.map(Repo.all(query), &decision_to_map/1)}
   rescue
     error -> {:error, {:store_error, error}}
@@ -472,50 +553,84 @@ defmodule Autonomic.Store.Postgres do
   def complete_effect(effect_id, outcome, details \\ %{})
 
   def complete_effect(effect_id, :committed, details) do
-    terminal_transition(effect_id, "committed", %{
-      committed_at_ms: Canonical.now(),
-      external_receipt: plain(Map.get(details, :receipt, %{})),
-      external_receipt_ref: Map.get(details, :receipt_ref),
-      failure: nil
-    }, :effect_committed)
+    terminal_transition(
+      effect_id,
+      "committed",
+      %{
+        committed_at_ms: Canonical.now(),
+        external_receipt: plain(Map.get(details, :receipt, %{})),
+        external_receipt_ref: Map.get(details, :receipt_ref),
+        failure: nil
+      },
+      :effect_committed
+    )
   end
 
   def complete_effect(effect_id, :failed, details) do
-    terminal_transition(effect_id, "failed", %{failure: plain(Map.get(details, :failure, details))}, :effect_failed)
+    terminal_transition(
+      effect_id,
+      "failed",
+      %{failure: plain(Map.get(details, :failure, details))},
+      :effect_failed
+    )
   end
 
   def complete_effect(effect_id, :commit_unknown, details) do
-    terminal_transition(effect_id, "commit_unknown", %{failure: plain(Map.get(details, :failure, details))}, :effect_commit_unknown)
+    terminal_transition(
+      effect_id,
+      "commit_unknown",
+      %{failure: plain(Map.get(details, :failure, details))},
+      :effect_commit_unknown
+    )
   end
 
   def reconcile_effect(effect_id, outcome, details \\ %{}) do
-    with {:ok, preliminary} <- effect_row(effect_id) do
-      Repo.transaction(fn ->
-        episode = lock_episode!(preliminary.episode_id)
-        effect = lock_effect!(effect_id)
+    with_locked_effect(effect_id, fn episode, effect ->
+      unless effect.state in @commit_states do
+        Repo.rollback(:not_reconcilable)
+      end
 
-        unless effect.state in @commit_states do
-          Repo.rollback(:not_reconcilable)
+      attrs =
+        case outcome do
+          :committed ->
+            %{
+              state: "committed",
+              committed_at_ms: Canonical.now(),
+              external_receipt: plain(Map.get(details, :receipt, %{})),
+              external_receipt_ref: Map.get(details, :receipt_ref),
+              failure: nil
+            }
+
+          :not_committed ->
+            %{state: "ready", commit_attempt_id: nil, commit_started_at_ms: nil, failure: nil}
+
+          :unknown ->
+            %{
+              state: "commit_unknown",
+              failure: plain(Map.get(details, :failure, %{reason: "reconciliation_unknown"}))
+            }
+
+          :failed ->
+            %{state: "failed", failure: plain(Map.get(details, :failure, details))}
         end
 
-        attrs =
-          case outcome do
-            :committed -> %{state: "committed", committed_at_ms: Canonical.now(), external_receipt: plain(Map.get(details, :receipt, %{})), external_receipt_ref: Map.get(details, :receipt_ref), failure: nil}
-            :not_committed -> %{state: "ready", commit_attempt_id: nil, commit_started_at_ms: nil, failure: nil}
-            :unknown -> %{state: "commit_unknown", failure: plain(Map.get(details, :failure, %{reason: "reconciliation_unknown"}))}
-            :failed -> %{state: "failed", failure: plain(Map.get(details, :failure, details))}
-          end
+      {:ok, updated} = effect |> Effect.changeset(attrs) |> Repo.update()
 
-        {:ok, updated} = effect |> Effect.changeset(attrs) |> Repo.update()
-        append_event_locked!(episode, :effect_reconciled, %{effect_id: effect.id, outcome: outcome, details: plain(details)})
-        effect_from_row(updated)
-      end)
-      |> tx_result()
-    end
+      append_event_locked!(episode, :effect_reconciled, %{
+        effect_id: effect.id,
+        outcome: outcome,
+        details: plain(details)
+      })
+
+      effect_from_row(updated)
+    end)
   end
 
   def pending_reconciliation do
-    rows = from(e in Effect, where: e.state in ^@commit_states, order_by: [asc: e.updated_at]) |> Repo.all()
+    rows =
+      from(e in Effect, where: e.state in ^@commit_states, order_by: [asc: e.updated_at])
+      |> Repo.all()
+
     {:ok, Enum.map(rows, &effect_from_row/1)}
   rescue
     error -> {:error, {:store_error, error}}
@@ -533,9 +648,7 @@ defmodule Autonomic.Store.Postgres do
 
       case %Checkpoint{} |> Checkpoint.changeset(attrs) |> Repo.insert() do
         {:ok, row} ->
-          if checkpoint.trust_level == :stable do
-            {:ok, _} = episode |> Episode.changeset(%{current_checkpoint_id: row.id}) |> Repo.update()
-          end
+          update_stable_checkpoint(episode, row, checkpoint.trust_level)
 
           append_event_locked!(episode, :checkpoint_recorded, %{
             checkpoint_id: row.id,
@@ -546,14 +659,26 @@ defmodule Autonomic.Store.Postgres do
 
           checkpoint_from_row(row)
 
-        {:error, changeset} -> Repo.rollback({:invalid_checkpoint, changeset})
+        {:error, changeset} ->
+          Repo.rollback({:invalid_checkpoint, changeset})
       end
     end)
     |> tx_result()
   end
 
+  defp update_stable_checkpoint(episode, row, :stable) do
+    {:ok, _} = episode |> Episode.changeset(%{current_checkpoint_id: row.id}) |> Repo.update()
+  end
+
+  defp update_stable_checkpoint(_episode, _row, _trust), do: :ok
+
   def latest_stable_checkpoint(episode_id) do
-    query = from(c in Checkpoint, where: c.episode_id == ^episode_id and c.trust_level == "stable", order_by: [desc: c.created_at_ms], limit: 1)
+    query =
+      from(c in Checkpoint,
+        where: c.episode_id == ^episode_id and c.trust_level == "stable",
+        order_by: [desc: c.created_at_ms],
+        limit: 1
+      )
 
     case Repo.one(query) do
       nil -> :not_found
@@ -589,17 +714,23 @@ defmodule Autonomic.Store.Postgres do
       }
 
       {:ok, updated} = episode |> Episode.changeset(attrs) |> Repo.update()
-      append_event_locked!(updated, :trajectory_updated, %{version: version, regime: attrs.trajectory_regime})
+
+      append_event_locked!(updated, :trajectory_updated, %{
+        version: version,
+        regime: attrs.trajectory_regime
+      })
+
       :ok
     end)
     |> tx_result()
   end
 
   def record_observation(frame) do
-    semantic = Enum.map(frame.semantic, fn
-      %SemanticObservation{} = observation -> plain(Map.from_struct(observation))
-      other -> plain(other)
-    end)
+    semantic =
+      Enum.map(frame.semantic, fn
+        %SemanticObservation{} = observation -> plain(Map.from_struct(observation))
+        other -> plain(other)
+      end)
 
     canonical = %{
       episode_id: frame.episode_id,
@@ -654,9 +785,20 @@ defmodule Autonomic.Store.Postgres do
       now = DateTime.utc_now()
       expires = DateTime.add(now, ttl_ms, :millisecond)
 
-      if is_nil(episode.owner_lease_expires_at) or DateTime.compare(episode.owner_lease_expires_at, now) == :lt or episode.owner_node == owner_node do
+      if is_nil(episode.owner_lease_expires_at) or
+           DateTime.compare(episode.owner_lease_expires_at, now) == :lt or
+           episode.owner_node == owner_node do
         token = Canonical.id()
-        {:ok, _} = episode |> Episode.changeset(%{owner_node: owner_node, owner_lease_token: token, owner_lease_expires_at: expires}) |> Repo.update()
+
+        {:ok, _} =
+          episode
+          |> Episode.changeset(%{
+            owner_node: owner_node,
+            owner_lease_token: token,
+            owner_lease_expires_at: expires
+          })
+          |> Repo.update()
+
         token
       else
         Repo.rollback(:owned_elsewhere)
@@ -686,34 +828,43 @@ defmodule Autonomic.Store.Postgres do
   end
 
   defp transition(effect_id, to, event, metadata) do
-    with {:ok, preliminary} <- effect_row(effect_id) do
-      Repo.transaction(fn ->
-        episode = lock_episode!(preliminary.episode_id)
-        effect = lock_effect!(effect_id)
-        from_state = EffectState.parse_state(effect.state)
-        if not EffectState.allowed?(from_state, to), do: Repo.rollback({:invalid_effect_transition, from_state, to})
-        {:ok, updated} = effect |> Effect.changeset(%{state: to_string(to)}) |> Repo.update()
-        append_event_locked!(episode, event, Map.merge(%{effect_id: effect_id, from: from_state, to: to}, plain(metadata)))
-        effect_from_row(updated)
-      end)
-      |> tx_result()
-    end
+    with_locked_effect(effect_id, fn episode, effect ->
+      from_state = EffectState.parse_state(effect.state)
+
+      if not EffectState.allowed?(from_state, to),
+        do: Repo.rollback({:invalid_effect_transition, from_state, to})
+
+      {:ok, updated} = effect |> Effect.changeset(%{state: to_string(to)}) |> Repo.update()
+
+      append_event_locked!(
+        episode,
+        event,
+        Map.merge(%{effect_id: effect_id, from: from_state, to: to}, plain(metadata))
+      )
+
+      effect_from_row(updated)
+    end)
   end
 
   defp terminal_transition(effect_id, to, attrs, event) do
-    with {:ok, preliminary} <- effect_row(effect_id) do
-      Repo.transaction(fn ->
-        episode = lock_episode!(preliminary.episode_id)
-        effect = lock_effect!(effect_id)
-        from_state = EffectState.parse_state(effect.state)
-        to_state = EffectState.parse_state(to)
-        if not EffectState.allowed?(from_state, to_state), do: Repo.rollback({:invalid_effect_transition, from_state, to_state})
-        {:ok, updated} = effect |> Effect.changeset(Map.put(attrs, :state, to)) |> Repo.update()
-        append_event_locked!(episode, event, %{effect_id: effect_id, from: from_state, to: to_state, details: plain(attrs)})
-        effect_from_row(updated)
-      end)
-      |> tx_result()
-    end
+    with_locked_effect(effect_id, fn episode, effect ->
+      from_state = EffectState.parse_state(effect.state)
+      to_state = EffectState.parse_state(to)
+
+      if not EffectState.allowed?(from_state, to_state),
+        do: Repo.rollback({:invalid_effect_transition, from_state, to_state})
+
+      {:ok, updated} = effect |> Effect.changeset(Map.put(attrs, :state, to)) |> Repo.update()
+
+      append_event_locked!(episode, event, %{
+        effect_id: effect_id,
+        from: from_state,
+        to: to_state,
+        details: plain(attrs)
+      })
+
+      effect_from_row(updated)
+    end)
   end
 
   defp validate_decision_binding!(episode, effect, decision) do
@@ -722,12 +873,17 @@ defmodule Autonomic.Store.Postgres do
 
     checks = [
       {episode.current_epoch == effect.epoch, :stale_authority},
-      {Map.get(decision, :effect_revision, effect.revision) == effect.revision, :stale_effect_revision},
+      {Map.get(decision, :effect_revision, effect.revision) == effect.revision,
+       :stale_effect_revision},
       {Map.get(decision, :epoch, effect.epoch) == effect.epoch, :stale_decision_epoch},
-      {Map.get(decision, :policy_version, expected["policy_version"]) == expected["policy_version"], :stale_decision_policy},
-      {Map.get(decision, :trajectory_version, expected["trajectory_version"]) == expected["trajectory_version"], :stale_decision_trajectory},
-      {Map.get(decision, :payload_digest, effect.payload_digest) == effect.payload_digest, :stale_decision_payload},
-      {is_nil(Map.get(decision, :expires_at)) or Map.get(decision, :expires_at) > now, :expired_decision}
+      {Map.get(decision, :policy_version, expected["policy_version"]) ==
+         expected["policy_version"], :stale_decision_policy},
+      {Map.get(decision, :trajectory_version, expected["trajectory_version"]) ==
+         expected["trajectory_version"], :stale_decision_trajectory},
+      {Map.get(decision, :payload_digest, effect.payload_digest) == effect.payload_digest,
+       :stale_decision_payload},
+      {is_nil(Map.get(decision, :expires_at)) or Map.get(decision, :expires_at) > now,
+       :expired_decision}
     ]
 
     case Enum.find(checks, fn {ok?, _} -> not ok? end) do
@@ -740,8 +896,8 @@ defmodule Autonomic.Store.Postgres do
     vector = effect.version_vector
 
     checks = [
-      {effect.state == "ready", :effect_not_ready},
       {episode.current_epoch == effect.epoch, :stale_authority},
+      {effect.state == "ready", :effect_not_ready},
       {lease.episode_id == effect.episode_id and lease.epoch == effect.epoch, :stale_lease},
       {is_nil(lease.revoked_at_ms) and lease.expires_at_ms > now, :expired_or_revoked_lease},
       {vector["epoch"] == episode.current_epoch, :stale_version_epoch},
@@ -769,17 +925,21 @@ defmodule Autonomic.Store.Postgres do
 
     valid =
       Enum.filter(rows, fn row ->
-        row.decision == "allow" and
-          row.epoch == effect.epoch and
-          row.policy_version == effect.version_vector["policy_version"] and
-          row.trajectory_version == effect.version_vector["trajectory_version"] and
-          row.payload_digest == effect.payload_digest and
-          (is_nil(row.expires_at_ms) or row.expires_at_ms > now)
+        valid_decision?(row, effect, now)
       end)
       |> MapSet.new(& &1.kind)
 
     missing = required |> Enum.map(&to_string/1) |> Enum.reject(&MapSet.member?(valid, &1))
     if missing != [], do: Repo.rollback({:missing_decisions, missing})
+  end
+
+  defp valid_decision?(row, effect, now) do
+    row.decision == "allow" and
+      row.epoch == effect.epoch and
+      row.policy_version == effect.version_vector["policy_version"] and
+      row.trajectory_version == effect.version_vector["trajectory_version"] and
+      row.payload_digest == effect.payload_digest and
+      (is_nil(row.expires_at_ms) or row.expires_at_ms > now)
   end
 
   defp same_decision?(row, attrs) do
@@ -789,6 +949,25 @@ defmodule Autonomic.Store.Postgres do
       row.trajectory_version == attrs.trajectory_version and
       row.payload_digest == attrs.payload_digest and
       row.evidence_ref == attrs.evidence_ref
+  end
+
+  # Every effect mutation locks the episode before the effect, preserving one lock order.
+  defp with_locked_effect(effect_id, operation) do
+    with {:ok, preliminary} <- effect_row(effect_id) do
+      Repo.transaction(fn ->
+        episode = lock_episode!(preliminary.episode_id)
+        effect = lock_effect!(effect_id)
+        operation.(episode, effect)
+      end)
+      |> tx_result()
+    end
+  end
+
+  defp require_checks!(checks) do
+    case Enum.find(checks, fn {ok?, _} -> not ok? end) do
+      nil -> :ok
+      {_, reason} -> Repo.rollback(reason)
+    end
   end
 
   defp lock_episode!(episode_id) do
@@ -824,7 +1003,16 @@ defmodule Autonomic.Store.Postgres do
     sequence = if previous, do: previous.sequence + 1, else: 1
     previous_hash = if previous, do: previous.entry_hash, else: nil
     now = Canonical.now()
-    body = %{episode_id: episode.id, sequence: sequence, kind: to_string(kind), payload: plain(payload), previous_hash: previous_hash, created_at_ms: now}
+
+    body = %{
+      episode_id: episode.id,
+      sequence: sequence,
+      kind: to_string(kind),
+      payload: plain(payload),
+      previous_hash: previous_hash,
+      created_at_ms: now
+    }
+
     entry_hash = Canonical.digest(body)
 
     attrs = Map.put(body, :entry_hash, entry_hash)
@@ -946,7 +1134,10 @@ defmodule Autonomic.Store.Postgres do
     checkpoint
     |> Map.from_struct()
     |> Map.put(:id, checkpoint.id || Canonical.id())
-    |> Map.put(:trust_level, if(checkpoint.trust_level, do: to_string(checkpoint.trust_level), else: nil))
+    |> Map.put(
+      :trust_level,
+      if(checkpoint.trust_level, do: to_string(checkpoint.trust_level), else: nil)
+    )
     |> Map.put(:created_at_ms, checkpoint.created_at)
     |> Map.delete(:created_at)
     |> Map.update!(:metadata, &plain/1)
@@ -1032,7 +1223,8 @@ defmodule Autonomic.Store.Postgres do
 
   defp atomize_known_constraint_keys(map) do
     Map.new(map, fn
-      {"max_effect_class", value} -> {:max_effect_class, safe_kind(value)}
+      {"max_effect_class", value} when is_binary(value) -> {:max_effect_class, safe_kind(value)}
+      {"max_effect_class", value} -> {:max_effect_class, value}
       {key, value} -> {key, value}
     end)
   end

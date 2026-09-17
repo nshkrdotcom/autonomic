@@ -3,11 +3,16 @@ defmodule Autonomic.Store.PostgresAuthorityTest do
 
   @moduletag :postgres
 
-  alias Autonomic.{CapabilityLease, Canonical, ProposedEffect, VersionVector}
+  alias Autonomic.{Canonical, CapabilityLease, ProposedEffect, VersionVector}
   alias Autonomic.Store.{Postgres, Repo}
 
   setup do
-    Ecto.Adapters.SQL.query!(Repo, "TRUNCATE recovery_records, observation_frames, episode_events, effect_decisions, effects, checkpoints, capability_leases, episodes RESTART IDENTITY CASCADE", [])
+    Ecto.Adapters.SQL.query!(
+      Repo,
+      "TRUNCATE recovery_records, observation_frames, episode_events, effect_decisions, effects, checkpoints, capability_leases, episodes RESTART IDENTITY CASCADE",
+      []
+    )
+
     :ok
   end
 
@@ -97,11 +102,16 @@ defmodule Autonomic.Store.PostgresAuthorityTest do
                trajectory_regime: :stable
              })
 
-    %{id: episode.id, policy_version: episode.policy_version, trajectory_version: episode.trajectory_version}
+    %{
+      id: episode.id,
+      policy_version: episode.policy_version,
+      trajectory_version: episode.trajectory_version
+    }
   end
 
   defp lease!(episode_id, epoch) do
     now = Canonical.now()
+
     lease = %CapabilityLease{
       id: Canonical.id(),
       episode_id: episode_id,
@@ -113,12 +123,14 @@ defmodule Autonomic.Store.PostgresAuthorityTest do
       expires_at: now + 120_000,
       authority_source: :signed_policy
     }
+
     assert :ok = Postgres.put_lease(lease)
     lease
   end
 
   defp proposed_effect(episode, lease) do
     payload = Canonical.hash("payload")
+
     vector = %VersionVector{
       episode_id: episode.id,
       epoch: 1,
@@ -131,11 +143,20 @@ defmodule Autonomic.Store.PostgresAuthorityTest do
     }
 
     %ProposedEffect{
-      id: Canonical.id(), episode_id: episode.id, epoch: 1, lease_id: lease.id,
-      class: :class_3_authoritative_external_mutation, kind: :git_commit,
+      id: Canonical.id(),
+      episode_id: episode.id,
+      epoch: 1,
+      lease_id: lease.id,
+      class: :class_3_authoritative_external_mutation,
+      kind: :git_commit,
       target: %{"id" => "fixture", "base_ref" => String.duplicate("a", 40)},
-      payload_ref: payload, payload_digest: payload, revision: 1, reversible?: false,
-      state: :proposed, version_vector: vector, created_at: Canonical.now()
+      payload_ref: payload,
+      payload_digest: payload,
+      revision: 1,
+      reversible?: false,
+      state: :proposed,
+      version_vector: vector,
+      created_at: Canonical.now()
     }
   end
 

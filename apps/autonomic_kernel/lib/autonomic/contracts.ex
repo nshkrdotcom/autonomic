@@ -48,7 +48,6 @@ defmodule Autonomic.Contracts do
           | :failed
 end
 
-
 defmodule Autonomic.ExecutionDomain do
   @moduledoc """
   Backend-neutral isolation boundary for an untrusted episode worker.
@@ -152,7 +151,6 @@ defmodule Autonomic.ExecutionDomain do
   @callback inspect_domain(Domain.t()) :: {:ok, map()} | {:error, term()}
 end
 
-
 defmodule Autonomic.EpisodeCheckpoint do
   alias Autonomic.Contracts
 
@@ -211,7 +209,6 @@ defmodule Autonomic.EpisodeCheckpoint do
         }
 end
 
-
 defmodule Autonomic.Capability do
   @enforce_keys [:kind, :scope]
   defstruct [:kind, :scope, constraints: %{}]
@@ -222,7 +219,6 @@ defmodule Autonomic.Capability do
           constraints: map()
         }
 end
-
 
 defmodule Autonomic.CapabilityLease do
   alias Autonomic.Contracts
@@ -271,7 +267,6 @@ defmodule Autonomic.CapabilityLease do
         }
 end
 
-
 defmodule Autonomic.VersionVector do
   alias Autonomic.Contracts
 
@@ -307,7 +302,6 @@ defmodule Autonomic.VersionVector do
           effect_revision: non_neg_integer()
         }
 end
-
 
 defmodule Autonomic.ProposedEffect do
   alias Autonomic.Contracts
@@ -377,7 +371,6 @@ defmodule Autonomic.ProposedEffect do
         }
 end
 
-
 defmodule Autonomic.HomeostaticState do
   alias Autonomic.Contracts
 
@@ -431,7 +424,6 @@ defmodule Autonomic.HomeostaticState do
         }
 end
 
-
 defmodule Autonomic.SemanticObservation do
   @moduledoc "Normalized semantic evidence plus reproducibility/provenance metadata; never authority."
 
@@ -473,7 +465,6 @@ defmodule Autonomic.SemanticObservation do
         }
 end
 
-
 defmodule Autonomic.ObservationFrame do
   alias Autonomic.Contracts
 
@@ -505,7 +496,6 @@ defmodule Autonomic.ObservationFrame do
         }
 end
 
-
 defmodule Autonomic.Trajectory do
   alias Autonomic.Contracts
 
@@ -535,7 +525,6 @@ defmodule Autonomic.Trajectory do
         }
 end
 
-
 defmodule Autonomic.TrajectoryAlert do
   alias Autonomic.Contracts
 
@@ -554,7 +543,6 @@ defmodule Autonomic.TrajectoryAlert do
         }
 end
 
-
 defmodule Autonomic.EffectAdapter do
   @moduledoc "Trusted adapter contract. Untrusted workers never call an adapter directly."
 
@@ -565,14 +553,12 @@ defmodule Autonomic.EffectAdapter do
               {:committed, receipt :: map()} | :not_committed | {:unknown, term()}
 end
 
-
 defmodule Autonomic.SemanticSensor do
   @moduledoc "Semantic sensor contract; implementations provide evidence, never authority."
 
   @callback observe(Autonomic.ObservationFrame.t(), keyword()) ::
               {:ok, [Autonomic.SemanticObservation.t()]} | {:error, term()}
 end
-
 
 defmodule Autonomic.Store do
   @moduledoc "Authoritative persistence contract for episode, epoch, lease and effect state."

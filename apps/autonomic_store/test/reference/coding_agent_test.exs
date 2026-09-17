@@ -1,7 +1,16 @@
 defmodule Autonomic.Store.CodingAgentReferenceTest do
   use ExUnit.Case, async: false
 
-  alias Autonomic.{Canonical, EffectBroker, EpisodeController, EpisodeSpec, EpisodeSupervisor, ExecutionDomain, ObservationFrame}
+  alias Autonomic.{
+    Canonical,
+    EffectBroker,
+    EpisodeController,
+    EpisodeSpec,
+    EpisodeSupervisor,
+    ExecutionDomain,
+    ObservationFrame
+  }
+
   alias Autonomic.Store.{Postgres, Repo}
   alias Autonomic.Typesafe.Bank
 
@@ -17,7 +26,9 @@ defmodule Autonomic.Store.CodingAgentReferenceTest do
       []
     )
 
-    root = Path.join(System.tmp_dir!(), "autonomic-reference-#{System.unique_integer([:positive])}")
+    root =
+      Path.join(System.tmp_dir!(), "a-ref-#{binary_part(Canonical.id(), 0, 12)}")
+
     authoritative = Path.join(root, "authoritative")
     worker = Path.join(root, "worker-base")
     state_dir = Path.join(root, "kernel-state")
@@ -26,9 +37,24 @@ defmodule Autonomic.Store.CodingAgentReferenceTest do
     File.cp_r!(fixture, authoritative)
     git!(authoritative, ["init", "-b", "main"])
     git!(authoritative, ["add", "."])
-    git!(authoritative, ["-c", "user.name=Fixture", "-c", "user.email=fixture@localhost", "commit", "-m", "fixture base"])
+
+    git!(authoritative, [
+      "-c",
+      "user.name=Fixture",
+      "-c",
+      "user.email=fixture@localhost",
+      "commit",
+      "-m",
+      "fixture base"
+    ])
+
     base = git!(authoritative, ["rev-parse", "HEAD"]) |> String.trim()
-    System.cmd("git", ["clone", "--no-hardlinks", "--quiet", authoritative, worker], stderr_to_stdout: true) |> ok_cmd!()
+
+    System.cmd("git", ["clone", "--no-hardlinks", "--quiet", authoritative, worker],
+      stderr_to_stdout: true
+    )
+    |> ok_cmd!()
+
     git!(worker, ["checkout", "--detach", base])
 
     old_targets = Application.get_env(:autonomic_kernel, :targets, %{})
@@ -38,6 +64,7 @@ defmodule Autonomic.Store.CodingAgentReferenceTest do
     Application.put_env(:autonomic_kernel, :automatic_verification, true)
 
     target_id = "fixture-repo"
+
     target = %{
       "repo" => authoritative,
       "ref" => "refs/heads/main",
@@ -45,14 +72,23 @@ defmodule Autonomic.Store.CodingAgentReferenceTest do
       "allowed_paths" => ["lib/**"],
       "forbidden_paths" => ["test/fixtures/**", "test/**", ".env", "**/.env", "**/*secret*"],
       "verify_argv" => [["mix", "test"]],
+      "verification_env" => %{
+        "MIX_OS_CONCURRENCY_LOCK" => "0",
+        "ELIXIR_ERL_OPTIONS" => "+S 2:2 +SDcpu 1 +SDio 1"
+      },
       "verification_resource_limits" => %{"cpu_quota" => 2, "memory_mb" => 1024, "pids" => 128}
     }
+
     Application.put_env(:autonomic_kernel, :targets, %{target_id => target})
 
     client = typesafe_client()
     assert :ok = Bank.install_client(client)
 
     on_exit(fn ->
+      for {_, pid, _, _} <- DynamicSupervisor.which_children(Autonomic.Episodes) do
+        DynamicSupervisor.terminate_child(Autonomic.Episodes, pid)
+      end
+
       Application.put_env(:autonomic_kernel, :targets, old_targets)
       Application.put_env(:autonomic_kernel, :state_dir, old_state_dir)
       Application.put_env(:autonomic_kernel, :automatic_verification, old_verify)
@@ -60,7 +96,14 @@ defmodule Autonomic.Store.CodingAgentReferenceTest do
       File.rm_rf(root)
     end)
 
-    {:ok, root: root, authoritative: authoritative, worker: worker, state_dir: state_dir, base: base, target_id: target_id, client: client}
+    {:ok,
+     root: root,
+     authoritative: authoritative,
+     worker: worker,
+     state_dir: state_dir,
+     base: base,
+     target_id: target_id,
+     client: client}
   end
 
   test "normal repair commits only the verified patch to the authoritative repository", ctx do
@@ -82,14 +125,17 @@ defmodule Autonomic.Store.CodingAgentReferenceTest do
     new_oid = git!(ctx.authoritative, ["rev-parse", "refs/heads/main"]) |> String.trim()
     refute new_oid == ctx.base
     assert git!(ctx.authoritative, ["show", "#{new_oid}:lib/auth.ex"]) =~ ~s(token == "valid")
-    assert git!(ctx.authoritative, ["show", "-s", "--format=%B", new_oid]) =~ "Autonomic-Effect: #{effect.id}"
+
+    assert git!(ctx.authoritative, ["show", "-s", "--format=%B", new_oid]) =~
+             "Autonomic-Effect: #{effect.id}"
 
     EpisodeController.complete(episode_id)
     assert {:completed, _} = await_state(episode_id, :completed)
     assert :ok = TypeSafeSDK.Test.verify!(ctx.client)
   end
 
-  test "seccomp tripwire fences epoch 1, destroys old domain, restores checkpoint and commits repaired epoch 2", ctx do
+  test "seccomp tripwire fences epoch 1, destroys old domain, restores checkpoint and commits repaired epoch 2",
+       ctx do
     episode_id = Canonical.id()
     spec = episode_spec(episode_id, ctx.worker, ctx.base, ctx.target_id)
     assert {:ok, _pid} = EpisodeSupervisor.start_episode(spec)
@@ -121,7 +167,11 @@ defmodule Autonomic.Store.CodingAgentReferenceTest do
 
     inet_probe =
       %ExecutionDomain.Command{
-        argv: ["/usr/bin/python3", "-c", "import socket; socket.socket(socket.AF_INET, socket.SOCK_STREAM)"],
+        argv: [
+          "/usr/bin/python3",
+          "-c",
+          "import socket; socket.socket(socket.AF_INET, socket.SOCK_STREAM)"
+        ],
         cwd: "/workspace",
         timeout_ms: 10_000
       }
@@ -149,6 +199,8 @@ defmodule Autonomic.Store.CodingAgentReferenceTest do
     new_oid = git!(ctx.authoritative, ["rev-parse", "refs/heads/main"]) |> String.trim()
     refute new_oid == ctx.base
     assert git!(ctx.authoritative, ["show", "#{new_oid}:lib/auth.ex"]) =~ ~s(token == "valid")
+    EpisodeController.complete(episode_id)
+    assert {:completed, _} = await_state(episode_id, :completed)
     assert :ok = TypeSafeSDK.Test.verify!(ctx.client)
   end
 
@@ -163,17 +215,25 @@ defmodule Autonomic.Store.CodingAgentReferenceTest do
       "id" => "coding-agent-policy",
       "version" => 1,
       "max_effect_class" => 3,
-      "capabilities" => [%{"kind" => "git_commit", "scope" => %{"id" => target_id}, "max_class" => 3}],
+      "capabilities" => [
+        %{"kind" => "git_commit", "scope" => %{"id" => target_id}, "max_class" => 3}
+      ],
       "semantic" => %{"max_risk" => 0.65}
     }
 
     %EpisodeSpec{
       id: id,
-      origin_intent: "Fix the failing test in test/auth_test.exs without changing test fixtures or secrets.",
+      origin_intent:
+        "Fix the failing test in test/auth_test.exs without changing test fixtures or secrets.",
       workspace: %{"lower" => worker, "base_ref" => base},
       policy: policy,
       hard_envelope: %{"max_effect_class" => 3, "capabilities" => [capability]},
-      resource_limits: %{"cpu_quota" => 2, "memory_mb" => 1024, "pids" => 128, "worker_timeout_ms" => 120_000},
+      resource_limits: %{
+        "cpu_quota" => 2,
+        "memory_mb" => 1024,
+        "pids" => 128,
+        "worker_timeout_ms" => 120_000
+      },
       environment: %{},
       requested_effect_ceiling: :class_3_authoritative_external_mutation,
       worker_argv: nil,
@@ -182,13 +242,39 @@ defmodule Autonomic.Store.CodingAgentReferenceTest do
   end
 
   defp repair_in_worker(domain) do
-    script = ~s|p='lib/auth.ex'; s=open(p).read(); s=s.replace('token == "allow"', 'token == "valid"'); open(p,'w').write(s)|
-    assert {:ok, edit} = domain.backend.exec(domain, %ExecutionDomain.Command{argv: ["/usr/bin/python3", "-c", script], cwd: "/workspace", timeout_ms: 10_000})
+    script =
+      ~s|p='lib/auth.ex'; s=open(p).read(); s=s.replace('token == "allow"', 'token == "valid"'); open(p,'w').write(s)|
+
+    assert {:ok, edit} =
+             domain.backend.exec(domain, %ExecutionDomain.Command{
+               argv: ["/usr/bin/python3", "-c", script],
+               cwd: "/workspace",
+               timeout_ms: 10_000
+             })
+
     assert edit.exit_status == 0
-    assert {:ok, tests} = domain.backend.exec(domain, %ExecutionDomain.Command{argv: ["mix", "test"], cwd: "/workspace", timeout_ms: 60_000})
-    assert tests.exit_status == 0, "worker fixture tests failed: #{tests.metadata.stderr}"
-    assert {:ok, diff} = domain.backend.exec(domain, %ExecutionDomain.Command{argv: ["git", "diff", "--binary", "--", "lib/auth.ex"], cwd: "/workspace", timeout_ms: 10_000})
-    assert diff.exit_status == 0
+
+    assert {:ok, tests} =
+             domain.backend.exec(domain, %ExecutionDomain.Command{
+               argv: ["mix", "test"],
+               env: %{
+                 "MIX_OS_CONCURRENCY_LOCK" => "0",
+                 "ELIXIR_ERL_OPTIONS" => "+S 2:2 +SDcpu 1 +SDio 1"
+               },
+               cwd: "/workspace",
+               timeout_ms: 60_000
+             })
+
+    assert tests.exit_status == 0, "worker fixture tests failed: #{inspect(tests)}"
+
+    assert {:ok, diff} =
+             domain.backend.exec(domain, %ExecutionDomain.Command{
+               argv: ["git", "diff", "--binary", "--", "lib/auth.ex"],
+               cwd: "/workspace",
+               timeout_ms: 10_000
+             })
+
+    assert diff.exit_status == 0, inspect(diff)
     assert diff.metadata.stdout =~ "token =="
     diff.metadata.stdout
   end
@@ -200,7 +286,11 @@ defmodule Autonomic.Store.CodingAgentReferenceTest do
                lease_id: lease_id,
                kind: :git_commit,
                target_id: ctx.target_id,
-               target: %{"base_ref" => ctx.base, "ref" => "refs/heads/main", "message" => "fix auth token validation"},
+               target: %{
+                 "base_ref" => ctx.base,
+                 "ref" => "refs/heads/main",
+                 "message" => "fix auth token validation"
+               },
                payload: patch,
                metadata: %{source: :coding_agent_fixture}
              })
@@ -223,14 +313,21 @@ defmodule Autonomic.Store.CodingAgentReferenceTest do
 
   defp typesafe_client do
     client = TypeSafeSDK.Test.client(model: "jev-fixture")
+
     TypeSafeSDK.Test.stub(
       client,
       [
         scope_drift: {:noul, 0.01},
         authority_escalation: {:noul, 0.01},
-        evidence_sufficiency: {:score, 2.0, probabilities: %{0 => 0.0, 1 => 0.0, 2 => 1.0}, confidence: 0.99},
-        irreversibility: {:score, 3.0, probabilities: %{0 => 0.0, 1 => 0.0, 2 => 0.0, 3 => 1.0, 4 => 0.0}, confidence: 0.99},
-        trajectory_regime: {:choice, :stable, probabilities: %{stable: 0.99, uncertain: 0.005, drifting: 0.003, unstable: 0.002}, confidence: 0.99}
+        evidence_sufficiency:
+          {:score, 2.0, probabilities: %{0 => 0.0, 1 => 0.0, 2 => 1.0}, confidence: 0.99},
+        irreversibility:
+          {:score, 3.0,
+           probabilities: %{0 => 0.0, 1 => 0.0, 2 => 0.0, 3 => 1.0, 4 => 0.0}, confidence: 0.99},
+        trajectory_regime:
+          {:choice, :stable,
+           probabilities: %{stable: 0.99, uncertain: 0.005, drifting: 0.003, unstable: 0.002},
+           confidence: 0.99}
       ],
       model: "jev-fixture",
       request_id: "req-reference",
@@ -239,20 +336,35 @@ defmodule Autonomic.Store.CodingAgentReferenceTest do
   end
 
   defp await_running(episode_id, epoch, attempts \\ 300)
-  defp await_running(_episode_id, _epoch, 0), do: flunk("episode did not reach requested running epoch")
+
+  defp await_running(_episode_id, _epoch, 0),
+    do: flunk("episode did not reach requested running epoch")
+
   defp await_running(episode_id, epoch, attempts) do
     case EpisodeController.state(episode_id) do
-      {:running, %{epoch: ^epoch}} -> EpisodeController.trusted_runtime(episode_id)
-      _ -> Process.sleep(25); await_running(episode_id, epoch, attempts - 1)
+      {:running, %{epoch: ^epoch}} ->
+        EpisodeController.trusted_runtime(episode_id)
+
+      {:failed, details} ->
+        flunk("episode bootstrap failed: #{inspect(details)}")
+
+      _ ->
+        Process.sleep(25)
+        await_running(episode_id, epoch, attempts - 1)
     end
   end
 
   defp await_state(episode_id, state, attempts \\ 300)
   defp await_state(_episode_id, _state, 0), do: flunk("episode state transition timed out")
+
   defp await_state(episode_id, state, attempts) do
     case EpisodeController.state(episode_id) do
-      {^state, _} = value -> value
-      _ -> Process.sleep(25); await_state(episode_id, state, attempts - 1)
+      {^state, _} = value ->
+        value
+
+      _ ->
+        Process.sleep(25)
+        await_state(episode_id, state, attempts - 1)
     end
   end
 

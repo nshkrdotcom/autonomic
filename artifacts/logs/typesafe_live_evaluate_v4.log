@@ -1,0 +1,8 @@
+==> autonomic_typesafe
+Running ExUnit with seed: 362472, max_cases: 48
+Including tags: [:live]
+
+.
+Finished in 1.0 seconds (0.00s async, 1.0s sync)
+
+Result: 1 passed

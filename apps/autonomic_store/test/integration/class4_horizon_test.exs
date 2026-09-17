@@ -25,7 +25,10 @@ defmodule Autonomic.Store.Class4HorizonTest do
     old_keys = Application.get_env(:autonomic_kernel, :decision_keys, %{})
     old_dir = Application.fetch_env!(:autonomic_kernel, :state_dir)
     Application.put_env(:autonomic_kernel, :state_dir, state)
-    Application.put_env(:autonomic_kernel, :targets, %{"release" => %{"directory" => out, "max_bytes" => 1024}})
+
+    Application.put_env(:autonomic_kernel, :targets, %{
+      "release" => %{"directory" => out, "max_bytes" => 1024}
+    })
 
     {public, private} = :crypto.generate_key(:eddsa, :ed25519)
     Application.put_env(:autonomic_kernel, :decision_keys, %{"operator" => Base.encode64(public)})
@@ -46,14 +49,23 @@ defmodule Autonomic.Store.Class4HorizonTest do
 
   test "Class 4 cannot cross commit horizon without exact signed human approval", ctx do
     episode_id = Canonical.id()
+
     policy = %{
       "id" => "publish-policy",
       "version" => 1,
       "max_effect_class" => 4,
-      "capabilities" => [%{"kind" => "publish", "scope" => %{"id" => "release"}, "max_class" => 4}],
+      "capabilities" => [
+        %{"kind" => "publish", "scope" => %{"id" => "release"}, "max_class" => 4}
+      ],
       "semantic" => %{"max_risk" => 0.65}
     }
-    capability = %{"kind" => "publish", "scope" => %{"id" => "release"}, "constraints" => %{"max_effect_class" => 4}}
+
+    capability = %{
+      "kind" => "publish",
+      "scope" => %{"id" => "release"},
+      "constraints" => %{"max_effect_class" => 4}
+    }
+
     envelope = %{"max_effect_class" => 4, "capabilities" => [capability]}
 
     assert {:ok, _} =
@@ -71,7 +83,10 @@ defmodule Autonomic.Store.Class4HorizonTest do
                metadata: %{}
              })
 
-    start_supervised!({AuthorityGovernor, episode_id: episode_id, policy: policy, hard_envelope: envelope})
+    start_supervised!(
+      {AuthorityGovernor, episode_id: episode_id, policy: policy, hard_envelope: envelope}
+    )
+
     assert {:ok, lease} =
              AuthorityGovernor.issue(episode_id, %{
                authority_source: :signed_policy,
@@ -113,7 +128,12 @@ defmodule Autonomic.Store.Class4HorizonTest do
       )
       |> Base.encode64()
 
-    approval = %{document: approval_doc, signature: signature, key_id: "operator", source_ref: "operator:integration"}
+    approval = %{
+      document: approval_doc,
+      signature: signature,
+      key_id: "operator",
+      source_ref: "operator:integration"
+    }
 
     assert {:ok, ready} = EffectBroker.evaluate(prepared.id, human_approval: approval)
     assert ready.state == :ready
@@ -131,9 +151,15 @@ defmodule Autonomic.Store.Class4HorizonTest do
       [
         scope_drift: {:noul, 0.01},
         authority_escalation: {:noul, 0.01},
-        evidence_sufficiency: {:score, 2.0, probabilities: %{0 => 0.0, 1 => 0.0, 2 => 1.0}, confidence: 0.99},
-        irreversibility: {:score, 4.0, probabilities: %{0 => 0.0, 1 => 0.0, 2 => 0.0, 3 => 0.0, 4 => 1.0}, confidence: 0.99},
-        trajectory_regime: {:choice, :stable, probabilities: %{stable: 0.99, uncertain: 0.005, drifting: 0.003, unstable: 0.002}, confidence: 0.99}
+        evidence_sufficiency:
+          {:score, 2.0, probabilities: %{0 => 0.0, 1 => 0.0, 2 => 1.0}, confidence: 0.99},
+        irreversibility:
+          {:score, 4.0,
+           probabilities: %{0 => 0.0, 1 => 0.0, 2 => 0.0, 3 => 0.0, 4 => 1.0}, confidence: 0.99},
+        trajectory_regime:
+          {:choice, :stable,
+           probabilities: %{stable: 0.99, uncertain: 0.005, drifting: 0.003, unstable: 0.002},
+           confidence: 0.99}
       ],
       model: "jev-fixture",
       request_id: "req-class4"

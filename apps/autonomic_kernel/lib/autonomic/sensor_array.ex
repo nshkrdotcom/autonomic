@@ -15,8 +15,17 @@ defmodule Autonomic.SensorArray do
 
   @impl true
   def init(opts) do
-    max_queue = Keyword.get(opts, :max_queue, Application.get_env(:autonomic_kernel, :sensor_queue, 64))
-    {:producer, %{episode_id: Keyword.fetch!(opts, :episode_id), queue: :queue.new(), demand: 0, max_queue: max_queue, dropped: 0}}
+    max_queue =
+      Keyword.get(opts, :max_queue, Application.get_env(:autonomic_kernel, :sensor_queue, 64))
+
+    {:producer,
+     %{
+       episode_id: Keyword.fetch!(opts, :episode_id),
+       queue: :queue.new(),
+       demand: 0,
+       max_queue: max_queue,
+       dropped: 0
+     }}
   end
 
   @impl true
@@ -51,6 +60,7 @@ defmodule Autonomic.SensorArray do
   end
 
   defp dispatch(%{demand: demand} = state) when demand <= 0, do: {:noreply, [], state}
+
   defp dispatch(state) do
     take = min(state.demand, :queue.len(state.queue))
     {events, queue} = take_queue(state.queue, take, [])
@@ -60,6 +70,7 @@ defmodule Autonomic.SensorArray do
   end
 
   defp take_queue(queue, 0, acc), do: {acc, queue}
+
   defp take_queue(queue, count, acc) do
     case :queue.out(queue) do
       {{:value, {_priority, frame}}, rest} -> take_queue(rest, count - 1, [frame | acc])
@@ -69,7 +80,10 @@ defmodule Autonomic.SensorArray do
 
   defp drop_one_low(queue) do
     items = :queue.to_list(queue)
-    case Enum.find_index(items, fn {priority, frame} -> priority != :critical and not hard_frame?(frame) end) do
+
+    case Enum.find_index(items, fn {priority, frame} ->
+           priority != :critical and not hard_frame?(frame)
+         end) do
       nil -> {queue, false}
       index -> {items |> List.delete_at(index) |> :queue.from_list(), true}
     end
@@ -77,11 +91,32 @@ defmodule Autonomic.SensorArray do
 
   defp hard_frame?(frame) do
     Enum.any?(frame.deterministic, fn fact ->
-      type = Map.get(fact, :type) || Map.get(fact, "type") || Map.get(fact, :kind) || Map.get(fact, "kind")
-      type in [:boundary_violation, :direct_network_attempt, :forbidden_path_attempt, :forbidden_mount_attempt,
-               :stale_epoch_request, :capability_misuse, :cgroup_escape, :forbidden_credential_access, :namespace_escape, :seccomp_violation,
-               "boundary_violation", "direct_network_attempt", "forbidden_path_attempt", "forbidden_mount_attempt",
-               "stale_epoch_request", "capability_misuse", "cgroup_escape", "forbidden_credential_access", "namespace_escape", "seccomp_violation"]
+      type =
+        Map.get(fact, :type) || Map.get(fact, "type") || Map.get(fact, :kind) ||
+          Map.get(fact, "kind")
+
+      type in [
+        :boundary_violation,
+        :direct_network_attempt,
+        :forbidden_path_attempt,
+        :forbidden_mount_attempt,
+        :stale_epoch_request,
+        :capability_misuse,
+        :cgroup_escape,
+        :forbidden_credential_access,
+        :namespace_escape,
+        :seccomp_violation,
+        "boundary_violation",
+        "direct_network_attempt",
+        "forbidden_path_attempt",
+        "forbidden_mount_attempt",
+        "stale_epoch_request",
+        "capability_misuse",
+        "cgroup_escape",
+        "forbidden_credential_access",
+        "namespace_escape",
+        "seccomp_violation"
+      ]
     end)
   end
 end
@@ -100,7 +135,9 @@ defmodule Autonomic.SensorConsumer do
   def init(opts) do
     episode_id = Keyword.fetch!(opts, :episode_id)
     producer = Runtime.via(episode_id, :sensor_array)
-    {:consumer, %{episode_id: episode_id}, subscribe_to: [{producer, max_demand: 8, min_demand: 2}]}
+
+    {:consumer, %{episode_id: episode_id},
+     subscribe_to: [{producer, max_demand: 8, min_demand: 2}]}
   end
 
   @impl true
@@ -111,6 +148,7 @@ defmodule Autonomic.SensorConsumer do
         _ -> :ok
       end
     end)
+
     {:noreply, [], state}
   end
 end

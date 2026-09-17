@@ -19,13 +19,23 @@ defmodule Autonomic.Typesafe.Evidence do
       "deterministic" => sanitize(frame.deterministic, 0),
       "resource" => sanitize(frame.resource, 0),
       "effect_context" => sanitize(frame.effect_context, 0),
-      "visible_state" => sanitize(Map.get(frame.metadata, :observable, Map.get(frame.metadata, "observable", %{})), 0)
+      "visible_state" =>
+        sanitize(
+          Map.get(frame.metadata, :observable, Map.get(frame.metadata, "observable", %{})),
+          0
+        )
     }
 
     encoded = Jason.encode!(observable)
 
     if byte_size(encoded) <= limit do
-      {:ok, observable, %{truncated: false, original_bytes: byte_size(encoded), sent_bytes: byte_size(encoded), digest: Canonical.hash(encoded)}}
+      {:ok, observable,
+       %{
+         truncated: false,
+         original_bytes: byte_size(encoded),
+         sent_bytes: byte_size(encoded),
+         digest: Canonical.hash(encoded)
+       }}
     else
       compact = %{
         "episode_id" => frame.episode_id,
@@ -38,9 +48,18 @@ defmodule Autonomic.Typesafe.Evidence do
         "truncated" => true,
         "full_redacted_digest" => Canonical.hash(encoded)
       }
+
       final = Jason.encode!(compact)
+
       if byte_size(final) <= limit,
-        do: {:ok, compact, %{truncated: true, original_bytes: byte_size(encoded), sent_bytes: byte_size(final), digest: Canonical.hash(final)}},
+        do:
+          {:ok, compact,
+           %{
+             truncated: true,
+             original_bytes: byte_size(encoded),
+             sent_bytes: byte_size(final),
+             digest: Canonical.hash(final)
+           }},
         else: {:error, :semantic_state_budget_exceeded}
     end
   end
@@ -50,7 +69,10 @@ defmodule Autonomic.Typesafe.Evidence do
   defp sanitize(value, _depth) when is_atom(value), do: Atom.to_string(value)
   defp sanitize(value, _depth) when is_binary(value), do: redact(value) |> String.slice(0, 16_384)
   defp sanitize(_value, depth) when depth >= 8, do: "[depth-truncated]"
-  defp sanitize(value, depth) when is_list(value), do: value |> Enum.take(128) |> Enum.map(&sanitize(&1, depth + 1))
+
+  defp sanitize(value, depth) when is_list(value),
+    do: value |> Enum.take(128) |> Enum.map(&sanitize(&1, depth + 1))
+
   defp sanitize(value, depth) when is_map(value) do
     value
     |> Enum.take(128)
@@ -59,10 +81,13 @@ defmodule Autonomic.Typesafe.Evidence do
       if secret_key?(key), do: {key, "[REDACTED]"}, else: {key, sanitize(item, depth + 1)}
     end)
   end
+
   defp sanitize(value, _depth), do: inspect(value, limit: 10, printable_limit: 512)
 
   defp redact(text) do
-    Enum.reduce(@secret_patterns, text, fn pattern, acc -> Regex.replace(pattern, acc, "[REDACTED]") end)
+    Enum.reduce(@secret_patterns, text, fn pattern, acc ->
+      Regex.replace(pattern, acc, "[REDACTED]")
+    end)
   end
 
   defp secret_key?(key) do
@@ -71,8 +96,15 @@ defmodule Autonomic.Typesafe.Evidence do
   end
 
   defp shrink(nil, _), do: nil
+
   defp shrink(value, max_bytes) do
     encoded = Jason.encode!(value)
-    if byte_size(encoded) <= max_bytes, do: value, else: %{"truncated_json" => String.slice(encoded, 0, max_bytes), "digest" => Canonical.hash(encoded)}
+
+    if byte_size(encoded) <= max_bytes,
+      do: value,
+      else: %{
+        "truncated_json" => String.slice(encoded, 0, max_bytes),
+        "digest" => Canonical.hash(encoded)
+      }
   end
 end

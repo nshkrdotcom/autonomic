@@ -9,15 +9,16 @@ defmodule Autonomic.Verifier do
          true <- Canonical.hash(payload) == effect.payload_digest,
          :ok <- verify_kind(effect, target, payload, opts),
          {:ok, verification_evidence} <- verify_test_evidence(effect, target, opts) do
-      {:ok, %{
-        verified_at: Canonical.now(),
-        effect_id: effect.id,
-        revision: effect.revision,
-        payload_digest: effect.payload_digest,
-        target_id: Map.get(effect.target, "id"),
-        verification: :deterministic_slow,
-        test_evidence: verification_evidence
-      }}
+      {:ok,
+       %{
+         verified_at: Canonical.now(),
+         effect_id: effect.id,
+         revision: effect.revision,
+         payload_digest: effect.payload_digest,
+         target_id: Map.get(effect.target, "id"),
+         verification: :deterministic_slow,
+         test_evidence: verification_evidence
+       }}
     else
       false -> {:error, :payload_digest_mismatch}
       {:error, _} = error -> error
@@ -28,7 +29,8 @@ defmodule Autonomic.Verifier do
   defp verify_kind(%{kind: :git_commit} = effect, target, payload, _opts),
     do: Autonomic.Adapters.Git.verify_patch(effect, target, payload)
 
-  defp verify_kind(%{kind: kind}, _target, payload, _opts) when kind in [:http_mutation, :publish] do
+  defp verify_kind(%{kind: kind}, _target, payload, _opts)
+       when kind in [:http_mutation, :publish] do
     if byte_size(payload) <= 4_194_304, do: :ok, else: {:error, :payload_too_large}
   end
 
@@ -38,9 +40,15 @@ defmodule Autonomic.Verifier do
     case Keyword.get(opts, :test_evidence) do
       evidence when is_map(evidence) ->
         cond do
-          Map.get(evidence, :payload_digest, Map.get(evidence, "payload_digest")) != effect.payload_digest -> {:error, :test_evidence_payload_mismatch}
-          Map.get(evidence, :passed, Map.get(evidence, "passed")) != true -> {:error, :verification_tests_failed}
-          true -> {:ok, Map.take(evidence, [:payload_digest, :passed, :source, :run_id])}
+          Map.get(evidence, :payload_digest, Map.get(evidence, "payload_digest")) !=
+              effect.payload_digest ->
+            {:error, :test_evidence_payload_mismatch}
+
+          Map.get(evidence, :passed, Map.get(evidence, "passed")) != true ->
+            {:error, :verification_tests_failed}
+
+          true ->
+            {:ok, Map.take(evidence, [:payload_digest, :passed, :source, :run_id])}
         end
 
       nil ->

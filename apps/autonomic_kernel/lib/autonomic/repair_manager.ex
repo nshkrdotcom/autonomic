@@ -15,9 +15,27 @@ defmodule Autonomic.RepairManager do
          :ok <- Homeostat.rebase_epoch(episode_id, to_epoch),
          {:ok, lease} <- issue_repair_lease(episode_id, spec, reason),
          context <- repair_context(reason, evidence),
-         {:ok, recovery_id} <- record_recovery(store, episode_id, from_epoch, to_epoch, checkpoint, old_domain, new_domain, reason, context) do
+         {:ok, recovery_id} <-
+           record_recovery(
+             store,
+             episode_id,
+             {from_epoch, to_epoch},
+             checkpoint,
+             old_domain,
+             new_domain,
+             reason,
+             context
+           ) do
       Homeostat.repair_recorded(episode_id)
-      {:ok, %{domain: new_domain, lease: lease, checkpoint: checkpoint, context: context, recovery_id: recovery_id}}
+
+      {:ok,
+       %{
+         domain: new_domain,
+         lease: lease,
+         checkpoint: checkpoint,
+         context: context,
+         recovery_id: recovery_id
+       }}
     else
       false -> {:error, :restore_epoch_mismatch}
       {:error, _} = error -> error
@@ -33,21 +51,34 @@ defmodule Autonomic.RepairManager do
       |> Enum.map(&safe_fact/1)
 
     %{
-      instruction: "Continue from the last stable checkpoint within the original task and hard envelope.",
+      instruction:
+        "Continue from the last stable checkpoint within the original task and hard envelope.",
       boundary_reason: to_string(reason),
       concrete_violations: facts,
-      constraints: ["Do not access host secrets.", "Do not use direct network access.", "Do not broaden scope or authority."],
+      constraints: [
+        "Do not access host secrets.",
+        "Do not use direct network access.",
+        "Do not broaden scope or authority."
+      ],
       scratchpad_replayed: false
     }
   end
 
   defp destroy_proven(domain) do
     case domain.backend.destroy(domain) do
-      :ok -> :ok
+      :ok ->
+        :ok
+
       {:ok, evidence} ->
-        if Map.get(evidence, :empty, Map.get(evidence, "empty", false)), do: :ok, else: {:error, :old_domain_not_proven_empty}
-      {:error, _} = error -> error
-      other -> {:error, {:invalid_destroy_result, other}}
+        if Map.get(evidence, :empty, Map.get(evidence, "empty", false)),
+          do: :ok,
+          else: {:error, :old_domain_not_proven_empty}
+
+      {:error, _} = error ->
+        error
+
+      other ->
+        {:error, {:invalid_destroy_result, other}}
     end
   end
 
@@ -74,8 +105,16 @@ defmodule Autonomic.RepairManager do
     |> Enum.map(&Autonomic.AuthorityGovernor.normalize_capability/1)
   end
 
-
-  defp record_recovery(store, episode_id, from_epoch, to_epoch, checkpoint, old_domain, new_domain, reason, context) do
+  defp record_recovery(
+         store,
+         episode_id,
+         {from_epoch, to_epoch},
+         checkpoint,
+         old_domain,
+         new_domain,
+         reason,
+         context
+       ) do
     store.record_recovery(%{
       episode_id: episode_id,
       from_epoch: from_epoch,
@@ -95,5 +134,7 @@ defmodule Autonomic.RepairManager do
     |> Enum.take(8)
     |> Map.new()
   end
-  defp safe_fact(other), do: %{type: :opaque_violation, value: inspect(other, limit: 10, printable_limit: 256)}
+
+  defp safe_fact(other),
+    do: %{type: :opaque_violation, value: inspect(other, limit: 10, printable_limit: 256)}
 end

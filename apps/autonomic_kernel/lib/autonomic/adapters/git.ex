@@ -34,7 +34,15 @@ defmodule Autonomic.Adapters.Git do
          {:ok, oid} <- create_commit(repo, effect, target, payload),
          {:ok, _} <- git(repo, ["update-ref", ref, oid, effect_base(effect)]),
          {:ok, tree} <- git(repo, ["rev-parse", "#{oid}^{tree}"]) do
-      {:ok, %{oid: String.trim(oid), tree: String.trim(tree), ref: ref, base: effect_base(effect), effect_id: effect.id, commit_attempt_id: effect.commit_attempt_id}}
+      {:ok,
+       %{
+         oid: String.trim(oid),
+         tree: String.trim(tree),
+         ref: ref,
+         base: effect_base(effect),
+         effect_id: effect.id,
+         commit_attempt_id: effect.commit_attempt_id
+       }}
     else
       {:error, {:git_failed, _status, output}} = error ->
         if String.contains?(output, "cannot lock ref") or String.contains?(output, "is at") do
@@ -43,8 +51,8 @@ defmodule Autonomic.Adapters.Git do
           error
         end
 
-      {:error, _} = error -> error
-      other -> {:error, other}
+      {:error, _} = error ->
+        error
     end
   end
 
@@ -58,11 +66,24 @@ defmodule Autonomic.Adapters.Git do
       base = effect_base(effect)
 
       cond do
-        current == base -> :not_committed
+        current == base ->
+          :not_committed
+
         authored_effect?(repo, current, effect) ->
           {:ok, tree} = git(repo, ["rev-parse", "#{current}^{tree}"])
-          {:committed, %{oid: current, tree: String.trim(tree), ref: ref, base: base, effect_id: effect.id, reconciled: true}}
-        true -> {:unknown, {:ref_advanced_by_other_actor, current}}
+
+          {:committed,
+           %{
+             oid: current,
+             tree: String.trim(tree),
+             ref: ref,
+             base: base,
+             effect_id: effect.id,
+             reconciled: true
+           }}
+
+        true ->
+          {:unknown, {:ref_advanced_by_other_actor, current}}
       end
     else
       {:error, reason} -> {:unknown, reason}
@@ -96,7 +117,17 @@ defmodule Autonomic.Adapters.Git do
            {:ok, _} <- git(stage, ["apply", "--index", "--whitespace=error", patch]),
            :ok <- verify_index_paths(stage, target),
            message <- commit_message(effect),
-           {:ok, _} <- git(stage, ["-c", "user.name=Autonomic Kernel", "-c", "user.email=autonomic@localhost", "commit", "--no-gpg-sign", "-m", message]),
+           {:ok, _} <-
+             git(stage, [
+               "-c",
+               "user.name=Autonomic Kernel",
+               "-c",
+               "user.email=autonomic@localhost",
+               "commit",
+               "--no-gpg-sign",
+               "-m",
+               message
+             ]),
            {:ok, oid} <- git(stage, ["rev-parse", "HEAD"]) do
         {:ok, String.trim(oid)}
       end
@@ -137,22 +168,28 @@ defmodule Autonomic.Adapters.Git do
 
   defp verify_paths(paths, target) do
     allowed = Map.get(target, "allowed_paths", ["**"])
-    forbidden = Map.get(target, "forbidden_paths", ["test/fixtures/**", ".env", "**/.env", "**/*secret*"])
 
-    bad = Enum.filter(paths, fn path ->
-      not Enum.any?(allowed, &glob_match?(&1, path)) or Enum.any?(forbidden, &glob_match?(&1, path))
-    end)
+    forbidden =
+      Map.get(target, "forbidden_paths", ["test/fixtures/**", ".env", "**/.env", "**/*secret*"])
+
+    bad =
+      Enum.filter(paths, fn path ->
+        not Enum.any?(allowed, &glob_match?(&1, path)) or
+          Enum.any?(forbidden, &glob_match?(&1, path))
+      end)
 
     if bad == [], do: :ok, else: {:error, {:forbidden_patch_paths, bad}}
   end
 
   defp glob_match?("**", _), do: true
+
   defp glob_match?(pattern, path) do
     regex =
       pattern
       |> Regex.escape()
       |> String.replace("\\*\\*", ".*")
       |> String.replace("\\*", "[^/]*")
+
     Regex.match?(Regex.compile!("^" <> regex <> "$"), path)
   end
 
@@ -166,7 +203,8 @@ defmodule Autonomic.Adapters.Git do
   defp authored_effect?(repo, oid, effect) do
     with {:ok, body} <- git(repo, ["show", "-s", "--format=%B", oid]),
          {:ok, parent} <- git(repo, ["rev-parse", "#{oid}^"]) do
-      String.contains?(body, "Autonomic-Effect: #{effect.id}") and String.trim(parent) == effect_base(effect)
+      String.contains?(body, "Autonomic-Effect: #{effect.id}") and
+        String.trim(parent) == effect_base(effect)
     else
       _ -> false
     end
@@ -175,10 +213,13 @@ defmodule Autonomic.Adapters.Git do
   defp commit_message(effect) do
     requested = Map.get(effect.target, "message", "apply verified autonomous repair")
     requested = requested |> to_string() |> String.slice(0, 2_000)
-    requested <> "\n\nAutonomic-Effect: #{effect.id}\nAutonomic-Attempt: #{effect.commit_attempt_id}\nAutonomic-Payload: #{effect.payload_digest}"
+
+    requested <>
+      "\n\nAutonomic-Effect: #{effect.id}\nAutonomic-Attempt: #{effect.commit_attempt_id}\nAutonomic-Payload: #{effect.payload_digest}"
   end
 
-  defp effect_base(effect), do: Map.get(effect.target, "base_ref") || Map.get(effect.target, :base_ref)
+  defp effect_base(effect),
+    do: Map.get(effect.target, "base_ref") || Map.get(effect.target, :base_ref)
 
   defp selected_ref(effect, target) do
     requested = Map.get(effect.target, "ref") || Map.get(target, "ref", "refs/heads/main")
@@ -201,7 +242,11 @@ defmodule Autonomic.Adapters.Git do
   end
 
   defp git(cwd, args) do
-    case System.cmd("git", args, cd: cwd, stderr_to_stdout: true, env: [{"GIT_CONFIG_NOSYSTEM", "1"}]) do
+    case System.cmd("git", args,
+           cd: cwd,
+           stderr_to_stdout: true,
+           env: [{"GIT_CONFIG_NOSYSTEM", "1"}]
+         ) do
       {output, 0} -> {:ok, output}
       {output, status} -> {:error, {:git_failed, status, output}}
     end

@@ -1,0 +1,21 @@
+Finding suitable PLTs
+Checking PLT...
+[:abnf_parsec, :asn1, :autonomic_kernel, :autonomic_linux, :autonomic_store, :autonomic_typesafe, :compiler, :crypto, :db_connection, :decimal, :ecto, :ecto_sql, :eex, :elixir, :execution_plane, :execution_plane_http, :finch, :foundation, :gen_stage, :ground_plane_contracts, :ground_plane_persistence_policy, :hpax, :idna, :inets, :jason, :jsv, :kernel, :logger, :mime, :mint, :multipart_ex, :nimble_options, :nimble_parsec, :nimble_pool, :postgrex, :pristine, :public_key, :sinter, :ssl, :stdlib, :telemetry, :texture, :typesafe_sdk, :uuid]
+PLT is up to date!
+No :ignore_warnings opt specified in mix.exs and default does not exist.
+
+Starting Dialyzer
+[
+  check_plt: false,
+  init_plt: ~c"/home/home/p/g/n/autonomic/_build/dev/dialyxir_erlang-29.0.6_elixir-1.20.4_deps-dev.plt",
+  files: [~c"/home/home/p/g/n/autonomic/_build/dev/lib/autonomic_kernel/ebin/Elixir.Autonomic.SensorArray.beam",
+   ~c"/home/home/p/g/n/autonomic/_build/dev/lib/autonomic_typesafe/ebin/Elixir.Autonomic.Typesafe.Application.beam",
+   ~c"/home/home/p/g/n/autonomic/_build/dev/lib/autonomic_kernel/ebin/Elixir.Autonomic.SemanticSensor.beam",
+   ~c"/home/home/p/g/n/autonomic/_build/dev/lib/autonomic_linux/ebin/Elixir.Autonomic.Linux.Backend.beam",
+   ~c"/home/home/p/g/n/autonomic/_build/dev/lib/autonomic_kernel/ebin/Elixir.Autonomic.Trajectory.beam",
+   ...],
+  ...
+]
+Total errors: 0, Skipped: 0, Unnecessary Skips: 0
+done in 0m3.14s
+done (passed successfully)

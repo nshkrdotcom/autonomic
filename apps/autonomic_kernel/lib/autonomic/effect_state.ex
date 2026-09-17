@@ -7,12 +7,20 @@ defmodule Autonomic.EffectState do
     ready: [:commit_intent, :aborted, :expired, :stale, :failed],
     commit_intent: [:committing, :commit_unknown],
     committing: [:committed, :commit_unknown, :failed],
-    commit_unknown: [:committed, :failed], committed: [],
-    aborted: [], expired: [], stale: [], failed: []
+    commit_unknown: [:committed, :failed],
+    committed: [],
+    aborted: [],
+    expired: [],
+    stale: [],
+    failed: []
   }
-  @classes [:class_0_local_replayable, :class_1_isolated_mutable,
+  @classes [
+    :class_0_local_replayable,
+    :class_1_isolated_mutable,
     :class_2_external_observable_or_compensatable,
-    :class_3_authoritative_external_mutation, :class_4_irreversible_high_impact]
+    :class_3_authoritative_external_mutation,
+    :class_4_irreversible_high_impact
+  ]
   def allowed?(from, to), do: to in Map.get(@edges, from, [])
   def states, do: Map.keys(@edges)
   def parse_state(value), do: Enum.find(states(), &(Atom.to_string(&1) == value))

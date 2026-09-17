@@ -7,7 +7,7 @@ defmodule Autonomic.SnapshotManager do
     store = Runtime.store()
 
     with {:ok, episode} <- store.fetch_episode(episode_id),
-         {:ok, homeostat} <- Homeostat.snapshot(episode_id),
+         %Autonomic.HomeostaticState{} = homeostat <- Homeostat.snapshot(episode_id),
          {:ok, backend_ref} <- domain.backend.checkpoint(domain),
          true <- backend_ref.episode_id == episode_id and backend_ref.epoch == domain.epoch,
          {:ok, effects} <- list_pending(store, episode_id) do
@@ -24,13 +24,19 @@ defmodule Autonomic.SnapshotManager do
         trajectory_ref: "trajectory:#{episode_id}:#{homeostat.trajectory_version}",
         policy_version: episode.policy_version,
         capability_state_ref: Keyword.get(opts, :capability_state_ref),
-        environment_digest: Map.get(backend_ref.metadata, :environment_digest) || Map.get(backend_ref.metadata, "environment_digest"),
+        environment_digest:
+          Map.get(backend_ref.metadata, :environment_digest) ||
+            Map.get(backend_ref.metadata, "environment_digest"),
         dependency_lock_digest: Keyword.get(opts, :dependency_lock_digest),
         parent_checkpoint_id: episode.current_checkpoint_id,
         trust_level: Keyword.get(opts, :trust_level, :stable),
         created_at: Canonical.now(),
         pending_effect_ids: Enum.map(effects, & &1.id),
-        metadata: Map.merge(%{reason: Keyword.get(opts, :reason, :periodic), backend: inspect(domain.backend)}, backend_ref.metadata || %{})
+        metadata:
+          Map.merge(
+            %{reason: Keyword.get(opts, :reason, :periodic), backend: inspect(domain.backend)},
+            backend_ref.metadata
+          )
       }
 
       store.put_checkpoint(checkpoint)

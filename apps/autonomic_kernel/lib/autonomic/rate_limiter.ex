@@ -7,7 +7,8 @@ defmodule Autonomic.RateLimiter do
 
   def start_link(_opts), do: GenServer.start_link(__MODULE__, %{}, name: __MODULE__)
 
-  @spec check(term(), pos_integer(), pos_integer()) :: :ok | {:error, {:rate_limited, non_neg_integer()}}
+  @spec check(term(), pos_integer(), pos_integer()) ::
+          :ok | {:error, {:rate_limited, non_neg_integer()}}
   def check(key, limit \\ @default_limit, window_ms \\ @default_window_ms)
       when is_integer(limit) and limit > 0 and is_integer(window_ms) and window_ms > 0 do
     GenServer.call(__MODULE__, {:check, key, limit, window_ms})

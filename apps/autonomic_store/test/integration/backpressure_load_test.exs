@@ -17,7 +17,10 @@ defmodule Autonomic.Store.BackpressureLoadTest do
     old_targets = Application.get_env(:autonomic_kernel, :targets, %{})
 
     for source <- [:semantic, :store, :launcher], do: SystemRegulator.health(source, :healthy)
-    for source <- [:semantic_queue, :effect_queue, :verifier_queue], do: SystemRegulator.report(source, 0.0)
+
+    for source <- [:semantic_queue, :effect_queue, :verifier_queue],
+        do: SystemRegulator.report(source, 0.0)
+
     await_mode(:normal)
 
     on_exit(fn ->
@@ -33,6 +36,7 @@ defmodule Autonomic.Store.BackpressureLoadTest do
     assert limit >= 2
 
     {listener, port, server} = start_slow_http_server(limit)
+
     on_exit(fn ->
       :gen_tcp.close(listener)
       Process.exit(server, :kill)
@@ -90,7 +94,9 @@ defmodule Autonomic.Store.BackpressureLoadTest do
                metadata: %{}
              })
 
-    start_supervised!({AuthorityGovernor, episode_id: episode_id, policy: policy, hard_envelope: envelope})
+    start_supervised!(
+      {AuthorityGovernor, episode_id: episode_id, policy: policy, hard_envelope: envelope}
+    )
 
     assert {:ok, lease} =
              AuthorityGovernor.issue(episode_id, %{
@@ -118,13 +124,18 @@ defmodule Autonomic.Store.BackpressureLoadTest do
       end
 
     {active, overflow} = Enum.split(effects, limit)
-    tasks = Enum.map(active, fn effect -> Task.async(fn -> EffectBroker.commit(effect.id) end) end)
+
+    tasks =
+      Enum.map(active, fn effect -> Task.async(fn -> EffectBroker.commit(effect.id) end) end)
 
     await_broker_active(limit)
     await_restricted_mode()
     assert {:error, :effect_broker_saturated} = EffectBroker.commit(hd(overflow).id)
 
-    assert Enum.all?(tasks, fn task -> match?({:ok, %{state: :committed}}, Task.await(task, 15_000)) end)
+    for task <- tasks do
+      assert {:ok, %{state: :committed}} = Task.await(task, 15_000)
+    end
+
     await_broker_active(0)
     await_mode(:normal)
   end
@@ -143,24 +154,37 @@ defmodule Autonomic.Store.BackpressureLoadTest do
 
     server =
       spawn_link(fn ->
-        Enum.each(1..expected_requests, fn _ ->
-          {:ok, client} = :gen_tcp.accept(listener)
-
-          spawn_link(fn ->
-            {:ok, request} = :gen_tcp.recv(client, 0, 5_000)
-            if not String.starts_with?(request, "GET /slow/"), do: exit({:unexpected_request, request})
-            Process.sleep(1_500)
-            body = ~s({"ok":true})
-            response =
-              "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: #{byte_size(body)}\r\nConnection: close\r\n\r\n#{body}"
-
-            :ok = :gen_tcp.send(client, response)
-            :gen_tcp.close(client)
-          end)
-        end)
+        accept_slow_clients(listener, expected_requests)
       end)
 
     {listener, port, server}
+  end
+
+  defp accept_slow_clients(listener, expected_requests) do
+    Enum.each(1..expected_requests, fn _ ->
+      {:ok, client} = :gen_tcp.accept(listener)
+
+      handler = spawn_link(fn -> serve_slow_client(client) end)
+      :ok = :gen_tcp.controlling_process(client, handler)
+      send(handler, :socket_ready)
+    end)
+  end
+
+  defp serve_slow_client(client) do
+    receive do: (:socket_ready -> :ok)
+    {:ok, request} = :gen_tcp.recv(client, 0, 5_000)
+
+    if not String.starts_with?(request, "GET /slow/"),
+      do: exit({:unexpected_request, request})
+
+    Process.sleep(1_500)
+    body = ~s({"ok":true})
+
+    response =
+      "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: #{byte_size(body)}\r\nConnection: close\r\n\r\n#{body}"
+
+    :ok = :gen_tcp.send(client, response)
+    :gen_tcp.close(client)
   end
 
   defp await_broker_active(expected, attempts \\ 200)

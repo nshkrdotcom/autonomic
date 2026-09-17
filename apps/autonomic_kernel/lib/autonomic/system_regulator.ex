@@ -4,15 +4,18 @@ defmodule Autonomic.SystemRegulator do
 
   alias Autonomic.Policy
 
-  @type mode :: :normal | :constrained | :read_only_autonomy | :no_sensitive_commits | :admission_closed
+  @type mode ::
+          :normal | :constrained | :read_only_autonomy | :no_sensitive_commits | :admission_closed
 
   def start_link(_opts), do: GenServer.start_link(__MODULE__, %{}, name: __MODULE__)
 
   def report(source, value) when is_atom(source) and is_number(value),
     do: GenServer.cast(__MODULE__, {:pressure, source, clamp(value)})
 
-  def health(source, status) when source in [:semantic, :store, :launcher] and status in [:healthy, :degraded, :unavailable],
-    do: GenServer.cast(__MODULE__, {:health, source, status})
+  def health(source, status)
+      when source in [:semantic, :store, :launcher] and
+             status in [:healthy, :degraded, :unavailable],
+      do: GenServer.cast(__MODULE__, {:health, source, status})
 
   def semantic_health(status), do: health(:semantic, status)
   def mode, do: GenServer.call(__MODULE__, :mode)
@@ -53,12 +56,16 @@ defmodule Autonomic.SystemRegulator do
   def handle_call(:snapshot, _from, state), do: {:reply, state, state}
 
   def handle_call(:sensitive_commit_allowed?, _from, state) do
-    allowed = state.mode in [:normal, :constrained] and state.health.store == :healthy and state.health.semantic == :healthy
+    allowed =
+      state.mode in [:normal, :constrained] and state.health.store == :healthy and
+        state.health.semantic == :healthy
+
     {:reply, allowed, state}
   end
 
   def handle_call({:admit?, class}, _from, state) do
     rank = Policy.class_rank(class)
+
     allowed =
       case state.mode do
         :normal -> true
@@ -67,38 +74,53 @@ defmodule Autonomic.SystemRegulator do
         :no_sensitive_commits -> rank <= 2
         :admission_closed -> false
       end
+
     {:reply, allowed, state}
   end
 
   defp recalculate(state) do
     pressure = state.pressures |> Map.values() |> Enum.max(fn -> 0.0 end)
 
-    target =
-      cond do
-        state.health.store == :unavailable -> :no_sensitive_commits
-        state.health.launcher == :unavailable -> :admission_closed
-        pressure >= 0.95 -> :admission_closed
-        state.health.semantic == :unavailable -> :no_sensitive_commits
-        pressure >= 0.85 -> :no_sensitive_commits
-        pressure >= 0.72 -> :read_only_autonomy
-        state.health.semantic == :degraded or pressure >= 0.52 -> :constrained
-        true -> :normal
-      end
+    target = target_mode(state.health, pressure)
 
-    {mode, candidate, count} = hysteresis(state.mode, state.candidate, state.candidate_count, target)
-    %{state | mode: mode, candidate: candidate, candidate_count: count, updated_at: System.monotonic_time(:millisecond)}
+    {mode, candidate, count} =
+      hysteresis(state.mode, state.candidate, state.candidate_count, target)
+
+    %{
+      state
+      | mode: mode,
+        candidate: candidate,
+        candidate_count: count,
+        updated_at: System.monotonic_time(:millisecond)
+    }
   end
 
-  # Degradation takes effect immediately; recovery requires three consecutive recalculations.
-  defp hysteresis(current, _candidate, _count, target) when severity(target) > severity(current),
-    do: {target, target, 0}
+  defp target_mode(health, pressure) do
+    cond do
+      health.store == :unavailable -> :no_sensitive_commits
+      health.launcher == :unavailable -> :admission_closed
+      pressure >= 0.95 -> :admission_closed
+      health.semantic == :unavailable -> :no_sensitive_commits
+      pressure >= 0.85 -> :no_sensitive_commits
+      pressure >= 0.72 -> :read_only_autonomy
+      constrained?(health, pressure) -> :constrained
+      true -> :normal
+    end
+  end
 
+  defp constrained?(health, pressure), do: health.semantic == :degraded or pressure >= 0.52
+
+  # Degradation takes effect immediately; recovery requires three consecutive recalculations.
   defp hysteresis(current, _candidate, _count, target) when target == current,
     do: {current, current, 0}
 
   defp hysteresis(current, candidate, count, target) do
-    next_count = if candidate == target, do: count + 1, else: 1
-    if next_count >= 3, do: {target, target, 0}, else: {current, target, next_count}
+    if severity(target) > severity(current) do
+      {target, target, 0}
+    else
+      next_count = if candidate == target, do: count + 1, else: 1
+      if next_count >= 3, do: {target, target, 0}, else: {current, target, next_count}
+    end
   end
 
   defp severity(:normal), do: 0

@@ -28,8 +28,11 @@ defmodule Autonomic.Homeostat do
 
   def snapshot(episode_id), do: GenServer.call(Runtime.via(episode_id, :homeostat), :snapshot)
 
-  def repair_recorded(episode_id), do: GenServer.cast(Runtime.via(episode_id, :homeostat), :repair)
-  def rebase_epoch(episode_id, epoch), do: GenServer.call(Runtime.via(episode_id, :homeostat), {:rebase_epoch, epoch})
+  def repair_recorded(episode_id),
+    do: GenServer.cast(Runtime.via(episode_id, :homeostat), :repair)
+
+  def rebase_epoch(episode_id, epoch),
+    do: GenServer.call(Runtime.via(episode_id, :homeostat), {:rebase_epoch, epoch})
 
   @impl true
   def init(opts) do
@@ -52,12 +55,27 @@ defmodule Autonomic.Homeostat do
   @impl true
   def handle_call(:snapshot, _from, state), do: {:reply, state, state}
 
-  def handle_call({:rebase_epoch, epoch}, _from, state) when is_integer(epoch) and epoch > state.epoch do
-    next = %{state | epoch: epoch, trajectory_version: 0, regime: :stable, drift: 0.0, volatility: 0.0, uncertainty: 0.0, deterministic_violations: [], semantic_sensor_health: :healthy, regime_entered_at: System.system_time(:millisecond), metadata: %{stable_frames: 0}}
+  def handle_call({:rebase_epoch, epoch}, _from, state)
+      when is_integer(epoch) and epoch > state.epoch do
+    next = %{
+      state
+      | epoch: epoch,
+        trajectory_version: 0,
+        regime: :stable,
+        drift: 0.0,
+        volatility: 0.0,
+        uncertainty: 0.0,
+        deterministic_violations: [],
+        semantic_sensor_health: :healthy,
+        regime_entered_at: System.system_time(:millisecond),
+        metadata: %{stable_frames: 0}
+    }
+
     {:reply, :ok, next}
   end
 
-  def handle_call({:rebase_epoch, _epoch}, _from, state), do: {:reply, {:error, :non_monotonic_epoch}, state}
+  def handle_call({:rebase_epoch, _epoch}, _from, state),
+    do: {:reply, {:error, :non_monotonic_epoch}, state}
 
   def handle_call({:observe, %ObservationFrame{} = frame}, _from, state) do
     result = ingest(state, frame)
@@ -70,7 +88,12 @@ defmodule Autonomic.Homeostat do
 
   @impl true
   def handle_cast(:repair, state) do
-    next = %{state | repair_count: state.repair_count + 1, trajectory_version: state.trajectory_version + 1}
+    next = %{
+      state
+      | repair_count: state.repair_count + 1,
+        trajectory_version: state.trajectory_version + 1
+    }
+
     {:noreply, next}
   end
 
@@ -92,7 +115,9 @@ defmodule Autonomic.Homeostat do
 
       if hard != [] do
         contained = hard_containment(next, hard)
-        {contained, {:homeostat, :contain, :deterministic_boundary_violation, %{deterministic: hard}}}
+
+        {contained,
+         {:homeostat, :contain, :deterministic_boundary_violation, %{deterministic: hard}}}
       else
         next = update_regime(next)
         {next, output(next, frame)}
@@ -102,7 +127,10 @@ defmodule Autonomic.Homeostat do
 
   defp hard_violations(facts) do
     Enum.filter(facts, fn fact ->
-      type = Map.get(fact, :type) || Map.get(fact, "type") || Map.get(fact, :kind) || Map.get(fact, "kind")
+      type =
+        Map.get(fact, :type) || Map.get(fact, "type") || Map.get(fact, :kind) ||
+          Map.get(fact, "kind")
+
       normalize_atom(type) in @hard_violations
     end)
   end
@@ -125,41 +153,77 @@ defmodule Autonomic.Homeostat do
         scope_pressure: ewma(state.scope_pressure, scope),
         authority_pressure: ewma(state.authority_pressure, authority),
         destructive_pressure: ewma(state.destructive_pressure, destructive),
-        verification_pressure: ewma(state.verification_pressure, pressure(frame, :verification_pressure)),
+        verification_pressure:
+          ewma(state.verification_pressure, pressure(frame, :verification_pressure)),
         approval_pressure: ewma(state.approval_pressure, pressure(frame, :approval_pressure)),
         blast_radius_remaining:
-          min(state.blast_radius_remaining, max(0.0, state.blast_radius_remaining - destructive * 0.05)),
+          min(
+            state.blast_radius_remaining,
+            max(0.0, state.blast_radius_remaining - destructive * 0.05)
+          ),
         autonomy_balance:
-          min(state.autonomy_balance, max(0.0, state.autonomy_balance - max(scope, authority) * 0.04))
+          min(
+            state.autonomy_balance,
+            max(0.0, state.autonomy_balance - max(scope, authority) * 0.04)
+          )
     }
   end
 
-  defp update_sensor_health(state, true), do: %{state | semantic_sensor_health: :degraded, uncertainty: max(state.uncertainty, 0.65)}
+  defp update_sensor_health(state, true),
+    do: %{state | semantic_sensor_health: :degraded, uncertainty: max(state.uncertainty, 0.65)}
+
   defp update_sensor_health(state, false), do: %{state | semantic_sensor_health: :healthy}
 
-  defp update_regime(state) do
-    risk = Enum.max([state.drift, state.uncertainty, state.authority_pressure, state.destructive_pressure, state.volatility])
+  defp regime_candidate(state, risk) do
+    cond do
+      risk >= 0.82 -> :unstable
+      max(state.drift, state.authority_pressure) >= 0.58 -> :drifting
+      state.uncertainty >= 0.42 or state.semantic_sensor_health != :healthy -> :uncertain
+      true -> :stable
+    end
+  end
 
-    candidate =
-      cond do
-        risk >= 0.82 -> :unstable
-        max(state.drift, state.authority_pressure) >= 0.58 -> :drifting
-        state.uncertainty >= 0.42 or state.semantic_sensor_health != :healthy -> :uncertain
-        true -> :stable
-      end
+  defp update_regime(state) do
+    risk =
+      Enum.max([
+        state.drift,
+        state.uncertainty,
+        state.authority_pressure,
+        state.destructive_pressure,
+        state.volatility
+      ])
+
+    candidate = regime_candidate(state, risk)
 
     stable_frames = Map.get(state.metadata, :stable_frames, 0)
 
     {regime, stable_frames} =
       cond do
-        state.regime == :containment -> {:containment, stable_frames}
-        candidate == :stable and state.regime in [:drifting, :unstable] and stable_frames + 1 < @stable_frames_required -> {state.regime, stable_frames + 1}
-        candidate == :stable -> {:stable, min(stable_frames + 1, @stable_frames_required)}
-        true -> {candidate, 0}
+        state.regime == :containment ->
+          {:containment, stable_frames}
+
+        candidate == :stable and state.regime in [:drifting, :unstable] and
+            stable_frames + 1 < @stable_frames_required ->
+          {state.regime, stable_frames + 1}
+
+        candidate == :stable ->
+          {:stable, min(stable_frames + 1, @stable_frames_required)}
+
+        true ->
+          {candidate, 0}
       end
 
-    entered_at = if regime == state.regime, do: state.regime_entered_at, else: System.system_time(:millisecond)
-    %{state | regime: regime, regime_entered_at: entered_at, metadata: Map.put(state.metadata, :stable_frames, stable_frames)}
+    entered_at =
+      if regime == state.regime,
+        do: state.regime_entered_at,
+        else: System.system_time(:millisecond)
+
+    %{
+      state
+      | regime: regime,
+        regime_entered_at: entered_at,
+        metadata: Map.put(state.metadata, :stable_frames, stable_frames)
+    }
   end
 
   defp hard_containment(state, hard) do
@@ -179,8 +243,7 @@ defmodule Autonomic.Homeostat do
   end
 
   defp output(%{regime: :drifting} = state, _frame) do
-    {:homeostat, :narrow,
-     %{max_effect_class: :class_1_isolated_mutable},
+    {:homeostat, :narrow, %{max_effect_class: :class_1_isolated_mutable},
      %{trajectory_version: state.trajectory_version, drift: state.drift}}
   end
 
@@ -189,21 +252,37 @@ defmodule Autonomic.Homeostat do
      %{trajectory_version: state.trajectory_version, uncertainty: state.uncertainty}}
   end
 
-  defp output(state, _frame), do: {:homeostat, :continue, %{trajectory_version: state.trajectory_version}}
+  defp output(state, _frame),
+    do: {:homeostat, :continue, %{trajectory_version: state.trajectory_version}}
 
   defp semantic_vector(observations) do
     Enum.reduce(observations, %{}, fn %SemanticObservation{} = observation, acc ->
       risk = semantic_risk(observation)
 
       case observation.sensor do
-        :scope_drift -> Map.put(acc, :scope_drift, risk)
-        :authority_escalation -> Map.put(acc, :authority_escalation, risk)
-        :irreversibility -> Map.put(acc, :irreversibility, risk)
-        :effect_class -> Map.put(acc, :irreversibility, risk)
-        :evidence_sufficiency -> Map.put(acc, :uncertainty, evidence_uncertainty(observation, risk))
-        :trajectory_regime -> Map.put(acc, :regime_risk, regime_risk(observation.value))
-        :regime -> Map.put(acc, :regime_risk, regime_risk(observation.value))
-        _ -> acc
+        :scope_drift ->
+          Map.put(acc, :scope_drift, risk)
+
+        :authority_escalation ->
+          Map.put(acc, :authority_escalation, risk)
+
+        :irreversibility ->
+          Map.put(acc, :irreversibility, risk)
+
+        :effect_class ->
+          Map.put(acc, :irreversibility, risk)
+
+        :evidence_sufficiency ->
+          Map.put(acc, :uncertainty, evidence_uncertainty(observation, risk))
+
+        :trajectory_regime ->
+          Map.put(acc, :regime_risk, regime_risk(observation.value))
+
+        :regime ->
+          Map.put(acc, :regime_risk, regime_risk(observation.value))
+
+        _ ->
+          acc
       end
     end)
   end
@@ -221,19 +300,22 @@ defmodule Autonomic.Homeostat do
   end
 
   defp semantic_risk(%SemanticObservation{value: value, confidence: confidence}) do
-    base =
-      cond do
-        is_boolean(value) -> if(value, do: 1.0, else: 0.0)
-        is_number(value) -> clamp(value * 1.0)
-        value in [:high, :authoritative, :high_impact, :unstable] -> 1.0
-        value in [:medium, :external, :drifting] -> 0.65
-        value in [:low, :local, :stable] -> 0.0
-        true -> 0.5
-      end
+    base = semantic_value_risk(value)
 
     case confidence do
       c when is_number(c) -> clamp(base * c + 0.5 * (1.0 - c))
       _ -> base
+    end
+  end
+
+  defp semantic_value_risk(value) do
+    cond do
+      is_boolean(value) -> if(value, do: 1.0, else: 0.0)
+      is_number(value) -> clamp(value * 1.0)
+      value in [:high, :authoritative, :high_impact, :unstable] -> 1.0
+      value in [:medium, :external, :drifting] -> 0.65
+      value in [:low, :local, :stable] -> 0.0
+      true -> 0.5
     end
   end
 
@@ -261,8 +343,17 @@ defmodule Autonomic.Homeostat do
 
   defp persist(frame, state) do
     store = Runtime.store()
-    _ = if function_exported?(store, :record_observation, 1), do: store.record_observation(frame), else: :ok
-    _ = if function_exported?(store, :update_trajectory, 2), do: store.update_trajectory(frame.episode_id, state), else: :ok
+
+    _ =
+      if function_exported?(store, :record_observation, 1),
+        do: store.record_observation(frame),
+        else: :ok
+
+    _ =
+      if function_exported?(store, :update_trajectory, 2),
+        do: store.update_trajectory(frame.episode_id, state),
+        else: :ok
+
     :ok
   end
 
@@ -276,19 +367,16 @@ defmodule Autonomic.Homeostat do
   defp ewma(old, sample), do: clamp((1.0 - @alpha) * old + @alpha * sample)
   defp clamp(value), do: value |> max(0.0) |> min(1.0)
   defp normalize_atom(value) when is_atom(value), do: value
-  defp normalize_atom(value) when is_binary(value) do
-    case value do
-      "direct_network_attempt" -> :direct_network_attempt
-      "forbidden_path_attempt" -> :forbidden_path_attempt
-      "forbidden_mount_attempt" -> :forbidden_mount_attempt
-      "stale_epoch_request" -> :stale_epoch_request
-      "capability_misuse" -> :capability_misuse
-      "cgroup_escape" -> :cgroup_escape
-      "forbidden_credential_access" -> :forbidden_credential_access
-      "namespace_escape" -> :namespace_escape
-      "seccomp_violation" -> :seccomp_violation
-      _ -> :unknown
-    end
-  end
+
+  defp normalize_atom("direct_network_attempt"), do: :direct_network_attempt
+  defp normalize_atom("forbidden_path_attempt"), do: :forbidden_path_attempt
+  defp normalize_atom("forbidden_mount_attempt"), do: :forbidden_mount_attempt
+  defp normalize_atom("stale_epoch_request"), do: :stale_epoch_request
+  defp normalize_atom("capability_misuse"), do: :capability_misuse
+  defp normalize_atom("cgroup_escape"), do: :cgroup_escape
+  defp normalize_atom("forbidden_credential_access"), do: :forbidden_credential_access
+  defp normalize_atom("namespace_escape"), do: :namespace_escape
+  defp normalize_atom("seccomp_violation"), do: :seccomp_violation
+
   defp normalize_atom(_), do: :unknown
 end

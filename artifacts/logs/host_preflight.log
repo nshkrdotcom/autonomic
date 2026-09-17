@@ -1,0 +1,21 @@
+ok   elixir                   /home/home/.asdf/shims/elixir
+ok   mix                      /home/home/.asdf/shims/mix
+ok   erl                      /home/home/.asdf/shims/erl
+ok   cargo                    /home/home/.cargo/bin/cargo
+ok   rustc                    /home/home/.cargo/bin/rustc
+ok   psql                     /usr/bin/psql
+ok   git                      /usr/bin/git
+ok   unshare                  /usr/bin/unshare
+ok   nsenter                  /usr/bin/nsenter
+ok   mount                    /usr/bin/mount
+ok   cgroup v2                cpuset cpu io memory hugetlb pids rdma
+ok   overlayfs                 available
+ok   rootfs path               /opt/autonomic/rootfs
+ok   rootfs path               /opt/autonomic/rootfs/workspace
+ok   rootfs path               /opt/autonomic/rootfs/run
+ok   rootfs path               /opt/autonomic/rootfs/tmp
+ok   rootfs path               /opt/autonomic/rootfs/proc
+ok   launcher                  /usr/local/libexec/autonomic_launcher
+ok   state root                /var/lib/autonomic
+ok   PostgreSQL test DB         reachable
+preflight: PASS

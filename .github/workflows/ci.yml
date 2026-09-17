@@ -50,7 +50,7 @@ jobs:
       - run: mix test apps/autonomic_store/test/integration --include postgres --exclude linux --exclude reference --exclude db_outage
       - run: mix credo --strict
       - run: mix dialyzer
-      - run: mix docs --warnings-as-errors
+      - run: MIX_ENV=dev mix docs --warnings-as-errors
 
   rust:
     runs-on: ubuntu-24.04

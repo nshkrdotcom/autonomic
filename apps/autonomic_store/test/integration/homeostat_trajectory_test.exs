@@ -7,9 +7,20 @@ defmodule Autonomic.Store.HomeostatTrajectoryTest do
   alias Autonomic.Store.{Postgres, Repo}
 
   setup do
-    Ecto.Adapters.SQL.query!(Repo, "TRUNCATE recovery_records, observation_frames, episode_events, effect_decisions, effects, checkpoints, capability_leases, episodes RESTART IDENTITY CASCADE", [])
+    Ecto.Adapters.SQL.query!(
+      Repo,
+      "TRUNCATE recovery_records, observation_frames, episode_events, effect_decisions, effects, checkpoints, capability_leases, episodes RESTART IDENTITY CASCADE",
+      []
+    )
+
     episode_id = Canonical.id()
-    policy = %{"id" => "trajectory", "version" => 1, "max_effect_class" => 4, "capabilities" => []}
+
+    policy = %{
+      "id" => "trajectory",
+      "version" => 1,
+      "max_effect_class" => 4,
+      "capabilities" => []
+    }
 
     assert {:ok, _} =
              Postgres.create_episode(%{
@@ -29,7 +40,8 @@ defmodule Autonomic.Store.HomeostatTrajectoryTest do
     %{episode_id: episode_id}
   end
 
-  test "hard deterministic violation dominates semantic safe evidence and persists containment", %{episode_id: episode_id} do
+  test "hard deterministic violation dominates semantic safe evidence and persists containment",
+       %{episode_id: episode_id} do
     safe_semantic = [
       observation(:scope_drift, false, 0.99),
       observation(:authority_escalation, false, 0.99),
@@ -49,6 +61,7 @@ defmodule Autonomic.Store.HomeostatTrajectoryTest do
 
     assert {:ok, {:homeostat, :contain, :deterministic_boundary_violation, _}, state} =
              Homeostat.observe(episode_id, frame)
+
     assert state.regime == :containment
     assert state.autonomy_balance == 0.0
     assert {:ok, episode} = Postgres.fetch_episode(episode_id)
@@ -56,7 +69,9 @@ defmodule Autonomic.Store.HomeostatTrajectoryTest do
     assert episode.trajectory_version == 1
   end
 
-  test "semantic uncertainty is smoothed and does not expand deterministic authority", %{episode_id: episode_id} do
+  test "semantic uncertainty is smoothed and does not expand deterministic authority", %{
+    episode_id: episode_id
+  } do
     uncertain = [
       observation(:scope_drift, false, 0.7),
       observation(:authority_escalation, false, 0.7),

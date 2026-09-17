@@ -47,13 +47,17 @@ defmodule Autonomic.Policy do
 
   def precedence(observations) when is_list(observations) do
     case Enum.find(@precedence, fn source ->
-           Enum.any?(observations, fn observation ->
-             Map.get(observation, "source") == source and Map.get(observation, "decision") == "deny"
-           end)
+           denied_by?(observations, source)
          end) do
       nil -> :no_denial
       source -> {:deny, source}
     end
+  end
+
+  defp denied_by?(observations, source) do
+    Enum.any?(observations, fn observation ->
+      Map.get(observation, "source") == source and Map.get(observation, "decision") == "deny"
+    end)
   end
 
   def contraction?(old, new, old_class, new_class) do
@@ -98,14 +102,17 @@ defmodule Autonomic.Policy do
 
   def class_rank(value) when is_binary(value) do
     case Integer.parse(value) do
-      {rank, ""} when rank in 0..4 -> rank
+      {rank, ""} when rank in 0..4 ->
+        rank
+
       _ ->
         value
         |> String.to_existing_atom()
         |> class_rank()
     end
   rescue
-    ArgumentError -> raise ArgumentError, "unknown effect class: #{inspect(value)}"
+    ArgumentError ->
+      reraise ArgumentError, [message: "unknown effect class: #{inspect(value)}"], __STACKTRACE__
   end
 
   def trusted_sign(document, role) do
@@ -125,7 +132,9 @@ defmodule Autonomic.Policy do
     do: "autonomic." <> domain <> ".v1\n" <> Canonical.json(document)
 
   defp scope_matches?(scope, target) when is_map(scope) and is_map(target) do
-    Enum.all?(scope, fn {key, value} -> Map.get(target, key) == value or Map.get(target, to_string(key)) == value end)
+    Enum.all?(scope, fn {key, value} ->
+      Map.get(target, key) == value or Map.get(target, to_string(key)) == value
+    end)
   end
 
   defp scope_matches?(scope, target), do: scope == target

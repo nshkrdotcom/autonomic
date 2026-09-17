@@ -6,7 +6,8 @@ defmodule Autonomic.Payloads do
   @digest ~r/\A[0-9a-f]{64}\z/
 
   @spec put(String.t(), binary(), pos_integer()) :: {:ok, String.t()} | {:error, term()}
-  def put(episode, bytes, limit \\ 1_048_576) when is_binary(bytes) and is_integer(limit) and limit > 0 do
+  def put(episode, bytes, limit \\ 1_048_576)
+      when is_binary(bytes) and is_integer(limit) and limit > 0 do
     cond do
       not Regex.match?(@id, episode) ->
         {:error, :invalid_episode_id}

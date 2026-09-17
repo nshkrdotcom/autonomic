@@ -31,12 +31,22 @@ defmodule Autonomic.Adapters.GitRemote do
          {:ok, expected} <- expected_remote_oid(effect, target),
          :ok <- preflight_remote(repo, url, ref, expected, target),
          {:ok, output} <- git(repo, push_args(url, ref, local_oid, expected), target) do
-      {:ok, %{remote: redacted_remote(url), ref: ref, oid: local_oid, expected_previous_oid: expected, effect_id: effect.id, commit_attempt_id: effect.commit_attempt_id, porcelain_digest: Canonical.hash(output)}}
+      {:ok,
+       %{
+         remote: redacted_remote(url),
+         ref: ref,
+         oid: local_oid,
+         expected_previous_oid: expected,
+         effect_id: effect.id,
+         commit_attempt_id: effect.commit_attempt_id,
+         porcelain_digest: Canonical.hash(output)
+       }}
     else
       {:error, {:git_failed, _status, output}} = error ->
         if ambiguous_push_failure?(output), do: {:unknown, error}, else: error
 
-      {:error, _} = error -> error
+      {:error, _} = error ->
+        error
     end
   rescue
     error -> {:unknown, {:git_remote_exception, Exception.message(error)}}
@@ -54,7 +64,14 @@ defmodule Autonomic.Adapters.GitRemote do
          {:ok, remote_oid} <- remote_oid(repo, url, ref, target) do
       cond do
         remote_oid == local_oid ->
-          {:committed, %{remote: redacted_remote(url), ref: ref, oid: remote_oid, effect_id: effect.id, reconciled: true}}
+          {:committed,
+           %{
+             remote: redacted_remote(url),
+             ref: ref,
+             oid: remote_oid,
+             effect_id: effect.id,
+             reconciled: true
+           }}
 
         remote_oid == expected or (expected == zero_oid() and is_nil(remote_oid)) ->
           :not_committed
@@ -81,17 +98,26 @@ defmodule Autonomic.Adapters.GitRemote do
     case git(repo, ["ls-remote", "--refs", url, ref], target) do
       {:ok, output} ->
         case String.split(output, "\n", trim: true) do
-          [] -> {:ok, nil}
+          [] ->
+            {:ok, nil}
+
           [line] ->
-            case String.split(line, ~r/\s+/, parts: 2) do
-              [oid, ^ref] -> {:ok, oid}
-              [oid, _] -> {:ok, oid}
-              _ -> {:error, :invalid_ls_remote_output}
-            end
-          _ -> {:error, :ambiguous_ls_remote_output}
+            parse_remote_line(line, ref)
+
+          _ ->
+            {:error, :ambiguous_ls_remote_output}
         end
 
-      {:error, _} = error -> error
+      {:error, _} = error ->
+        error
+    end
+  end
+
+  defp parse_remote_line(line, ref) do
+    case String.split(line, ~r/\s+/, parts: 2) do
+      [oid, ^ref] -> {:ok, oid}
+      [oid, _] -> {:ok, oid}
+      _ -> {:error, :invalid_ls_remote_output}
     end
   end
 
@@ -117,13 +143,13 @@ defmodule Autonomic.Adapters.GitRemote do
     value = Map.get(effect.target, "local_oid") || Map.get(effect.target, :local_oid)
     source_ref = Map.get(effect.target, "source_ref") || Map.get(target, "source_ref") || "HEAD"
 
-    cond do
-      is_binary(value) -> {:ok, String.trim(value)}
-      true ->
-        case git(repo, ["rev-parse", "--verify", "#{source_ref}^{commit}"], target) do
-          {:ok, oid} -> {:ok, String.trim(oid)}
-          error -> error
-        end
+    if is_binary(value) do
+      {:ok, String.trim(value)}
+    else
+      case git(repo, ["rev-parse", "--verify", "#{source_ref}^{commit}"], target) do
+        {:ok, oid} -> {:ok, String.trim(oid)}
+        error -> error
+      end
     end
   end
 
@@ -141,7 +167,9 @@ defmodule Autonomic.Adapters.GitRemote do
       path when is_binary(path) ->
         expanded = Path.expand(path)
         if File.dir?(expanded), do: {:ok, expanded}, else: {:error, :git_remote_repo_missing}
-      _ -> {:error, :git_remote_repo_not_configured}
+
+      _ ->
+        {:error, :git_remote_repo_not_configured}
     end
   end
 
@@ -154,7 +182,10 @@ defmodule Autonomic.Adapters.GitRemote do
 
   defp allowed_remote?(url, target) do
     allowed = Map.get(target, "allowed_urls", [url])
-    if url in allowed and not credential_in_url?(url), do: :ok, else: {:error, :git_remote_url_denied}
+
+    if url in allowed and not credential_in_url?(url),
+      do: :ok,
+      else: {:error, :git_remote_url_denied}
   end
 
   defp credential_in_url?(url) do
@@ -164,8 +195,10 @@ defmodule Autonomic.Adapters.GitRemote do
     end
   end
 
-  defp validate_oid(oid) when is_binary(oid), do: if(Regex.match?(~r/\A[0-9a-f]{40,64}\z/, oid), do: :ok, else: {:error, :invalid_local_oid})
-  defp validate_oid(_), do: {:error, :invalid_local_oid}
+  defp validate_oid(oid) when is_binary(oid),
+    do:
+      if(Regex.match?(~r/\A[0-9a-f]{40,64}\z/, oid), do: :ok, else: {:error, :invalid_local_oid})
+
   defp validate_expected(value) when value == "0000000000000000000000000000000000000000", do: :ok
   defp validate_expected(value), do: validate_oid(value)
   defp zero_oid, do: String.duplicate("0", 40)
@@ -189,10 +222,15 @@ defmodule Autonomic.Adapters.GitRemote do
     |> case do
       names when is_map(names) ->
         Enum.map(names, fn {env_name, source_env_name} ->
-          value = System.get_env(to_string(source_env_name)) || raise "missing trusted Git credential environment #{source_env_name}"
+          value =
+            System.get_env(to_string(source_env_name)) ||
+              raise "missing trusted Git credential environment #{source_env_name}"
+
           {to_string(env_name), value}
         end)
-      _ -> []
+
+      _ ->
+        []
     end
   end
 
@@ -206,18 +244,27 @@ defmodule Autonomic.Adapters.GitRemote do
     target
     |> Map.get("credential_env", %{})
     |> case do
-      names when is_map(names) -> names |> Map.values() |> Enum.map(&(System.get_env(to_string(&1)) || ""))
-      _ -> []
+      names when is_map(names) ->
+        names |> Map.values() |> Enum.map(&(System.get_env(to_string(&1)) || ""))
+
+      _ ->
+        []
     end
   end
 
   defp redacted_remote(url) do
     uri = URI.parse(url)
-    if uri.scheme in ["http", "https", "ssh"], do: URI.to_string(%{uri | userinfo: nil}), else: url
+
+    if uri.scheme in ["http", "https", "ssh"],
+      do: URI.to_string(%{uri | userinfo: nil}),
+      else: url
   end
 
   defp ambiguous_push_failure?(output) do
-    not Enum.any?(["rejected", "non-fast-forward", "stale info", "fetch first", "invalid refspec"], &String.contains?(String.downcase(output), &1))
+    not Enum.any?(
+      ["rejected", "non-fast-forward", "stale info", "fetch first", "invalid refspec"],
+      &String.contains?(String.downcase(output), &1)
+    )
   end
 
   defp trusted_target(opts) do

@@ -32,13 +32,13 @@ if [[ ${EUID:-$(id -u)} -eq 0 ]]; then
   id postgres >/dev/null 2>&1 || { echo 'root execution requires a postgres OS user' >&2; exit 1; }
   run_as=postgres
   chown -R postgres:postgres "$tmp"
-  runuser -u postgres -- "$pg_bindir/initdb" -D "$pgdata" -A trust --no-locale >/dev/null
-  runuser -u postgres -- "$pg_bindir/pg_ctl" -D "$pgdata" -o "-F -p $port -h 127.0.0.1" -w start >/dev/null
-  runuser -u postgres -- "$pg_bindir/createdb" -h 127.0.0.1 -p "$port" autonomic_outage
+  runuser -u postgres -- "$pg_bindir/initdb" -D "$pgdata" -U postgres -A trust --no-locale >/dev/null
+  runuser -u postgres -- "$pg_bindir/pg_ctl" -D "$pgdata" -o "-F -p $port -h 127.0.0.1 -k $tmp" -w start >/dev/null
+  runuser -u postgres -- "$pg_bindir/createdb" -U postgres -h 127.0.0.1 -p "$port" autonomic_outage
 else
-  "$pg_bindir/initdb" -D "$pgdata" -A trust --no-locale >/dev/null
-  "$pg_bindir/pg_ctl" -D "$pgdata" -o "-F -p $port -h 127.0.0.1" -w start >/dev/null
-  "$pg_bindir/createdb" -h 127.0.0.1 -p "$port" autonomic_outage
+  "$pg_bindir/initdb" -D "$pgdata" -U postgres -A trust --no-locale >/dev/null
+  "$pg_bindir/pg_ctl" -D "$pgdata" -o "-F -p $port -h 127.0.0.1 -k $tmp" -w start >/dev/null
+  "$pg_bindir/createdb" -U postgres -h 127.0.0.1 -p "$port" autonomic_outage
 fi
 
 export AUTONOMIC_TEST_DATABASE_URL="ecto://postgres@127.0.0.1:$port/autonomic_outage"

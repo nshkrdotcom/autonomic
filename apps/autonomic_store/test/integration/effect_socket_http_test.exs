@@ -16,7 +16,10 @@ defmodule Autonomic.Store.EffectSocketHTTPTest do
 
     old_targets = Application.get_env(:autonomic_kernel, :targets, %{})
     old_dir = Application.fetch_env!(:autonomic_kernel, :state_dir)
-    state_dir = Path.join(System.tmp_dir!(), "autonomic-broker-#{System.unique_integer([:positive])}")
+
+    state_dir =
+      Path.join(System.tmp_dir!(), "autonomic-broker-#{System.unique_integer([:positive])}")
+
     File.mkdir_p!(state_dir)
     Application.put_env(:autonomic_kernel, :state_dir, state_dir)
 
@@ -30,10 +33,15 @@ defmodule Autonomic.Store.EffectSocketHTTPTest do
   end
 
   test "real AF_UNIX broker mediates an HTTP read and materializes a bounded response" do
-    {listener, port, server} = start_http_server("{\"source\":\"trusted-broker\",\"ok\":true}")
-    on_exit(fn -> :gen_tcp.close(listener); Process.exit(server, :kill) end)
+    {listener, port, server} = start_http_server(~s({"source":"trusted-broker","ok":true}))
+
+    on_exit(fn ->
+      :gen_tcp.close(listener)
+      Process.exit(server, :kill)
+    end)
 
     target_id = "local-http"
+
     target = %{
       "base_url" => "http://127.0.0.1:#{port}",
       "host" => "127.0.0.1",
@@ -49,16 +57,22 @@ defmodule Autonomic.Store.EffectSocketHTTPTest do
     Application.put_env(:autonomic_kernel, :targets, %{target_id => target})
 
     episode_id = Canonical.id()
+
     policy = %{
       "id" => "broker-http-policy",
       "version" => 1,
       "max_effect_class" => 2,
       "capabilities" => [%{"kind" => "http_read", "scope" => %{"id" => target_id}}]
     }
+
     envelope = %{
       "max_effect_class" => 2,
       "capabilities" => [
-        %{"kind" => "http_read", "scope" => %{"id" => target_id}, "constraints" => %{"max_effect_class" => 2}}
+        %{
+          "kind" => "http_read",
+          "scope" => %{"id" => target_id},
+          "constraints" => %{"max_effect_class" => 2}
+        }
       ]
     }
 
@@ -77,7 +91,10 @@ defmodule Autonomic.Store.EffectSocketHTTPTest do
                metadata: %{}
              })
 
-    start_supervised!({AuthorityGovernor, episode_id: episode_id, policy: policy, hard_envelope: envelope})
+    start_supervised!(
+      {AuthorityGovernor, episode_id: episode_id, policy: policy, hard_envelope: envelope}
+    )
+
     start_supervised!({EffectSocket, episode_id: episode_id})
 
     assert {:ok, lease} =
@@ -151,7 +168,10 @@ defmodule Autonomic.Store.EffectSocketHTTPTest do
     {:ok, socket} = :socket.open(:local, :stream, :default)
     :ok = :socket.connect(socket, %{family: :local, path: String.to_charlist(path)})
     payload = Jason.encode!(request)
-    :ok = :socket.send(socket, <<byte_size(payload)::unsigned-big-integer-size(32), payload::binary>>)
+
+    :ok =
+      :socket.send(socket, <<byte_size(payload)::unsigned-big-integer-size(32), payload::binary>>)
+
     {:ok, <<size::unsigned-big-integer-size(32)>>} = recv_exact(socket, 4, <<>>)
     {:ok, response} = recv_exact(socket, size, <<>>)
     :socket.close(socket)
@@ -159,6 +179,7 @@ defmodule Autonomic.Store.EffectSocketHTTPTest do
   end
 
   defp recv_exact(_socket, 0, acc), do: {:ok, acc}
+
   defp recv_exact(socket, remaining, acc) do
     case :socket.recv(socket, remaining, 10_000) do
       {:ok, data} -> recv_exact(socket, remaining - byte_size(data), acc <> data)
@@ -182,8 +203,13 @@ defmodule Autonomic.Store.EffectSocketHTTPTest do
       spawn_link(fn ->
         {:ok, client} = :gen_tcp.accept(listener)
         {:ok, request} = :gen_tcp.recv(client, 0, 5_000)
-        if not String.starts_with?(request, "GET /public/status "), do: exit({:unexpected_request, request})
-        response = "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: #{byte_size(body)}\r\nConnection: close\r\n\r\n#{body}"
+
+        if not String.starts_with?(request, "GET /public/status "),
+          do: exit({:unexpected_request, request})
+
+        response =
+          "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: #{byte_size(body)}\r\nConnection: close\r\n\r\n#{body}"
+
         :ok = :gen_tcp.send(client, response)
         :gen_tcp.close(client)
       end)

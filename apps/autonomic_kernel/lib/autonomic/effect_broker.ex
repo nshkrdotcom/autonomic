@@ -2,22 +2,44 @@ defmodule Autonomic.EffectBroker do
   @moduledoc "Durable MVCC effect broker. This is the only trusted path to authoritative adapters."
   use GenServer
 
-  alias Autonomic.{AuthorityGovernor, Canonical, EffectState, ObservationFrame, Payloads, Policy, ProposedEffect, Runtime, SystemRegulator, VersionVector}
+  alias Autonomic.{
+    AuthorityGovernor,
+    Canonical,
+    EffectState,
+    ObservationFrame,
+    Payloads,
+    Policy,
+    ProposedEffect,
+    Runtime,
+    SystemRegulator,
+    VersionVector
+  }
 
   def start_link(_opts), do: GenServer.start_link(__MODULE__, %{}, name: __MODULE__)
 
   def prepare(attrs, opts \\ []), do: GenServer.call(__MODULE__, {:prepare, attrs, opts}, 30_000)
-  def evaluate(effect_id, opts \\ []), do: GenServer.call(__MODULE__, {:evaluate, effect_id, opts}, 60_000)
-  def commit(effect_id, opts \\ []), do: GenServer.call(__MODULE__, {:commit, effect_id, opts}, 120_000)
-  def abort(effect_id, reason \\ :caller_abort), do: GenServer.call(__MODULE__, {:abort, effect_id, reason}, 30_000)
-  def reconcile(effect_id, opts \\ []), do: GenServer.call(__MODULE__, {:reconcile, effect_id, opts}, 60_000)
+
+  def evaluate(effect_id, opts \\ []),
+    do: GenServer.call(__MODULE__, {:evaluate, effect_id, opts}, 60_000)
+
+  def commit(effect_id, opts \\ []),
+    do: GenServer.call(__MODULE__, {:commit, effect_id, opts}, 120_000)
+
+  def abort(effect_id, reason \\ :caller_abort),
+    do: GenServer.call(__MODULE__, {:abort, effect_id, reason}, 30_000)
+
+  def reconcile(effect_id, opts \\ []),
+    do: GenServer.call(__MODULE__, {:reconcile, effect_id, opts}, 60_000)
+
   def reconcile_pending, do: GenServer.call(__MODULE__, :reconcile_pending, 120_000)
   def stats, do: GenServer.call(__MODULE__, :stats)
 
   @impl true
   def init(_) do
     Process.send_after(self(), :reconcile_after_boot, 2_000)
-    {:ok, %{active: 0, limit: max(Application.get_env(:autonomic_kernel, :effect_concurrency, 8), 1)}}
+
+    {:ok,
+     %{active: 0, limit: max(Application.get_env(:autonomic_kernel, :effect_concurrency, 8), 1)}}
   end
 
   @impl true
@@ -38,12 +60,24 @@ defmodule Autonomic.EffectBroker do
 
   @impl true
   def handle_call(:stats, _from, state), do: {:reply, state, state}
-  def handle_call({:prepare, attrs, opts}, from, state), do: dispatch(from, state, fn -> do_prepare(attrs, opts) end)
-  def handle_call({:evaluate, id, opts}, from, state), do: dispatch(from, state, fn -> do_evaluate(id, opts) end)
-  def handle_call({:commit, id, opts}, from, state), do: dispatch(from, state, fn -> do_commit(id, opts) end)
-  def handle_call({:abort, id, reason}, from, state), do: dispatch(from, state, fn -> Runtime.store().abort_effect(id, reason) end)
-  def handle_call({:reconcile, id, opts}, from, state), do: dispatch(from, state, fn -> do_reconcile(id, opts) end)
-  def handle_call(:reconcile_pending, from, state), do: dispatch(from, state, &do_reconcile_pending/0)
+
+  def handle_call({:prepare, attrs, opts}, from, state),
+    do: dispatch(from, state, fn -> do_prepare(attrs, opts) end)
+
+  def handle_call({:evaluate, id, opts}, from, state),
+    do: dispatch(from, state, fn -> do_evaluate(id, opts) end)
+
+  def handle_call({:commit, id, opts}, from, state),
+    do: dispatch(from, state, fn -> do_commit(id, opts) end)
+
+  def handle_call({:abort, id, reason}, from, state),
+    do: dispatch(from, state, fn -> Runtime.store().abort_effect(id, reason) end)
+
+  def handle_call({:reconcile, id, opts}, from, state),
+    do: dispatch(from, state, fn -> do_reconcile(id, opts) end)
+
+  def handle_call(:reconcile_pending, from, state),
+    do: dispatch(from, state, &do_reconcile_pending/0)
 
   defp dispatch(from, state, fun) do
     case start_work(from, fun, state) do
@@ -97,10 +131,27 @@ defmodule Autonomic.EffectBroker do
          {:ok, {adapter, class}} <- Runtime.adapter(to_string(kind)),
          {:ok, trusted_target} <- Runtime.target(to_string(target_id)),
          true <- Policy.permits?(episode.policy, kind, public_target(attrs, target_id), class),
-         :ok <- AuthorityGovernor.validate(episode_id, lease_id, normalize_kind(kind), public_target(attrs, target_id), class),
+         :ok <-
+           AuthorityGovernor.validate(
+             episode_id,
+             lease_id,
+             normalize_kind(kind),
+             public_target(attrs, target_id),
+             class
+           ),
          :ok <- ensure_admitted(class),
          {:ok, payload_ref, payload_digest} <- payload(episode_id, attrs, opts),
-         effect <- build_effect(attrs, episode, lease_id, kind, class, target_id, payload_ref, payload_digest),
+         effect <-
+           build_effect(
+             attrs,
+             episode,
+             lease_id,
+             kind,
+             class,
+             target_id,
+             payload_ref,
+             payload_digest
+           ),
          :ok <- adapter.validate(effect, Keyword.put(opts, :trusted_target, trusted_target)),
          :ok <- Runtime.store().put_effect(effect),
          {:ok, prepared} <- Runtime.store().prepare_existing_effect(effect.id) do
@@ -127,7 +178,10 @@ defmodule Autonomic.EffectBroker do
          :ok <- adapter.validate(effect, Keyword.put(opts, :trusted_target, trusted_target)),
          {:ok, effect} <- ensure_evaluating(effect),
          required <- Policy.required_decisions(episode.policy, effect.class),
-         :ok <- record_allow(effect, :deterministic, "kernel:deterministic", %{checked_at: Canonical.now()}),
+         :ok <-
+           record_allow(effect, :deterministic, "kernel:deterministic", %{
+             checked_at: Canonical.now()
+           }),
          :ok <- maybe_semantic(effect, episode, required, opts),
          :ok <- maybe_slow_verify(effect, required, opts),
          :ok <- maybe_human(effect, required, opts),
@@ -168,18 +222,33 @@ defmodule Autonomic.EffectBroker do
 
   # Any exception after commit_intent is ambiguous by default: never blind retry.
   defp commit_adapter(adapter, effect, opts) do
-    try do
-      case adapter.commit(effect, opts) do
-        {:ok, receipt} ->
-          Runtime.store().complete_effect(effect.id, :committed, %{receipt: receipt, receipt_ref: Map.get(receipt, :receipt_ref) || Map.get(receipt, "receipt_ref")})
-        {:unknown, reason} -> Runtime.store().complete_effect(effect.id, :commit_unknown, %{failure: %{reason: inspect(reason)}})
-        {:error, reason} -> Runtime.store().complete_effect(effect.id, :commit_unknown, %{failure: %{adapter_error: inspect(reason)}})
-      end
-    rescue
-      error -> Runtime.store().complete_effect(effect.id, :commit_unknown, %{failure: %{exception: Exception.message(error)}})
-    catch
-      kind, reason -> Runtime.store().complete_effect(effect.id, :commit_unknown, %{failure: %{caught: inspect({kind, reason})}})
+    case adapter.commit(effect, opts) do
+      {:ok, receipt} ->
+        Runtime.store().complete_effect(effect.id, :committed, %{
+          receipt: receipt,
+          receipt_ref: Map.get(receipt, :receipt_ref) || Map.get(receipt, "receipt_ref")
+        })
+
+      {:unknown, reason} ->
+        Runtime.store().complete_effect(effect.id, :commit_unknown, %{
+          failure: %{reason: inspect(reason)}
+        })
+
+      {:error, reason} ->
+        Runtime.store().complete_effect(effect.id, :commit_unknown, %{
+          failure: %{adapter_error: inspect(reason)}
+        })
     end
+  rescue
+    error ->
+      Runtime.store().complete_effect(effect.id, :commit_unknown, %{
+        failure: %{exception: Exception.message(error)}
+      })
+  catch
+    kind, reason ->
+      Runtime.store().complete_effect(effect.id, :commit_unknown, %{
+        failure: %{caught: inspect({kind, reason})}
+      })
   end
 
   defp do_reconcile(effect_id, opts) do
@@ -188,9 +257,16 @@ defmodule Autonomic.EffectBroker do
          {:ok, {adapter, _}} <- Runtime.adapter(to_string(effect.kind)),
          {:ok, trusted_target} <- target_for(effect) do
       case adapter.reconcile(effect, Keyword.put(opts, :trusted_target, trusted_target)) do
-        {:committed, receipt} -> Runtime.store().reconcile_effect(effect.id, :committed, %{receipt: receipt})
-        :not_committed -> Runtime.store().reconcile_effect(effect.id, :not_committed, %{})
-        {:unknown, reason} -> Runtime.store().reconcile_effect(effect.id, :unknown, %{failure: %{reason: inspect(reason)}})
+        {:committed, receipt} ->
+          Runtime.store().reconcile_effect(effect.id, :committed, %{receipt: receipt})
+
+        :not_committed ->
+          Runtime.store().reconcile_effect(effect.id, :not_committed, %{})
+
+        {:unknown, reason} ->
+          Runtime.store().reconcile_effect(effect.id, :unknown, %{
+            failure: %{reason: inspect(reason)}
+          })
       end
     else
       false -> {:error, :effect_not_reconcilable}
@@ -207,8 +283,11 @@ defmodule Autonomic.EffectBroker do
 
     if function_exported?(store, :pending_reconciliation, 0) do
       case store.pending_reconciliation() do
-        {:ok, effects} -> {:ok, Enum.map(effects, fn effect -> {effect.id, do_reconcile(effect.id, [])} end)}
-        error -> error
+        {:ok, effects} ->
+          {:ok, Enum.map(effects, fn effect -> {effect.id, do_reconcile(effect.id, [])} end)}
+
+        error ->
+          error
       end
     else
       {:error, :reconciliation_not_supported}
@@ -225,14 +304,26 @@ defmodule Autonomic.EffectBroker do
         sequence: System.unique_integer([:positive, :monotonic]),
         observed_at: Canonical.now(),
         deterministic: [%{type: :effect_evaluation, payload_digest: effect.payload_digest}],
-        effect_context: %{class: effect.class, kind: effect.kind, target: effect.target, revision: effect.revision},
+        effect_context: %{
+          class: effect.class,
+          kind: effect.kind,
+          target: effect.target,
+          revision: effect.revision
+        },
         metadata: %{mode: :effect_evaluation}
       }
 
       case Runtime.sensor().observe(frame, Keyword.put(opts, :mode, :slow)) do
         {:ok, observations} ->
           {decision, evidence} = semantic_decision(observations, episode.policy)
-          record_decision(effect, :semantic, decision, "semantic:#{effect.id}:#{effect.revision}", evidence)
+
+          record_decision(
+            effect,
+            :semantic,
+            decision,
+            "semantic:#{effect.id}:#{effect.revision}",
+            evidence
+          )
 
         {:error, reason} ->
           SystemRegulator.semantic_health(:degraded)
@@ -259,14 +350,34 @@ defmodule Autonomic.EffectBroker do
       end
 
     decision = if not risky and sufficient, do: :allow, else: :deny
-    {decision, %{observations: Enum.map(observations, &semantic_ref/1), sufficient: sufficient, risky: risky}}
+
+    {decision,
+     %{
+       observations: Enum.map(observations, &semantic_ref/1),
+       sufficient: sufficient,
+       risky: risky
+     }}
   end
 
   defp maybe_slow_verify(effect, required, opts) do
     if "slow_verifier" in Enum.map(required, &to_string/1) do
       case Autonomic.Verifier.verify(effect, opts) do
-        {:ok, evidence} -> record_allow(effect, :slow_verifier, "verifier:#{effect.id}:#{effect.revision}", evidence)
-        {:error, reason} -> record_decision(effect, :slow_verifier, :deny, "verifier:#{effect.id}:#{effect.revision}", %{reason: inspect(reason)})
+        {:ok, evidence} ->
+          record_allow(
+            effect,
+            :slow_verifier,
+            "verifier:#{effect.id}:#{effect.revision}",
+            evidence
+          )
+
+        {:error, reason} ->
+          record_decision(
+            effect,
+            :slow_verifier,
+            :deny,
+            "verifier:#{effect.id}:#{effect.revision}",
+            %{reason: inspect(reason)}
+          )
       end
     else
       :ok
@@ -275,15 +386,23 @@ defmodule Autonomic.EffectBroker do
 
   defp maybe_human(effect, required, opts) do
     if "human" in Enum.map(required, &to_string/1) do
-      case Keyword.get(opts, :human_approval) do
-        nil -> {:error, :human_approval_required}
-        approval ->
-          with :ok <- Autonomic.HumanApproval.verify(effect, approval) do
-            record_allow(effect, :human, Map.get(approval, :source_ref, "human:approval"), %{approval: Map.drop(approval, [:signature])})
-          end
-      end
+      record_human_approval(effect, opts)
     else
       :ok
+    end
+  end
+
+  defp record_human_approval(effect, opts) do
+    case Keyword.get(opts, :human_approval) do
+      nil ->
+        {:error, :human_approval_required}
+
+      approval ->
+        with :ok <- Autonomic.HumanApproval.verify(effect, approval) do
+          record_allow(effect, :human, Map.get(approval, :source_ref, "human:approval"), %{
+            approval: Map.drop(approval, [:signature])
+          })
+        end
     end
   end
 
@@ -293,8 +412,14 @@ defmodule Autonomic.EffectBroker do
   defp ensure_allows(required, decisions) do
     required = MapSet.new(Enum.map(required, &to_string/1))
     denied? = Enum.any?(decisions, &(Map.get(&1, :decision) == "deny"))
-    allowed = decisions |> Enum.filter(&(Map.get(&1, :decision) == "allow")) |> MapSet.new(&Map.get(&1, :kind))
+
+    allowed =
+      decisions
+      |> Enum.filter(&(Map.get(&1, :decision) == "allow"))
+      |> MapSet.new(&Map.get(&1, :kind))
+
     missing = MapSet.difference(required, allowed) |> MapSet.to_list()
+
     cond do
       denied? -> {:error, :decision_denied}
       missing != [] -> {:error, {:missing_decisions, missing}}
@@ -302,10 +427,12 @@ defmodule Autonomic.EffectBroker do
     end
   end
 
-  defp record_allow(effect, kind, source_ref, evidence), do: record_decision(effect, kind, :allow, source_ref, evidence)
+  defp record_allow(effect, kind, source_ref, evidence),
+    do: record_decision(effect, kind, :allow, source_ref, evidence)
 
   defp record_decision(effect, kind, decision, source_ref, evidence) do
     digest = Canonical.digest(evidence)
+
     entry = %{
       kind: kind,
       decision: decision,
@@ -321,14 +448,20 @@ defmodule Autonomic.EffectBroker do
     }
 
     case Runtime.store().record_effect_decision(effect.id, entry) do
-      {:ok, _} -> :ok
-      {:error, {:invalid_decision, changeset}} -> {:error, {:decision_persistence_failed, changeset}}
-      {:error, _} = error -> error
+      {:ok, _} ->
+        :ok
+
+      {:error, {:invalid_decision, changeset}} ->
+        {:error, {:decision_persistence_failed, changeset}}
+
+      {:error, _} = error ->
+        error
     end
   end
 
   defp build_effect(attrs, episode, lease_id, kind, class, target_id, payload_ref, payload_digest) do
     revision = 1
+
     vector = %VersionVector{
       episode_id: episode.id,
       epoch: episode.current_epoch,
@@ -351,7 +484,8 @@ defmodule Autonomic.EffectBroker do
       payload_ref: payload_ref,
       payload_digest: payload_digest,
       revision: revision,
-      reversible?: Map.get(attrs, :reversible?, Map.get(attrs, "reversible", EffectState.rank(class) < 4)),
+      reversible?:
+        Map.get(attrs, :reversible?, Map.get(attrs, "reversible", EffectState.rank(class) < 4)),
       state: :proposed,
       version_vector: vector,
       expires_at: Map.get(attrs, :expires_at, Canonical.now() + 600_000),
@@ -362,6 +496,7 @@ defmodule Autonomic.EffectBroker do
 
   defp payload(episode_id, attrs, opts) do
     limit = Keyword.get(opts, :payload_limit, 4_194_304)
+
     cond do
       is_binary(Map.get(attrs, :payload)) ->
         bytes = Map.fetch!(attrs, :payload)
@@ -375,14 +510,27 @@ defmodule Autonomic.EffectBroker do
         ref = Map.fetch!(attrs, :payload_ref)
         with {:ok, bytes} <- Payloads.get(episode_id, ref), do: {:ok, ref, Canonical.hash(bytes)}
 
-      true -> {:error, :payload_required}
+      true ->
+        {:error, :payload_required}
     end
   end
 
   defp public_target(attrs, target_id) do
     supplied = Map.get(attrs, :target, Map.get(attrs, "target", %{}))
     supplied = if is_map(supplied), do: supplied, else: %{}
-    supplied |> Map.drop(["credential", "credentials", "token", "api_key", :credential, :credentials, :token, :api_key]) |> Map.put("id", to_string(target_id))
+
+    supplied
+    |> Map.drop([
+      "credential",
+      "credentials",
+      "token",
+      "api_key",
+      :credential,
+      :credentials,
+      :token,
+      :api_key
+    ])
+    |> Map.put("id", to_string(target_id))
   end
 
   defp target_for(effect) do
@@ -390,9 +538,13 @@ defmodule Autonomic.EffectBroker do
     if is_binary(id), do: Runtime.target(id), else: {:error, :target_id_missing}
   end
 
-  defp ensure_admitted(class), do: if(SystemRegulator.admit?(class), do: :ok, else: {:error, :system_backpressure})
+  defp ensure_admitted(class),
+    do: if(SystemRegulator.admit?(class), do: :ok, else: {:error, :system_backpressure})
+
   defp sensitive_gate(class) do
-    if Policy.class_rank(class) >= 3 and not SystemRegulator.sensitive_commit_allowed?(), do: {:error, :sensitive_commits_paused}, else: :ok
+    if Policy.class_rank(class) >= 3 and not SystemRegulator.sensitive_commit_allowed?(),
+      do: {:error, :sensitive_commits_paused},
+      else: :ok
   end
 
   defp required(map, key) do
@@ -403,6 +555,7 @@ defmodule Autonomic.EffectBroker do
   end
 
   defp normalize_kind(value) when is_atom(value), do: value
+
   defp normalize_kind(value) when is_binary(value) do
     case value do
       "git_commit" -> :git_commit
@@ -416,12 +569,14 @@ defmodule Autonomic.EffectBroker do
 
   defp semantic_positive?(observation, threshold) do
     value = observation.value
+
     probability =
       cond do
         is_boolean(value) -> if(value, do: observation.confidence || 1.0, else: 0.0)
         is_number(value) -> value * 1.0
         true -> observation.confidence || 0.5
       end
+
     probability >= threshold
   end
 
@@ -442,7 +597,6 @@ defmodule Autonomic.EffectBroker do
   end
 end
 
-
 defmodule Autonomic.HumanApproval do
   @moduledoc "Verifier for operator approvals bound to exact effect revision/payload/epoch."
   alias Autonomic.{Canonical, Runtime}
@@ -462,11 +616,21 @@ defmodule Autonomic.HumanApproval do
       "decision" => "allow"
     }
 
-    with true <- Enum.all?(expected, fn {k, v} -> Map.get(document, k) == v or Map.get(document, String.to_existing_atom(k)) == v end),
+    with true <-
+           Enum.all?(expected, fn {k, v} ->
+             Map.get(document, k) == v or Map.get(document, String.to_existing_atom(k)) == v
+           end),
          encoded when is_binary(encoded) <- Map.get(keys, key_id),
          {:ok, public} <- Base.decode64(encoded),
          {:ok, sig} <- Base.decode64(signature || ""),
-         true <- :crypto.verify(:eddsa, :none, "autonomic.human-approval.v1\n" <> Canonical.json(document), sig, [public, :ed25519]) do
+         true <-
+           :crypto.verify(
+             :eddsa,
+             :none,
+             "autonomic.human-approval.v1\n" <> Canonical.json(document),
+             sig,
+             [public, :ed25519]
+           ) do
       :ok
     else
       _ -> {:error, :invalid_human_approval}

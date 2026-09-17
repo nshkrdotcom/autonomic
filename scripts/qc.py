@@ -79,7 +79,7 @@ SECRET_PATTERNS = {
     "openai_key": re.compile(rb"\bsk-[A-Za-z0-9_-]{32,}\b"),
 }
 
-SKIP_DIRS = {"_build", "deps", "target", ".git", "artifacts"}
+SKIP_DIRS = {"_build", "deps", "target", ".git", "artifacts", "doc", "__pycache__", "var", "cover", ".elixir_ls"}
 
 
 def now_iso() -> str:
@@ -107,14 +107,21 @@ def run_gate(gate_id: str, command: list[str], *, env: dict[str, str] | None = N
     merged = os.environ.copy()
     if env:
         merged.update(env)
+    if gate_id == "exdoc_warnings_as_errors":
+        merged["MIX_ENV"] = "dev"
     try:
         with log_path.open("wb") as log:
             cp = subprocess.run(command, cwd=ROOT, env=merged, stdout=log,
                                 stderr=subprocess.STDOUT, timeout=timeout, check=False)
+        log_bytes = log_path.read_bytes()
         status = "passed" if cp.returncode == 0 else "failed"
+        # ExUnit can exit zero with every test excluded; that is never evidence.
+        if Path(command[0]).name == "mix" and "test" in command and not re.search(rb"Result: [1-9][0-9]*(?:/[0-9]+)? passed", log_bytes):
+            status = "failed"
         return {
             "id": gate_id, "status": status, "mandatory": gate_id in MANDATORY,
             "command": command, "exit_code": cp.returncode, "started_at": started,
+            "log_sha256": hashlib.sha256(log_bytes).hexdigest(),
             "finished_at": now_iso(), "log": str(log_path.relative_to(ROOT)),
         }
     except subprocess.TimeoutExpired:
@@ -380,6 +387,8 @@ def main() -> int:
             dedup[gid] = gate
     gates = [dedup[x] for x in order]
 
+    for missing_id in sorted(MANDATORY - {g["id"] for g in gates}):
+        gates.append(pending(missing_id, "mandatory gate missing from execution plan"))
     mandatory_failures = [g for g in gates if g["id"] in MANDATORY and g["status"] != "passed"]
     report = {
         "schema_version": 1,

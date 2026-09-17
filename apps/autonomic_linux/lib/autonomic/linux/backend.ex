@@ -28,17 +28,23 @@ defmodule Autonomic.Linux.Backend do
   def exec(%ExecutionDomain.Domain{} = domain, %ExecutionDomain.Command{} = command) do
     with :ok <- current?(domain),
          :ok <- validate_and_observe(domain, command),
-         {:ok, result} <- Launcher.request("exec", %{
-           "domain_id" => domain.id,
-           "episode_id" => domain.episode_id,
-           "epoch" => domain.epoch,
-           "argv" => command.argv,
-           "cwd" => command.cwd || "/workspace",
-           "env" => command.env,
-           "stdin_b64" => if(is_binary(command.stdin), do: Base.encode64(command.stdin), else: nil),
-           "timeout_ms" => command.timeout_ms,
-           "state_root" => state_root()
-         }, command.timeout_ms + 10_000) do
+         {:ok, result} <-
+           Launcher.request(
+             "exec",
+             %{
+               "domain_id" => domain.id,
+               "episode_id" => domain.episode_id,
+               "epoch" => domain.epoch,
+               "argv" => command.argv,
+               "cwd" => command.cwd || "/workspace",
+               "env" => command.env,
+               "stdin_b64" =>
+                 if(is_binary(command.stdin), do: Base.encode64(command.stdin), else: nil),
+               "timeout_ms" => command.timeout_ms,
+               "state_root" => state_root()
+             },
+             command.timeout_ms + 10_000
+           ) do
       execution = %ExecutionDomain.Execution{
         id: Map.get(result, "execution_id", Canonical.id()),
         domain_id: domain.id,
@@ -63,7 +69,8 @@ defmodule Autonomic.Linux.Backend do
   @impl true
   def signal(domain, signal) do
     with :ok <- current?(domain),
-         {:ok, _} <- Launcher.request("signal", identity(domain) |> Map.put("signal", to_string(signal))) do
+         {:ok, _} <-
+           Launcher.request("signal", identity(domain) |> Map.put("signal", to_string(signal))) do
       :ok
     end
   end
@@ -75,14 +82,23 @@ defmodule Autonomic.Linux.Backend do
   def checkpoint(domain) do
     with :ok <- current?(domain),
          {:ok, result} <- Launcher.request("checkpoint_fs", identity(domain), 120_000) do
-      {:ok, %ExecutionDomain.CheckpointRef{
-        ref: result["checkpoint_ref"],
-        episode_id: domain.episode_id,
-        epoch: domain.epoch,
-        domain_generation: domain.generation,
-        digest: result["digest"],
-        metadata: %{backend: __MODULE__, rootfs: rootfs(), workspace_lower: result["workspace_lower"], effect_socket: result["effect_socket"] || domain.metadata[:effect_socket], resource_limits: result["resource_limits"], state_root: state_root(), environment_digest: result["environment_digest"]}
-      }}
+      {:ok,
+       %ExecutionDomain.CheckpointRef{
+         ref: result["checkpoint_ref"],
+         episode_id: domain.episode_id,
+         epoch: domain.epoch,
+         domain_generation: domain.generation,
+         digest: result["digest"],
+         metadata: %{
+           backend: __MODULE__,
+           rootfs: rootfs(),
+           workspace_lower: result["workspace_lower"],
+           effect_socket: result["effect_socket"] || domain.metadata[:effect_socket],
+           resource_limits: result["resource_limits"],
+           state_root: state_root(),
+           environment_digest: result["environment_digest"]
+         }
+       }}
     end
   end
 
@@ -90,17 +106,29 @@ defmodule Autonomic.Linux.Backend do
   def restore(%ExecutionDomain.CheckpointRef{} = checkpoint) do
     with {:ok, epoch} <- Runtime.store().current_epoch(checkpoint.episode_id),
          true <- epoch > checkpoint.epoch,
-         {:ok, result} <- Launcher.request("restore_domain", %{
-           "episode_id" => checkpoint.episode_id,
-           "epoch" => epoch,
-           "checkpoint_ref" => checkpoint.ref,
-           "checkpoint_digest" => checkpoint.digest,
-           "rootfs" => Map.get(checkpoint.metadata, :rootfs) || rootfs(),
-           "workspace_lower" => Map.get(checkpoint.metadata, :workspace_lower) || Map.get(checkpoint.metadata, "workspace_lower"),
-           "effect_socket" => Map.get(checkpoint.metadata, :effect_socket) || Map.get(checkpoint.metadata, "effect_socket") || Path.join([Runtime.root(), "sockets", checkpoint.episode_id <> ".sock"]),
-           "resource_limits" => Map.get(checkpoint.metadata, :resource_limits) || Map.get(checkpoint.metadata, "resource_limits") || %{},
-           "state_root" => state_root()
-         }, 120_000) do
+         {:ok, result} <-
+           Launcher.request(
+             "restore_domain",
+             %{
+               "episode_id" => checkpoint.episode_id,
+               "epoch" => epoch,
+               "checkpoint_ref" => checkpoint.ref,
+               "checkpoint_digest" => checkpoint.digest,
+               "rootfs" => Map.get(checkpoint.metadata, :rootfs) || rootfs(),
+               "workspace_lower" =>
+                 Map.get(checkpoint.metadata, :workspace_lower) ||
+                   Map.get(checkpoint.metadata, "workspace_lower"),
+               "effect_socket" =>
+                 Map.get(checkpoint.metadata, :effect_socket) ||
+                   Map.get(checkpoint.metadata, "effect_socket") ||
+                   Path.join([Runtime.root(), "sockets", checkpoint.episode_id <> ".sock"]),
+               "resource_limits" =>
+                 Map.get(checkpoint.metadata, :resource_limits) ||
+                   Map.get(checkpoint.metadata, "resource_limits") || %{},
+               "state_root" => state_root()
+             },
+             120_000
+           ) do
       {:ok, domain_from_result(checkpoint.episode_id, epoch, result)}
     else
       false -> {:error, :restore_requires_newer_epoch}
@@ -112,8 +140,12 @@ defmodule Autonomic.Linux.Backend do
   def destroy(domain) do
     case Launcher.request("destroy_domain", identity(domain), 90_000) do
       {:ok, result} ->
-        if result["empty"] == true, do: {:ok, atomize_evidence(result)}, else: {:error, {:destruction_not_proven, result}}
-      error -> error
+        if result["empty"] == true,
+          do: {:ok, atomize_evidence(result)},
+          else: {:error, {:destruction_not_proven, result}}
+
+      error ->
+        error
     end
   end
 
@@ -150,7 +182,7 @@ defmodule Autonomic.Linux.Backend do
 
   defp validate_command(%ExecutionDomain.Command{argv: argv, env: env}) do
     cond do
-      not is_list(argv) or argv == [] or Enum.any?(argv, &(not is_binary(&1) or byte_size(&1) > 16_384)) ->
+      invalid_argv?(argv) ->
         {:error, :invalid_argv}
 
       map_size(env) > 128 ->
@@ -171,6 +203,11 @@ defmodule Autonomic.Linux.Backend do
     end
   end
 
+  defp invalid_argv?(argv),
+    do:
+      not is_list(argv) or argv == [] or
+        Enum.any?(argv, &(not is_binary(&1) or byte_size(&1) > 16_384))
+
   @forbidden_host_path_markers [
     "/root/.env",
     "~/.env",
@@ -190,7 +227,10 @@ defmodule Autonomic.Linux.Backend do
     end)
   end
 
-  defp maybe_observe_execution(domain, %ExecutionDomain.Execution{metadata: %{seccomp_violation: true}} = execution) do
+  defp maybe_observe_execution(
+         domain,
+         %ExecutionDomain.Execution{metadata: %{seccomp_violation: true}} = execution
+       ) do
     publish_hard_fact(domain, %{
       type: :seccomp_violation,
       source: :linux_launcher,
@@ -226,13 +266,34 @@ defmodule Autonomic.Linux.Backend do
       generation: result["generation"],
       backend: __MODULE__,
       os_ref: result["keeper_pid"],
-      metadata: %{cgroup: result["cgroup"], workspace_lower: result["workspace_lower"], git_base_ref: result["git_base_ref"], effect_socket: result["effect_socket"], resource_limits: result["resource_limits"], destruction_proof_required: true}
+      metadata: %{
+        cgroup: result["cgroup"],
+        workspace_lower: result["workspace_lower"],
+        git_base_ref: result["git_base_ref"],
+        effect_socket: result["effect_socket"],
+        resource_limits: result["resource_limits"],
+        destruction_proof_required: true
+      }
     }
   end
 
-  defp identity(domain), do: %{"domain_id" => domain.id, "episode_id" => domain.episode_id, "epoch" => domain.epoch, "state_root" => state_root()}
+  defp identity(domain),
+    do: %{
+      "domain_id" => domain.id,
+      "episode_id" => domain.episode_id,
+      "epoch" => domain.epoch,
+      "state_root" => state_root()
+    }
+
   defp rootfs, do: Application.get_env(:autonomic_linux, :rootfs, "/var/lib/autonomic/rootfs")
   defp state_root, do: Application.get_env(:autonomic_linux, :state_root, "/var/lib/autonomic")
   defp plain(value), do: Jason.decode!(Jason.encode!(value))
-  defp atomize_evidence(result), do: %{empty: result["empty"], killed: result["killed"], cgroup_removed: result["cgroup_removed"], domain_id: result["domain_id"]}
+
+  defp atomize_evidence(result),
+    do: %{
+      empty: result["empty"],
+      killed: result["killed"],
+      cgroup_removed: result["cgroup_removed"],
+      domain_id: result["domain_id"]
+    }
 end

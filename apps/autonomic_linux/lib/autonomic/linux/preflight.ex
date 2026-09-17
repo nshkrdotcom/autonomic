@@ -3,6 +3,7 @@ defmodule Autonomic.Linux.Preflight do
 
   def report do
     cgroup = "/sys/fs/cgroup/cgroup.controllers"
+
     %{
       linux: match?({:unix, :linux}, :os.type()),
       cgroup_v2: File.exists?(cgroup),

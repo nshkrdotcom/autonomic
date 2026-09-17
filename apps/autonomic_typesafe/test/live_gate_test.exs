@@ -9,7 +9,9 @@ defmodule Autonomic.Typesafe.LiveGateTest do
 
   test "production TypeSafe evaluate/4 gate records non-secret provenance" do
     key = System.get_env("TYPESAFE_API_KEY")
-    assert is_binary(key) and String.trim(key) != "", "TYPESAFE_API_KEY is required for the live gate"
+
+    assert is_binary(key) and String.trim(key) != "",
+           "TYPESAFE_API_KEY is required for the live gate"
 
     requested_model = Application.get_env(:autonomic_typesafe, :model, "jev-latest")
     requirements = Application.get_env(:autonomic_typesafe, :required_capabilities, [])
@@ -62,7 +64,8 @@ defmodule Autonomic.Typesafe.LiveGateTest do
       sensor_bank_version: first.sensor_bank_version,
       semantic_contract_id: first.semantic_contract_id,
       runtime_capabilities: TypeSafeSDK.RuntimeCapabilities.report(client),
-      answers: Enum.map(observations, &%{sensor: &1.sensor, value: &1.value, confidence: &1.confidence})
+      answers:
+        Enum.map(observations, &%{sensor: &1.sensor, value: &1.value, confidence: &1.confidence})
     }
 
     path = Path.expand("../../../artifacts/typesafe_live_gate.json", __DIR__)

@@ -1,0 +1,9 @@
+==> autonomic_store
+Running ExUnit with seed: 440512, max_cases: 48
+Excluding tags: [:linux, :reference, :db_outage, :live]
+Including tags: [:postgres]
+
+...........
+Finished in 2.8 seconds (0.00s async, 2.8s sync)
+
+Result: 11 passed, 1 excluded

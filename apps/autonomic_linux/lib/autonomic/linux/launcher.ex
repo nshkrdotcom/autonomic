@@ -16,10 +16,16 @@ defmodule Autonomic.Linux.Launcher do
 
   def start_link(_opts), do: GenServer.start_link(__MODULE__, %{}, name: __MODULE__)
 
-  def request(action, fields \\ %{}, timeout \\ 60_000) when is_binary(action) and is_map(fields) do
+  def request(action, fields \\ %{}, timeout \\ 60_000)
+      when is_binary(action) and is_map(fields) do
     with true <- enabled?(),
          request_id = Canonical.id(),
-         request = Map.merge(fields, %{"protocol" => @protocol, "request_id" => request_id, "action" => action}),
+         request =
+           Map.merge(fields, %{
+             "protocol" => @protocol,
+             "request_id" => request_id,
+             "action" => action
+           }),
          encoded when byte_size(encoded) <= @max_request <- Jason.encode!(request),
          {:ok, port} <- open_port(),
          result <- exchange(port, encoded, request_id, timeout) do
@@ -45,18 +51,14 @@ defmodule Autonomic.Linux.Launcher do
   end
 
   defp exchange(port, encoded, request_id, timeout) do
-    try do
-      if Port.command(port, encoded) do
-        case await(port, request_id, timeout) do
-          {:ok, response} -> normalize_response(response)
-          {:error, _} = error -> error
-        end
-      else
-        {:error, :launcher_port_closed}
-      end
-    after
-      if is_port(port) and Port.info(port) != nil, do: Port.close(port)
+    true = Port.command(port, encoded)
+
+    case await(port, request_id, timeout) do
+      {:ok, response} -> normalize_response(response)
+      {:error, _} = error -> error
     end
+  after
+    if Port.info(port) != nil, do: Port.close(port)
   end
 
   defp open_port do
@@ -78,7 +80,13 @@ defmodule Autonomic.Linux.Launcher do
     port =
       Port.open(
         {:spawn_executable, String.to_charlist(program)},
-        [:binary, {:packet, 4}, :exit_status, :use_stdio, args: Enum.map(args, &String.to_charlist/1)]
+        [
+          :binary,
+          {:packet, 4},
+          :exit_status,
+          :use_stdio,
+          args: Enum.map(args, &String.to_charlist/1)
+        ]
       )
 
     {:ok, port}
@@ -95,17 +103,26 @@ defmodule Autonomic.Linux.Launcher do
           {:error, _} -> {:error, {:invalid_launcher_json, String.slice(data, 0, 1024)}}
         end
 
-      {^port, {:data, _oversize}} -> {:error, :launcher_reply_too_large}
-      {^port, {:exit_status, status}} -> {:error, {:launcher_exited, status}}
+      {^port, {:data, _oversize}} ->
+        {:error, :launcher_reply_too_large}
+
+      {^port, {:exit_status, status}} ->
+        {:error, {:launcher_exited, status}}
     after
       timeout -> {:error, :launcher_timeout}
     end
   end
 
   defp normalize_response(%{"ok" => true, "result" => result}), do: {:ok, result}
-  defp normalize_response(%{"ok" => false, "error" => error}), do: {:error, {:launcher_error, error}}
+
+  defp normalize_response(%{"ok" => false, "error" => error}),
+    do: {:error, {:launcher_error, error}}
+
   defp normalize_response(_), do: {:error, :invalid_launcher_response}
 
-  defp executable, do: Application.get_env(:autonomic_linux, :executable, "/usr/local/libexec/autonomic_launcher")
+  defp executable,
+    do:
+      Application.get_env(:autonomic_linux, :executable, "/usr/local/libexec/autonomic_launcher")
+
   defp enabled?, do: Application.get_env(:autonomic_linux, :enabled, false)
 end
