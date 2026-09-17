@@ -1,0 +1,9 @@
+{
+  "project": "autonomic_kernel",
+  "delivered_at": "2026-09-17",
+  "implementation_baseline_commit": "2cf8c10c0e36fe9a15e37a2b5487059934426dbb",
+  "final_handoff_commit": "88c0fc76d166dc4788f2b6a5b1ebc8c5046bbd6d",
+  "conformance_source_sha256": "7c6b7099b98b1f61e900a37b039561e5adba3eef282ac8c4e0b44b502faa7de8",
+  "git_metadata_included": false,
+  "note": "Package is an exact git archive of the final handoff commit plus DELIVERY.json and the generated host_preflight log referenced by artifacts/conformance_report.json."
+}

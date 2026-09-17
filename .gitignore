@@ -1,0 +1,15 @@
+/_build/
+/deps/
+/doc/
+/cover/
+/.elixir_ls/
+/native/autonomic_launcher/target/
+/var/
+/artifacts/logs/
+*.beam
+*.plt
+*.plt.hash
+.env
+
+__pycache__/
+*.pyc

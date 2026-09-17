@@ -1,0 +1,67 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  beam-and-postgres:
+    runs-on: ubuntu-24.04
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: autonomic
+          POSTGRES_PASSWORD: autonomic
+          POSTGRES_DB: autonomic_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U autonomic -d autonomic_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      MIX_ENV: test
+      AUTONOMIC_TEST_DATABASE_URL: ecto://autonomic:autonomic@127.0.0.1/autonomic_test
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: erlef/setup-beam@v1
+        with:
+          elixir-version: '1.20.4'
+          otp-version: '29.0.6'
+      - uses: actions/cache@v4
+        with:
+          path: |
+            deps
+            _build
+          key: ${{ runner.os }}-mix-${{ hashFiles('**/mix.exs', 'mix.lock') }}
+      - run: mix deps.get
+      - run: mix format --check-formatted
+      - run: mix compile --warnings-as-errors
+      - run: mix ecto.migrate -r Autonomic.Store.Repo
+      - run: mix test
+      - run: mix test apps/autonomic_store/test/integration --include postgres --exclude linux --exclude reference --exclude db_outage
+      - run: mix credo --strict
+      - run: mix dialyzer
+      - run: mix docs --warnings-as-errors
+
+  rust:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.90.0
+          components: rustfmt, clippy
+      - run: cargo fmt --manifest-path native/autonomic_launcher/Cargo.toml -- --check
+      - run: cargo clippy --manifest-path native/autonomic_launcher/Cargo.toml --all-targets -- -D warnings
+      - run: cargo test --manifest-path native/autonomic_launcher/Cargo.toml

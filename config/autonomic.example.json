@@ -1,0 +1,31 @@
+{
+  "targets": {
+    "authoritative_repo": {
+      "repo": "/srv/autonomic/repos/example.git",
+      "ref": "refs/heads/autonomic",
+      "verify_argv": ["mix", "test"],
+      "verification_env": {}
+    },
+    "docs_read": {
+      "base_url": "https://docs.example.invalid",
+      "host": "docs.example.invalid",
+      "path_prefix": "/",
+      "methods": ["GET", "HEAD"],
+      "max_response_bytes": 1048576,
+      "rate_limit": 30,
+      "rate_window_ms": 60000
+    },
+    "release_artifacts": {
+      "directory": "/srv/autonomic/artifacts"
+    }
+  },
+  "policy_keys": {},
+  "decision_keys": {},
+  "signer": {
+    "key_id": "operator-key-id",
+    "private_key_file": "/etc/autonomic/operator-ed25519.base64"
+  },
+  "domain_spec": {},
+  "allowed_models": ["jev-latest"],
+  "required_capabilities": []
+}

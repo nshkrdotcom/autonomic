@@ -1,0 +1,320 @@
+{
+  "schema_version": 1,
+  "project": "autonomic_kernel",
+  "generated_at": "2026-09-17T20:49:49.208884+00:00",
+  "mode": "handoff",
+  "status": "handoff_pending_or_failed",
+  "release_ready": false,
+  "source_sha256": "7c6b7099b98b1f61e900a37b039561e5adba3eef282ac8c4e0b44b502faa7de8",
+  "environment": {
+    "os": "Linux-6.18.44-x86_64-with-glibc2.41",
+    "kernel": "6.18.44",
+    "architecture": "x86_64",
+    "python": "3.13.5",
+    "git": "git version 2.47.3",
+    "elixir": null,
+    "mix": null,
+    "erlang_otp": null,
+    "rustc": null,
+    "cargo": null,
+    "psql": null
+  },
+  "availability": {
+    "elixir_toolchain": false,
+    "rust_toolchain": false,
+    "postgresql_tooling": false,
+    "postgresql_test_url_configured": false,
+    "linux_gate_enabled": false,
+    "typesafe_credentials_configured": false
+  },
+  "gates": [
+    {
+      "id": "source_contract_inventory",
+      "status": "passed",
+      "mandatory": true,
+      "missing_required_files": [],
+      "parse_errors": [],
+      "trailing_whitespace": []
+    },
+    {
+      "id": "secret_scan",
+      "status": "passed",
+      "mandatory": true,
+      "findings": []
+    },
+    {
+      "id": "mix_deps_get",
+      "status": "not_run",
+      "mandatory": true,
+      "reason": "Mix/Elixir toolchain unavailable",
+      "command": [
+        "mix",
+        "deps.get"
+      ]
+    },
+    {
+      "id": "format",
+      "status": "not_run",
+      "mandatory": true,
+      "reason": "Mix/Elixir toolchain unavailable",
+      "command": [
+        "mix",
+        "format",
+        "--check-formatted"
+      ]
+    },
+    {
+      "id": "compile_warnings_as_errors",
+      "status": "not_run",
+      "mandatory": true,
+      "reason": "Mix/Elixir toolchain unavailable",
+      "command": [
+        "mix",
+        "compile",
+        "--warnings-as-errors"
+      ]
+    },
+    {
+      "id": "exunit_full",
+      "status": "not_run",
+      "mandatory": true,
+      "reason": "Mix/Elixir toolchain unavailable",
+      "command": [
+        "mix",
+        "test"
+      ]
+    },
+    {
+      "id": "credo_strict",
+      "status": "not_run",
+      "mandatory": true,
+      "reason": "Mix/Elixir toolchain unavailable",
+      "command": [
+        "mix",
+        "credo",
+        "--strict"
+      ]
+    },
+    {
+      "id": "dialyzer",
+      "status": "not_run",
+      "mandatory": true,
+      "reason": "Mix/Elixir toolchain unavailable",
+      "command": [
+        "mix",
+        "dialyzer"
+      ]
+    },
+    {
+      "id": "exdoc_warnings_as_errors",
+      "status": "not_run",
+      "mandatory": true,
+      "reason": "Mix/Elixir toolchain unavailable",
+      "command": [
+        "mix",
+        "docs",
+        "--warnings-as-errors"
+      ]
+    },
+    {
+      "id": "rust_launcher_fmt",
+      "status": "not_run",
+      "mandatory": true,
+      "reason": "Rust toolchain unavailable",
+      "command": [
+        "cargo",
+        "fmt",
+        "--manifest-path",
+        "native/autonomic_launcher/Cargo.toml",
+        "--",
+        "--check"
+      ]
+    },
+    {
+      "id": "rust_launcher_clippy",
+      "status": "not_run",
+      "mandatory": true,
+      "reason": "Rust toolchain unavailable",
+      "command": [
+        "cargo",
+        "clippy",
+        "--manifest-path",
+        "native/autonomic_launcher/Cargo.toml",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ]
+    },
+    {
+      "id": "rust_launcher_tests",
+      "status": "not_run",
+      "mandatory": true,
+      "reason": "Rust toolchain unavailable",
+      "command": [
+        "cargo",
+        "test",
+        "--manifest-path",
+        "native/autonomic_launcher/Cargo.toml"
+      ]
+    },
+    {
+      "id": "postgresql_integration",
+      "status": "not_run",
+      "mandatory": true,
+      "reason": "requires Mix, psql and AUTONOMIC_TEST_DATABASE_URL"
+    },
+    {
+      "id": "postgresql_epoch_commit_race",
+      "status": "not_run",
+      "mandatory": true,
+      "reason": "requires Mix, psql and AUTONOMIC_TEST_DATABASE_URL"
+    },
+    {
+      "id": "af_unix_effect_broker",
+      "status": "not_run",
+      "mandatory": true,
+      "reason": "requires Mix, psql and AUTONOMIC_TEST_DATABASE_URL"
+    },
+    {
+      "id": "git_authoritative_commit_reconciliation",
+      "status": "not_run",
+      "mandatory": true,
+      "reason": "requires Mix, psql and AUTONOMIC_TEST_DATABASE_URL"
+    },
+    {
+      "id": "stale_epoch_race",
+      "status": "not_run",
+      "mandatory": true,
+      "reason": "requires Mix, psql and AUTONOMIC_TEST_DATABASE_URL"
+    },
+    {
+      "id": "broker_crash_after_external_mutation_reconciliation",
+      "status": "not_run",
+      "mandatory": true,
+      "reason": "requires Mix, psql and AUTONOMIC_TEST_DATABASE_URL"
+    },
+    {
+      "id": "class4_human_horizon",
+      "status": "not_run",
+      "mandatory": true,
+      "reason": "requires Mix, psql and AUTONOMIC_TEST_DATABASE_URL"
+    },
+    {
+      "id": "db_outage_blocks_authority",
+      "status": "not_run",
+      "mandatory": true,
+      "reason": "requires Mix and PostgreSQL server binaries (pg_config/initdb/pg_ctl/createdb) on a host permitted to start an ephemeral cluster",
+      "command": [
+        "bash",
+        "scripts/run_db_outage_gate.sh"
+      ]
+    },
+    {
+      "id": "linux_namespaces_cgroup_seccomp_overlay",
+      "status": "not_run",
+      "mandatory": true,
+      "reason": "requires Mix, Rust launcher build and AUTONOMIC_LINUX=1 on a privileged cgroup-v2 host"
+    },
+    {
+      "id": "old_process_fork_cleanup",
+      "status": "not_run",
+      "mandatory": true,
+      "reason": "requires Mix, Rust launcher build and AUTONOMIC_LINUX=1 on a privileged cgroup-v2 host"
+    },
+    {
+      "id": "overlay_rollback",
+      "status": "not_run",
+      "mandatory": true,
+      "reason": "requires Mix, Rust launcher build and AUTONOMIC_LINUX=1 on a privileged cgroup-v2 host"
+    },
+    {
+      "id": "semantic_outage_degradation",
+      "status": "not_run",
+      "mandatory": true,
+      "evidence_gate": "exunit_full",
+      "reason": "covered by TypeSafeSDK.Test outage/model/unknown/capability tests"
+    },
+    {
+      "id": "backpressure_load",
+      "status": "not_run",
+      "mandatory": true,
+      "evidence_gate": "postgresql_integration",
+      "reason": "covered by real PostgreSQL broker saturation with concurrent trusted HTTP commits"
+    },
+    {
+      "id": "typesafe_live_evaluate_v4",
+      "status": "not_run",
+      "mandatory": true,
+      "reason": "requires Mix, network and intentionally configured TYPESAFE_API_KEY"
+    },
+    {
+      "id": "coding_agent_reference",
+      "status": "not_run",
+      "mandatory": false,
+      "reason": "requires real PostgreSQL plus privileged Linux launcher gate"
+    },
+    {
+      "id": "coding_agent_normal_repair",
+      "status": "not_run",
+      "mandatory": true,
+      "reason": "requires real PostgreSQL plus privileged Linux launcher gate"
+    },
+    {
+      "id": "coding_agent_violation_repair_epoch2",
+      "status": "not_run",
+      "mandatory": true,
+      "reason": "requires real PostgreSQL plus privileged Linux launcher gate"
+    },
+    {
+      "id": "sensor_poisoning",
+      "status": "not_run",
+      "mandatory": true,
+      "reason": "requires real PostgreSQL plus privileged Linux launcher gate"
+    },
+    {
+      "id": "host_preflight",
+      "status": "failed",
+      "mandatory": true,
+      "command": [
+        "bash",
+        "scripts/preflight.sh"
+      ],
+      "exit_code": 1,
+      "started_at": "2026-09-17T20:49:49.192411+00:00",
+      "finished_at": "2026-09-17T20:49:49.208742+00:00",
+      "log": "artifacts/logs/host_preflight.log"
+    }
+  ],
+  "mandatory_not_green": [
+    "mix_deps_get",
+    "format",
+    "compile_warnings_as_errors",
+    "exunit_full",
+    "credo_strict",
+    "dialyzer",
+    "exdoc_warnings_as_errors",
+    "rust_launcher_fmt",
+    "rust_launcher_clippy",
+    "rust_launcher_tests",
+    "postgresql_integration",
+    "postgresql_epoch_commit_race",
+    "af_unix_effect_broker",
+    "git_authoritative_commit_reconciliation",
+    "stale_epoch_race",
+    "broker_crash_after_external_mutation_reconciliation",
+    "class4_human_horizon",
+    "db_outage_blocks_authority",
+    "linux_namespaces_cgroup_seccomp_overlay",
+    "old_process_fork_cleanup",
+    "overlay_rollback",
+    "semantic_outage_degradation",
+    "backpressure_load",
+    "typesafe_live_evaluate_v4",
+    "coding_agent_normal_repair",
+    "coding_agent_violation_repair_epoch2",
+    "sensor_poisoning",
+    "host_preflight"
+  ],
+  "determination": "One or more mandatory gates failed or could not execute. This repository is an implementation handoff, not a security-qualified release, until those gates are green on the target host."
+}
