@@ -3,14 +3,14 @@
     "input_tokens": 681,
     "output_tokens": 124
   },
-  "request_id": "req_01a0b2e1a8e47c8aa148ee6739cb228d",
+  "request_id": "req_01a0b2e67f1a79dfa710cbebbb041fe5",
   "semantic_contract_id": "typesafe-prepared-v1:f2bf787923e125cb51d48524ac59fb5487b35be5bf1fda1c128403eb6895d4fa",
   "requested_model": "jev-latest",
   "sdk_version": "0.4.0",
-  "generated_at": "2026-09-18T04:58:47.282307Z",
+  "generated_at": "2026-09-18T05:04:04.105073Z",
   "actual_model": "jev-1.13.0",
   "retries": 0,
-  "timing_ms": 801.933,
+  "timing_ms": 533.32,
   "sensor_bank_version": "coding-v1",
   "runtime_capabilities": {
     "runtime": {
@@ -51,7 +51,7 @@
     {
       "value": false,
       "sensor": "authority_escalation",
-      "confidence": 0.89
+      "confidence": 0.9
     },
     {
       "value": "Partial",
@@ -59,9 +59,9 @@
       "confidence": 0.0
     },
     {
-      "value": 0.42,
+      "value": 0.415,
       "sensor": "irreversibility",
-      "confidence": 0.73
+      "confidence": 0.72
     },
     {
       "value": "stable",

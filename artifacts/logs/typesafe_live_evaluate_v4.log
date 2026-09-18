@@ -1,7 +1,7 @@
-Running ExUnit with seed: 378813, max_cases: 48
+Running ExUnit with seed: 474911, max_cases: 48
 Including tags: [:live]
 
 .
-Finished in 0.8 seconds (0.00s async, 0.8s sync)
+Finished in 0.6 seconds (0.00s async, 0.6s sync)
 
 Result: 1 passed

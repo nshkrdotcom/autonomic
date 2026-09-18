@@ -186,7 +186,7 @@ and epoch fencing backend for the Autonomic Kernel architecture.
     HexDocs: https://hexdocs.pm/autonomic_postgres
     License: https://github.com/nshkrdotcom/autonomic/blob/main/packages/autonomic_postgres/LICENSE
   Elixir: ~> 1.20
-Package checksum: dc4c9fb7968123c9044961ae2f5cbdd88c4b6fdc0f719e851406b3cebf886bc5
+Package checksum: 9e7c5a20c7b6f02c6a052572cbb0a88b69d637be05815690fbd5e6f19c24e998
 Saved to autonomic_postgres-0.1.0.tar
   [OK] Built: autonomic_postgres-0.1.0.tar (26112 bytes)
 
@@ -234,7 +234,7 @@ providing evidence redaction, drift monitoring, and anomaly detection.
     HexDocs: https://hexdocs.pm/autonomic_typesafe
     License: https://github.com/nshkrdotcom/autonomic/blob/main/packages/autonomic_typesafe/LICENSE
   Elixir: ~> 1.20
-Package checksum: b1b593454eaf0b4b10f5f94cebc86121a0ab438937f29874991991af1e6fd809
+Package checksum: 464875b5b112e6e8de2bc1e69e8a9a7015886899b73f5ca75d3db16342547357
 Saved to autonomic_typesafe-0.1.0.tar
   [OK] Built: autonomic_typesafe-0.1.0.tar (25600 bytes)
 

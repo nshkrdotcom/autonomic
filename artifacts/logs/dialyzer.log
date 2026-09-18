@@ -20,7 +20,7 @@ Starting Dialyzer
   ...
 ]
 Total errors: 0, Skipped: 0, Unnecessary Skips: 0
-done in 0m2.58s
+done in 0m2.5s
 done (passed successfully)
 
 === [autonomic_linux] in packages/autonomic_linux ===
@@ -42,7 +42,7 @@ Starting Dialyzer
   warnings: [...]
 ]
 Total errors: 0, Skipped: 0, Unnecessary Skips: 0
-done in 0m2.33s
+done in 0m2.26s
 done (passed successfully)
 
 === [autonomic_postgres] in packages/autonomic_postgres ===
@@ -66,7 +66,7 @@ Starting Dialyzer
   ...
 ]
 Total errors: 0, Skipped: 0, Unnecessary Skips: 0
-done in 0m2.46s
+done in 0m2.55s
 done (passed successfully)
 
 === [autonomic_typesafe] in packages/autonomic_typesafe ===
@@ -89,5 +89,5 @@ Starting Dialyzer
   ...
 ]
 Total errors: 0, Skipped: 0, Unnecessary Skips: 0
-done in 0m2.6s
+done in 0m2.82s
 done (passed successfully)

@@ -7,45 +7,9 @@ $ /home/home/.asdf/shims/mix format --check-formatted
 
 === [autonomic_postgres] in packages/autonomic_postgres ===
 $ /home/home/.asdf/shims/mix format --check-formatted
-** (Mix) mix format failed due to --check-formatted.
-The following files are not formatted:
-
-[1m[31m/home/home/p/g/n/autonomic/packages/autonomic_postgres/mix.exs
-[0m
-         |
-103 103  |        "guides/02-schema-model.md": [title: "Schema Model"],
-104 104  |        "guides/03-epoch-fencing-and-recovery.md": [title: "Epoch Fencing & Recovery"],
-105     -|        "guides/04-semantic-evidence-and-trajectories.md": [title: "Semantic Evidence & Trajectories"]
-    105 +|        "guides/04-semantic-evidence-and-trajectories.md": [
-    106 +|          title: "Semantic Evidence & Trajectories"
-    107 +|        ]
-106 108  |      ],
-107 109  |      groups_for_extras: [
-         |
-
-
-
 
 === [autonomic_typesafe] in packages/autonomic_typesafe ===
 $ /home/home/.asdf/shims/mix format --check-formatted
-** (Mix) mix format failed due to --check-formatted.
-The following files are not formatted:
-
-[1m[31m/home/home/p/g/n/autonomic/packages/autonomic_typesafe/mix.exs
-[0m
-         |
-107 107  |        "guides/01-semantic-sensors.md": [title: "Semantic Sensors"],
-108 108  |        "guides/02-typesafe-sdk-integration.md": [title: "TypeSafeSDK Integration"],
-109     -|        "guides/03-evidence-budgeting-and-drift.md": [title: "Evidence, Privacy & Failure Semantics"],
-    109 +|        "guides/03-evidence-budgeting-and-drift.md": [
-    110 +|          title: "Evidence, Privacy & Failure Semantics"
-    111 +|        ],
-110 112  |        "guides/04-end-to-end-control-loop.md": [title: "End-to-End Semantic Control Loop"]
-111 113  |      ],
-         |
-
-
-
 
 === [autonomic_acceptance] in integration/autonomic_acceptance ===
 $ /home/home/.asdf/shims/mix format --check-formatted
