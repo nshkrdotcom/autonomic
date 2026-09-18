@@ -6,7 +6,13 @@ defmodule Autonomic.Dev.ExecutionDomainCase do
 
   def verify_skeleton!(backend, spec) do
     result = backend.create(spec)
-    Support.assert!(match?({:error, :backend_not_configured}, result) or match?({:ok, %ExecutionDomain.Domain{}}, result), "backend must fail explicitly or return a typed Domain")
+
+    Support.assert!(
+      match?({:error, :backend_not_configured}, result) or
+        match?({:ok, %ExecutionDomain.Domain{}}, result),
+      "backend must fail explicitly or return a typed Domain"
+    )
+
     :ok
   end
 end

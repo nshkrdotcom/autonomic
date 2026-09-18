@@ -2,12 +2,20 @@ defmodule AutonomicExample19.MixProject do
   use Mix.Project
 
   def project do
-    [app: :autonomic_example_19, version: "0.1.0", elixir: "~> 1.20", deps: deps()]
+    [
+      app: :autonomic_example_19,
+      version: "0.1.0",
+      elixir: "~> 1.20",
+      deps: deps(),
+      aliases: aliases()
+    ]
   end
 
   def application do
     [extra_applications: [:logger, :crypto, :autonomic, :autonomic_examples_dev]]
   end
+
+  defp aliases, do: [run: ["run run.exs"]]
 
   defp deps do
     [

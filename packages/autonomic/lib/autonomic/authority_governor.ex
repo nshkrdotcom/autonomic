@@ -110,11 +110,17 @@ defmodule Autonomic.AuthorityGovernor do
   end
 
   def handle_call({:advance_epoch, reason}, _from, state) do
-    case Runtime.store().advance_epoch(state.episode_id, %{reason: reason}) do
+    case Runtime.store().advance_epoch(state.episode_id, %{reason: audit_reason(reason)}) do
       {:ok, new_epoch} -> {:reply, {:ok, new_epoch}, %{state | epoch: new_epoch}}
       error -> {:reply, error, state}
     end
   end
+
+  defp audit_reason(reason) when is_binary(reason), do: reason
+  defp audit_reason(reason) when is_atom(reason), do: Atom.to_string(reason)
+
+  defp audit_reason(reason),
+    do: inspect(reason, limit: 20, printable_limit: 1_024)
 
   defp expansion_source_allowed(source)
        when source in [:signed_policy, :slow_verifier, :human, :parent_capability], do: :ok

@@ -2,15 +2,33 @@ alias Autonomic.EffectBroker
 alias Autonomic.Dev.Support
 
 Support.reset!()
-Support.install_adapter!("http_read", :class_2_external_observable_or_compensatable, %{"id" => "demo", "mode" => "unknown_after_write", "object_key" => "artifact-a"})
-{spec, runtime} = Support.start_episode!(max_class: :class_2_external_observable_or_compensatable, kinds: ["http_read"])
 
-ambiguous = Support.prepare!(spec, runtime, :http_read, "mutation happened") |> Support.evaluate!()
+Support.install_adapter!("http_read", :class_2_external_observable_or_compensatable, %{
+  "id" => "demo",
+  "mode" => "unknown_after_write",
+  "object_key" => "artifact-a"
+})
+
+{spec, runtime} =
+  Support.start_episode!(
+    max_class: :class_2_external_observable_or_compensatable,
+    kinds: ["http_read"]
+  )
+
+ambiguous =
+  Support.prepare!(spec, runtime, :http_read, "mutation happened") |> Support.evaluate!()
+
 {:ok, unknown} = EffectBroker.commit(ambiguous.id)
 retry = EffectBroker.commit(ambiguous.id)
 {:ok, reconciled} = EffectBroker.reconcile(ambiguous.id)
 
-Support.install_adapter!("http_read", :class_2_external_observable_or_compensatable, %{"id" => "demo", "mode" => "unknown_without_evidence", "object_key" => "artifact-b", "reconcile_unknown" => true})
+Support.install_adapter!("http_read", :class_2_external_observable_or_compensatable, %{
+  "id" => "demo",
+  "mode" => "unknown_without_evidence",
+  "object_key" => "artifact-b",
+  "reconcile_unknown" => true
+})
+
 indeterminate = Support.prepare!(spec, runtime, :http_read, "no evidence") |> Support.evaluate!()
 {:ok, still_unknown} = EffectBroker.commit(indeterminate.id)
 {:ok, still_unknown} = EffectBroker.reconcile(indeterminate.id)
