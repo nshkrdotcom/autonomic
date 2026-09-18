@@ -1,28 +1,49 @@
-# Security and threat model
+# Security and Threat Model
 
-`docs/spec/07_THREAT_MODEL_AND_SECURITY.md` is normative. This implementation assumes the worker, repository contents, stdout/stderr, tool output and semantic evidence may all be hostile.
+`docs/spec/07_THREAT_MODEL_AND_SECURITY.md` is normative. The implementation assumes the worker, repository contents, tool output, stdout/stderr, and semantic evidence may all be hostile or wrong.
 
-## Boundaries
+## Security boundaries
 
-- **Kernel/DB boundary:** PostgreSQL is the authority source for epoch, policy version, leases, effect state, decisions, checkpoints and recovery lineage. DB loss blocks authoritative effect commits.
-- **OS boundary:** Linux namespaces, cgroup v2, chroot/read-only rootfs, overlayfs, `PR_SET_NO_NEW_PRIVS`, seccomp and a network namespace constrain the worker. Direct AF_INET/AF_INET6 `socket()` is trapped with `SIGSYS` so it becomes deterministic evidence.
-- **Effect boundary:** only trusted adapters receive trusted target configuration and credentials. The worker supplies a bounded target-relative request and payload bytes, never a host target path or credential.
-- **Semantic boundary:** `Autonomic.Typesafe.Evidence` redacts secret-shaped fields/text and enforces a byte budget before `TypeSafeSDK.evaluate/4`. Unknown required answer tags, configured concrete-model drift, unavailable transport guarantees and semantic outages fail closed as semantic degradation.
+### Durable authority boundary
+
+PostgreSQL is the authority source for epoch, policy version, leases, effect state, decisions, checkpoints, and recovery lineage. Database loss blocks authoritative progress; TypeSafe availability cannot substitute for a provable current epoch.
+
+### Linux execution boundary
+
+The current `autonomic_linux` backend uses user/mount/PID/network/IPC/UTS namespaces, cgroup v2, chroot/read-only rootfs, OverlayFS, `PR_SET_NO_NEW_PRIVS`, and seccomp. Direct INET socket creation is trapped/denied by the launcher policy and selected violations become deterministic evidence.
+
+This is **same-host shared-kernel isolation**. It is not a VM/microVM boundary, remote worker fleet, or physical separation. A successful host-kernel escape can cross the intended trust boundary; same-machine hardware side channels are outside the guarantees of this backend.
+
+### Effect boundary
+
+Only trusted adapters receive trusted target configuration and credentials. The worker supplies bounded target-relative requests/payloads and cannot widen its own destination/credential scope.
+
+### TypeSafe semantic boundary
+
+The semantic model is not the security root of trust. Before TypeSafeSDK receives state, `Autonomic.Typesafe.Evidence` constructs a bounded observable view and recursively redacts secret-shaped material.
+
+TypeSafeSDK enforces exact final request size, response contracts, model allow-set policy, and answer decoding. Autonomic verifies Prepared-fingerprint identity and required answer-family compatibility. Errors degrade the semantic channel; they never produce a synthetic safe result.
+
+The TypeSafe API key stays on the trusted control-plane side and is not a worker/sandbox credential.
+
+## Defense against semantic manipulation
+
+A repository or worker can attempt to influence the semantic model. Autonomic therefore applies a dominance rule rather than weighted voting:
+
+```text
+deterministic denial > semantic approval
+```
+
+A high-confidence TypeSafe answer cannot override a forbidden path, stale epoch, invalid lease, disallowed target, seccomp violation, or signed-policy restriction.
+
+Semantic evidence can still make the system more conservative: Homeostat can yield/narrow/preempt, and EffectBroker can deny a proposal whose deterministic syntax was otherwise valid.
 
 ## Native launcher
 
-The launcher is intentionally a small external privileged process. Requests are packet-framed JSON with protocol versioning, request/reply limits, action-specific allowed fields and structural argv/env transfer. It does not execute worker-supplied shell command strings. Each lifecycle request uses a one-shot Port process so an executing worker cannot serialize or block a concurrent destroy/freeze request. Domain metadata is persisted and validated on rehydration.
-
-The reference seccomp filter denies namespace/mount/ptrace/key/BPF/perf escape-oriented syscalls and traps AF_INET/AF_INET6 sockets. It is not a substitute for keeping the mount surface minimal. The rootfs must not contain host secrets.
-
-## HTTP mediation
-
-The HTTP adapter owns DNS/TLS, redirects (`autoredirect: false`), method allowlists, host/path checks, body/response limits, broker-selected credentials, idempotency headers and rate limits. Response bytes are placed in the trusted content-addressed payload store and exposed to the worker only through bounded `fetch_response` chunks.
-
-## Git mediation
-
-The worker never receives the authoritative repository writable. It proposes an exact patch against an exact base OID. Slow verification replays that exact patch in a separate clean disposable domain. The trusted Git adapter materializes the patch in a trusted worktree and uses compare-and-swap ref update. Reconciliation searches for the effect identity marker and detects unrelated ref movement as ambiguous rather than claiming success.
+The privileged launcher is an external Rust process rather than an in-process NIF. Requests are bounded structured messages and worker commands are transferred as argv/env/stdin fields. Host provisioning and source review are not equivalent to security qualification on the intended kernel.
 
 ## Operational rule
 
-A source audit is not a sandbox qualification. Deploy only after all mandatory gates in `docs/spec/11_ACCEPTANCE_GATES.md` are green on the intended kernel/cgroup/filesystem host and the live TypeSafe gate has run with non-secret provenance.
+Do not describe `autonomic_linux` as a hardened hostile-agent VM sandbox. Describe it as the current Linux containment backend and qualify it on the intended host. If the threat model requires a stronger kernel/hardware boundary, implement/use a stronger `Autonomic.ExecutionDomain` backend and keep trusted TypeSafe/DB/control-plane credentials off the execution host as appropriate.
+
+Run every mandatory acceptance gate and the live TypeSafe gate before claiming the reference composition is qualified for a deployment environment.

@@ -106,14 +106,16 @@ defmodule Autonomic.Typesafe.MixProject do
         LICENSE: [title: "License"],
         "guides/01-semantic-sensors.md": [title: "Semantic Sensors"],
         "guides/02-typesafe-sdk-integration.md": [title: "TypeSafeSDK Integration"],
-        "guides/03-evidence-budgeting-and-drift.md": [title: "Evidence Budgeting & Drift"]
+        "guides/03-evidence-budgeting-and-drift.md": [title: "Evidence, Privacy & Failure Semantics"],
+        "guides/04-end-to-end-control-loop.md": [title: "End-to-End Semantic Control Loop"]
       ],
       groups_for_extras: [
         Overview: ["README.md", "CHANGELOG.md", "LICENSE"],
         Guides: [
           "guides/01-semantic-sensors.md",
           "guides/02-typesafe-sdk-integration.md",
-          "guides/03-evidence-budgeting-and-drift.md"
+          "guides/03-evidence-budgeting-and-drift.md",
+          "guides/04-end-to-end-control-loop.md"
         ]
       ],
       groups_for_modules: [

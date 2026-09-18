@@ -66,7 +66,7 @@ def deps do
 end
 ```
 
-`autonomic_typesafe` is opt-in from the application's point of view, but its Mix dependency is **autonomic_typesafe → autonomic**. Installing this package does not make `autonomic` depend on it; an application chooses this adapter by adding the package and configuring the corresponding core behaviour.
+`autonomic_typesafe` remains a separate package so the core contract stays reusable, but the repository's full reference composition installs it and configures `Autonomic.Typesafe.Sensor`. Its Mix dependency is **autonomic_typesafe → autonomic**; the core never depends back on the adapter.
 
 ## Configuration
 
@@ -103,6 +103,32 @@ supervised bank; production has no client hot-swap API.
 - `Autonomic.Typesafe.Bank` — bounded OTP execution and response normalization.
 - `Autonomic.Typesafe.Evidence` — observable-state sanitization and redaction.
 - `Autonomic.Typesafe.Application` — dedicated semantic task supervision plus optional bank supervision.
+
+## What TypeSafe actually does in the reference system
+
+The production bank is a prepared five-query contract, not a single `safe?` prompt:
+
+| Sensor | TypeSafe family | Preserved structure |
+| --- | --- | --- |
+| `scope_drift` | Noul | boolean, confidence, true/false probabilities |
+| `authority_escalation` | Noul | boolean, confidence, true/false probabilities |
+| `evidence_sufficiency` | Score | expected/modal/ranked levels, normalized score, probabilities |
+| `irreversibility` | Score | normalized value, expected/modal/ranked levels, probabilities |
+| `trajectory_regime` | Choice | selected regime, confidence, full probabilities, ranking, margin |
+
+One successful evaluation produces five `Autonomic.SemanticObservation` values with shared model/request/fingerprint/usage/timing provenance. Core then uses them in two real control paths:
+
+1. `Autonomic.Homeostat` smooths semantic risk over time and can continue, yield, narrow authority, or preempt.
+2. `Autonomic.EffectBroker` evaluates required semantic evidence for the exact proposed effect revision and persists a semantic allow/deny decision.
+
+The TypeSafe-facing layer deliberately preserves more structure than current core policy consumes. In particular, EffectBroker currently reduces selected observations to explicit thresholds rather than performing probabilistic fusion across every returned distribution.
+
+Read the guides in order:
+
+1. [Semantic Sensors](guides/01-semantic-sensors.md)
+2. [TypeSafeSDK Integration](guides/02-typesafe-sdk-integration.md)
+3. [Evidence Budgeting, Privacy & Failure Semantics](guides/03-evidence-budgeting-and-drift.md)
+4. [End-to-End TypeSafe Semantic Control Loop](guides/04-end-to-end-control-loop.md)
 
 ## Testing
 

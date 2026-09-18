@@ -84,6 +84,26 @@ config :autonomic,
   max_repairs: 3
 ```
 
+## TypeSafe-centered reference runtime
+
+The core package is adapter-neutral, but the repository's reference semantic path is TypeSafe-centered. With `sensor: Autonomic.Typesafe.Sensor`, observable worker/effect state is evaluated by a fixed prepared TypeSafe bank and returned as typed `Autonomic.SemanticObservation` values.
+
+Those observations are not decorative telemetry:
+
+```text
+TypeSafe semantic bank
+  |
+  +--> Homeostat -> temporal drift/uncertainty/authority/destructive pressure
+  |                 -> continue / yield / narrow / preempt
+  |
+  `--> EffectBroker -> semantic decision for an exact effect revision
+                      -> allow / deny as one required decision class
+```
+
+The adapter preserves Noul/Score/Choice distributions, confidence, ranking/margins, actual/requested model, request ID, TypeSafeSDK version, bank version, Prepared fingerprint, usage, retries, and latency. Core policy then interprets that evidence conservatively; it does not treat the semantic model as authority.
+
+See [TypeSafe Control Loop](guides/05-typesafe-control-loop.md) for the exact core consumption path and current policy limitations.
+
 ## What public modules and concepts does it own?
 
 - **Core & Lifecycle**: `Autonomic.Application`, `Autonomic.EpisodeSupervisor`, `Autonomic.EpisodeController`, `Autonomic.EpisodeSpec`, `Autonomic.Runtime`, `Autonomic.SystemRegulator`.

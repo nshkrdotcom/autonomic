@@ -190,12 +190,12 @@ defp deps do
     {:autonomic, "~> 0.1.0"},           # required: kernel, broker, contracts
     {:autonomic_linux, "~> 0.1.0"},     # optional: Linux execution domains
     {:autonomic_postgres, "~> 0.1.0"},  # optional: durable authority store
-    {:autonomic_typesafe, "~> 0.1.0"}   # optional: semantic sensor bank
+    {:autonomic_typesafe, "~> 0.1.0"}   # reference semantic sensor bank (separate package)
   ]
 end
 ```
 
-These are **application composition choices**, not dependencies declared by the core package. The Mix dependency direction is adapter → core:
+These are **application composition choices**, not dependencies declared by the core package. Package-level replaceability is intentional; the repository's full reference composition is TypeSafe-centered and configures `Autonomic.Typesafe.Sensor` as the semantic implementation. Core remaining independent does not mean the reference system treats semantic evaluation as an afterthought. The Mix dependency direction is adapter → core:
 
 ```text
 autonomic_linux ───────┐
@@ -573,7 +573,7 @@ uv run --no-project python scripts/verify_packages.py  # resolve/compile/test ou
 
 **Start here** — [Architecture](docs/ARCHITECTURE.md) · [Package composition](docs/PACKAGE_COMPOSITION.md) · [Security model](docs/SECURITY.md) · [Operations](docs/OPERATIONS.md) · [Development](docs/DEVELOPMENT.md)
 
-**Building on it** — [Effect adapter authoring](docs/EFFECT_ADAPTERS.md) · [Semantic sensors](docs/TYPESAFE_SENSORS.md) · [Persistence and recovery](docs/PERSISTENCE_RECOVERY.md) · [Host provisioning](docs/HOST_PROVISIONING.md)
+**Building on it** — [Effect adapter authoring](docs/EFFECT_ADAPTERS.md) · [TypeSafe control loop](docs/TYPESAFE_CONTROL_LOOP.md) · [Semantic sensors](docs/TYPESAFE_SENSORS.md) · [Persistence and recovery](docs/PERSISTENCE_RECOVERY.md) · [Host provisioning](docs/HOST_PROVISIONING.md)
 
 **Normative specification** — [`docs/spec/`](docs/spec/README.md): system architecture, subsystem specifications, interfaces and schemas, effect transaction protocol, threat model, durability ledger, testing and conformance, acceptance gates, TypeSafe SDK integration.
 

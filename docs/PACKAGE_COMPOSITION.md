@@ -16,6 +16,8 @@ autonomic_typesafe ────┘
 
 Each adapter is a normal standalone package that depends on `autonomic`. Applications opt in by adding whichever adapters they want.
 
+That package-level replaceability should not be confused with the repository's reference architecture. The full reference composition is **TypeSafe-centered**: when using the official stack, `Autonomic.Typesafe.Sensor` is the semantic implementation feeding Homeostat and EffectBroker. Keeping it in a separate Hex package prevents a dependency cycle and preserves the `Autonomic.SemanticSensor` extension boundary; it does not make the TypeSafe path merely decorative.
+
 ## Consumer installation recipes
 
 Keeping `{:autonomic, ...}` explicit in an application is recommended even when an adapter would also bring it transitively. The application uses the core API directly, so the dependency should be visible in its own `mix.exs`.
@@ -47,7 +49,7 @@ end
 
 The same pattern applies to `autonomic_linux` and `autonomic_typesafe`.
 
-### Full official stack
+### Full official TypeSafe-centered stack
 
 A production application using all three official adapters depends on all four packages:
 
@@ -103,7 +105,7 @@ That is the monorepo equivalent of a consumer application's four versioned Hex d
 
 ## How the numbered examples map to published packages
 
-The numbered examples are executable teaching/conformance projects. They are not all intended to be literal installation templates.
+The numbered examples are executable teaching/conformance projects. They are not all intended to be literal installation templates. Many use deterministic `examples/dev_stack` semantic fixtures so a narrow invariant can be demonstrated without live model/network dependence. **Those examples are not evidence that the reference semantic runtime is TypeSafe-backed.** The real TypeSafe integration is exercised in `packages/autonomic_typesafe`, its live gate, and the cross-package acceptance composition.
 
 | Example shape | Repository dependency shape | Consumer-package lesson |
 | :--- | :--- | :--- |

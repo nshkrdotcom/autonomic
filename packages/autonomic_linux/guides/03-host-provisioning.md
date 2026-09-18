@@ -1,12 +1,26 @@
 # Host Provisioning Prerequisites
 
-Running isolated Linux worker domains requires specific host kernel features.
+The current `autonomic_linux` backend requires a Linux host capable of running its shared-kernel containment mechanisms.
 
-## Prerequisites
+## Host prerequisites
 
-- Ubuntu 24.04+ or compatible Linux kernel (6.8+ recommended).
-- Unified cgroup v2 mounted at `/sys/fs/cgroup` with `cpu`, `memory`, and `pids` controllers enabled.
-- User, mount, PID, network, IPC, and UTS namespaces enabled.
-- OverlayFS module loaded (`modprobe overlay`).
-- Seccomp filter support enabled in kernel.
-- Rust and Cargo (for compiling `native/autonomic_launcher` from source).
+- Linux with unified cgroup v2;
+- `cpu`, `memory`, and `pids` controllers;
+- user/mount/PID/network/IPC/UTS namespaces;
+- OverlayFS;
+- seccomp filtering;
+- a rootfs suitable for the worker workload;
+- Rust/Cargo when compiling the native launcher from source;
+- privilege configuration allowing the launcher to create/manage the required namespaces, mounts, and cgroups.
+
+## Provisioning is not security qualification
+
+Passing preflight means required kernel features are present. It does **not** prove the host is an adequate trust boundary for every adversarial-agent threat model.
+
+The current backend shares the host kernel with the trusted BEAM control plane. Deployments that require stronger separation from kernel escape or same-machine hardware side channels need a stronger execution backend and/or separate execution hardware. That is outside the present `autonomic_linux` implementation.
+
+## Control-plane placement
+
+In the current backend, the BEAM control plane and launcher execute on the same host as the contained worker. TypeSafe semantic evaluation and database access remain trusted-side concerns and should not be exposed inside the worker namespace/rootfs.
+
+Do not place TypeSafe credentials, PostgreSQL credentials, cloud credentials, authoritative Git credentials, or host home directories into the worker rootfs.

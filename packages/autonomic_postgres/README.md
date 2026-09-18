@@ -74,6 +74,14 @@ mix ecto.migrate -r Autonomic.Store.Repo
 - `Autonomic.Store.Schema.*` — Schemas for episodes, capability leases, checkpoints, effects, effect decisions, events, observation frames, and recovery records.
 - `Autonomic.Postgres.Application` — OTP application supervisor managing Repo pool.
 
+## TypeSafe evidence is part of the durable audit path
+
+In the reference composition, `autonomic_typesafe` produces typed semantic observations and core turns them into trajectory state and effect decisions. `autonomic_postgres` is where those consequences become durable.
+
+The store persists observation frames, trajectory/version state, and exact-revision effect decisions so an operator can relate semantic evidence to the authority consequence it influenced. A semantic decision is not a reusable "AI approval": it remains bound to the effect revision, epoch, policy version, trajectory version, and payload identity that were current when it was evaluated.
+
+See [Semantic Evidence and Trajectories](guides/04-semantic-evidence-and-trajectories.md).
+
 ## How does it fit into Autonomic?
 
 `autonomic_postgres` is the official durable authority adapter:

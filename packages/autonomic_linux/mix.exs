@@ -146,14 +146,16 @@ defmodule Autonomic.Linux.MixProject do
         LICENSE: [title: "License"],
         "guides/01-linux-isolation.md": [title: "Linux Isolation"],
         "guides/02-launcher-protocol.md": [title: "Launcher Protocol"],
-        "guides/03-host-provisioning.md": [title: "Host Provisioning"]
+        "guides/03-host-provisioning.md": [title: "Host Provisioning"],
+        "guides/04-trust-boundary-and-control-plane.md": [title: "Trust Boundary & Control Plane"]
       ],
       groups_for_extras: [
         Overview: ["README.md", "CHANGELOG.md", "LICENSE"],
         Guides: [
           "guides/01-linux-isolation.md",
           "guides/02-launcher-protocol.md",
-          "guides/03-host-provisioning.md"
+          "guides/03-host-provisioning.md",
+          "guides/04-trust-boundary-and-control-plane.md"
         ]
       ],
       groups_for_modules: [

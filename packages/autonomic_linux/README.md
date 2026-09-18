@@ -60,6 +60,14 @@ config :autonomic_linux,
   sudo: true
 ```
 
+## Security boundary: what this package is and is not
+
+The current backend is **host-local shared-kernel Linux containment**. The BEAM control plane, TypeSafe client, native launcher, and contained worker are on the same physical/virtual Linux host. The worker is isolated with namespaces, cgroup v2, OverlayFS/chroot boundaries, and seccomp, but this package is not a microVM backend or a remote execution fleet.
+
+TypeSafe runs on the trusted control-plane side. The worker does not need the TypeSafe SDK or API key; observable worker activity is turned into bounded/redacted observation frames and evaluated outside the sandbox.
+
+For a precise threat statement and the future remote/hardware-backed execution shape, see [Trust Boundary, TypeSafe, and the Execution Plane](guides/04-trust-boundary-and-control-plane.md).
+
 ## What public modules and concepts does it own?
 
 - `Autonomic.Linux.Backend` — Implements `Autonomic.ExecutionDomain` lifecycle callbacks.

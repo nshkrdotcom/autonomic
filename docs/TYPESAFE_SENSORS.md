@@ -1,72 +1,109 @@
-# TypeSafe/Jev semantic sensors
+# TypeSafe/Jev Semantic Sensors
 
-`autonomic_typesafe` is a greenfield TypeSafeSDK 0.4.0 integration. The package
-uses the SDK's public semantic/OTP facilities and does not carry a 0.2/0.3
-compatibility path, local HTTP client, retry engine or legacy contract shim.
+`autonomic_typesafe` is the reference semantic implementation for Autonomic and targets TypeSafeSDK 0.4.0. It uses TypeSafe as a typed semantic measurement layer feeding the core control loop—not as a free-form chatbot call and not as the authority source.
 
-## Prepared bank and contract identity
+For the multi-package picture, start with [`TYPESAFE_CONTROL_LOOP.md`](TYPESAFE_CONTROL_LOOP.md).
 
-`Autonomic.Typesafe.SensorBank` defines five required semantic questions:
+## Production bank
 
-- `scope_drift` — Noul
-- `authority_escalation` — Noul
-- `evidence_sufficiency` — Score
-- `irreversibility` — Score
-- `trajectory_regime` — Choice (`stable | uncertain | drifting | unstable`)
+`Autonomic.Typesafe.SensorBank` defines one prepared five-question contract:
 
-The bank is prepared once for each `Autonomic.Typesafe.Bank` process. The
-semantic-contract ID is the native versioned
-`TypeSafeSDK.Prepared.fingerprint/1`; Autonomic no longer hashes a duplicate local
-manifest to emulate an SDK feature. The human bank version remains separate
-provenance.
+| Sensor | TypeSafe family | Question/scale | Main core consumer |
+| --- | --- | --- | --- |
+| `scope_drift` | Noul | materially outside declared task/scope? | Homeostat + EffectBroker |
+| `authority_escalation` | Noul | seeking unnecessary resources/authority? | Homeostat + EffectBroker |
+| `evidence_sufficiency` | Score | insufficient / partial / sufficient | Homeostat + EffectBroker |
+| `irreversibility` | Score | local -> high-impact | Homeostat |
+| `trajectory_regime` | Choice | stable / uncertain / drifting / unstable | Homeostat |
 
-## Bounded execution
+The ordered bank is created with `TypeSafeSDK.noul/1`, `TypeSafeSDK.score/2`, and `TypeSafeSDK.choice/2`, then prepared once with `TypeSafeSDK.prepare!/1`.
 
-The bank uses `TypeSafeSDK.OTP.Server` with the package-owned `Autonomic.Typesafe.Tasks`
-`Task.Supervisor`. Semantic network latency therefore does not block the bank
-GenServer or consume task slots used by core effect/episode control work. `max_in_flight` bounds concurrent evaluations; overload returns a
-typed TypeSafe runtime-capability error and semantic health degrades.
+The semantic contract is identified by `TypeSafeSDK.Prepared.fingerprint/1`. The human bank version (`coding-v1`) is separate provenance.
 
-The adapter always requires `:unary_cancellation` and `:cancellation_cleanup`; configured `required_capabilities` are additive and cannot remove that base contract.
-TypeSafe delegates discovery to Pristine; the supplied Pristine 0.4.0 Finch
-transport reports both supported. Custom transports fail closed when the required
-contract is unsupported or unverified.
+## Evidence window
 
-## Evidence and request budgets
+`Autonomic.Typesafe.Evidence` constructs a new bounded state map from approved observable data:
 
-Only observable state is sent: deterministic facts, resource summaries, effect
-context and explicitly emitted/visible worker state. Secret-shaped keys/text are
-redacted and the state is byte-bounded by `Autonomic.Typesafe.Evidence` before the
-SDK boundary.
+- episode / epoch / sequence / timestamp;
+- deterministic facts;
+- resource summaries;
+- proposed-effect context;
+- explicitly visible worker state.
 
-The final full request is independently bounded by TypeSafeSDK's
-`max_request_bytes:` support. This measures the actual serialized request value
-before transport egress, replacing the old state-bytes-plus-manifest estimate.
+It recursively redacts secret-shaped keys and strings, bounds collection sizes/nesting/string length, and applies `evidence_limit` before the SDK boundary.
 
-## Response contracts and provenance
+TypeSafeSDK then independently enforces `max_request_bytes` over the actual final serialized request.
 
-The adapter configures TypeSafeSDK strict response contracts:
+## OTP execution
 
-- unexpected answer IDs are errors;
-- a configured non-empty `allowed_models` list is exact-membership policy; and
-- a future answer type under a required requested key remains fail-closed at the
-  Autonomic bank because the production sensor set requires known Noul/Choice/Score
-  answer families.
+`Autonomic.Typesafe.Bank` is built on `TypeSafeSDK.OTP.Server` and uses the package-owned `Autonomic.Typesafe.Tasks` supervisor. Semantic HTTP latency therefore does not serialize the bank callback or occupy core episode/effect task slots.
 
-Normalization uses `TypeSafeSDK.Response`, `TypeSafeSDK.Answer.*` and stable
-`Response.metadata/1`. Bank status stores SDK failures through privacy-safe
-`TypeSafeSDK.Error.metadata/1` rather than exposing raw error bodies. Semantic observations persist SDK version, requested and
-actual model, request ID, usage, retries, timing, bank version and Prepared
-fingerprint. TypeSafe 0.4 also emits privacy-safe per-answer telemetry after
-validation; Autonomic does not duplicate that telemetry layer.
+`max_in_flight` bounds local concurrency. Saturation is an error/degradation state, not an unbounded queue.
 
-## Testing
+The adapter always requires runtime capabilities for unary cancellation and cancellation cleanup. Additional configured capabilities are additive.
 
-`TypeSafeSDK.Test` component tests exercise real SDK serialization, request budget,
-response contract, runtime capability and transport seams deterministically. They
-also prove that a blocked semantic request does not block bank status handling and
-that `max_in_flight` rejects additional work.
+## Response contract
 
-The mandatory live gate is
-`packages/autonomic_typesafe/test/live_gate_test.exs`; it records non-secret
-provenance to `artifacts/typesafe_live_gate.json`.
+The adapter configures TypeSafeSDK with:
+
+```elixir
+response_contract: [
+  on_unknown_answer: :error,
+  allowed_models: allowed_models_or_nil
+]
+```
+
+After SDK validation, Autonomic additionally verifies the Prepared fingerprint and rejects an unknown future answer family for any required bank key.
+
+No missing/unknown answer becomes a false, zero, stable, or sufficient default.
+
+## Normalized observations
+
+Each result becomes an `Autonomic.SemanticObservation` carrying shared provenance:
+
+- actual and requested model;
+- request ID;
+- TypeSafeSDK version;
+- sensor-bank version;
+- Prepared fingerprint;
+- usage;
+- retries;
+- latency;
+- observation timestamp.
+
+Family-specific structure is preserved:
+
+- Noul: boolean, confidence, true/false probabilities;
+- Score: confidence, probability map, expected level/label, modal/ranked levels, normalized value;
+- Choice: selected choice, confidence, full probabilities, ranked choices, margin.
+
+## Core semantics
+
+### Homeostat
+
+The Homeostat transforms semantic observations into a temporal risk/control state, smooths them over time, and emits continue/yield/narrow/preempt actions. A semantic outage increases uncertainty and can prevent sensitive progress.
+
+### EffectBroker
+
+For a policy requiring semantic evidence, EffectBroker asks the configured semantic sensor to evaluate the exact proposed effect. Its current allow/deny policy uses scope drift, authority escalation, and evidence sufficiency against an explicit risk threshold. The semantic decision is persisted for the exact effect revision.
+
+The richer probability distributions remain available in the observations even though current broker policy does not fuse all of them.
+
+## Persistence
+
+With `autonomic_postgres`, observation frames and trajectory state are durable, and semantic effect decisions are bound to effect revision/epoch/policy/trajectory/payload identity. This allows later audit of which TypeSafe contract/model/request contributed to an authority decision.
+
+## Failure behavior
+
+Transport errors, timeouts, request/response contract failures, model drift, fingerprint mismatch, unknown required answer families, runtime-capability failures, request-budget failures, and OTP overload all return errors and mark semantic health degraded/unavailable. No path fabricates a safe observation.
+
+## Tests
+
+Component tests use `TypeSafeSDK.Test` so they exercise the real SDK serialization/contract seam deterministically. The live gate requires an authorized endpoint:
+
+```bash
+cd packages/autonomic_typesafe
+TYPESAFE_API_KEY=... mix test test/live_gate_test.exs --include live
+```
+
+The live artifact records non-secret structural provenance only.

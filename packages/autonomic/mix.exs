@@ -106,7 +106,8 @@ defmodule Autonomic.MixProject do
         "guides/01-architecture.md": [title: "Architecture"],
         "guides/02-invariants.md": [title: "Non-Negotiable Invariants"],
         "guides/03-effect-broker.md": [title: "EffectBroker & Horizons"],
-        "guides/04-adapter-authoring.md": [title: "Effect Adapter Authoring"]
+        "guides/04-adapter-authoring.md": [title: "Effect Adapter Authoring"],
+        "guides/05-typesafe-control-loop.md": [title: "TypeSafe Control Loop"]
       ],
       groups_for_extras: [
         Overview: ["README.md", "CHANGELOG.md", "LICENSE"],
@@ -114,7 +115,8 @@ defmodule Autonomic.MixProject do
           "guides/01-architecture.md",
           "guides/02-invariants.md",
           "guides/03-effect-broker.md",
-          "guides/04-adapter-authoring.md"
+          "guides/04-adapter-authoring.md",
+          "guides/05-typesafe-control-loop.md"
         ]
       ],
       groups_for_modules: [

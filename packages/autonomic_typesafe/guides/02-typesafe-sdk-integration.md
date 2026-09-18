@@ -1,51 +1,131 @@
 # TypeSafeSDK 0.4 Integration
 
-The production adapter uses TypeSafeSDK 0.4.0 as the only semantic client layer.
-It does not implement a parallel TypeSafe HTTP stack or retry engine.
+`autonomic_typesafe` intentionally uses TypeSafeSDK as the semantic client/runtime instead of reimplementing its HTTP, response, contract, or cancellation layers.
 
-## SDK-owned mechanics used directly
+## SDK features used directly
 
-- `TypeSafeSDK.prepare!/1` and `TypeSafeSDK.Prepared.fingerprint/1`
-- `TypeSafeSDK.evaluate/4` via `TypeSafeSDK.OTP.Server`
-- `response_contract: [on_unknown_answer: :error, allowed_models: ...]`
-- `max_request_bytes:` for exact serialized request sizing
-- `TypeSafeSDK.Response` and `TypeSafeSDK.Answer.*` normalization helpers
-- `TypeSafeSDK.Response.metadata/1` for bounded stable provenance
-- `TypeSafeSDK.Error.metadata/1` for privacy-safe bank status diagnostics
-- `TypeSafeSDK.RuntimeCapabilities` for fail-closed runtime requirements
-- privacy-safe TypeSafe evaluation and per-answer telemetry
-- `TypeSafeSDK.Test` at the real SDK transport seam for deterministic tests
+| TypeSafeSDK feature | How Autonomic uses it |
+| --- | --- |
+| `TypeSafeSDK.noul/1` | scope-drift and authority-escalation questions |
+| `TypeSafeSDK.score/2` | evidence-sufficiency and irreversibility questions |
+| `TypeSafeSDK.choice/2` | trajectory-regime classification |
+| `TypeSafeSDK.prepare!/1` | compile the fixed ordered semantic bank once per process |
+| `TypeSafeSDK.Prepared.fingerprint/1` | authoritative machine identity for the semantic question contract |
+| `TypeSafeSDK.OTP.Server` | bounded non-blocking evaluation outside the bank callback |
+| `max_request_bytes:` | exact final serialized-request budget before egress |
+| `response_contract:` | unexpected answer ID and concrete-model enforcement |
+| `TypeSafeSDK.Response` | required answer fetch, request ID and stable metadata |
+| `TypeSafeSDK.Answer.Noul` | boolean threshold + confidence |
+| `TypeSafeSDK.Answer.Score` | expected/modal/ranked/normalized score interpretation |
+| `TypeSafeSDK.Answer.Choice` | selected choice, ranking and margin |
+| `TypeSafeSDK.RuntimeCapabilities` | startup-time proof of required transport/runtime properties |
+| `TypeSafeSDK.Error.metadata/1` | bounded privacy-safe status diagnostics |
+| `TypeSafeSDK.Test` | deterministic tests at the real SDK transport/serialization seam |
 
-## Bounded OTP execution
+## Client construction
 
-`Autonomic.Typesafe.Bank` is implemented with `TypeSafeSDK.OTP.Server` and uses
-`Autonomic.Typesafe.Tasks`, a Task.Supervisor owned by the adapter application.
-This prevents the bank GenServer from serializing all network latency while
-keeping a finite `max_in_flight` bound. The TypeSafe wrapper creates private
-Pristine cancellation scopes and performs the actual evaluations outside the
-bank process.
+Production configuration creates a real `TypeSafeSDK.Client`:
 
-Keeping semantic tasks off the core `Autonomic.Tasks` supervisor prevents semantic latency from consuming task slots used by effect and episode control work. This dedicated supervisor is a task-lifecycle boundary, not an HTTP pool or queue.
+```elixir
+TypeSafeSDK.new_client(
+  api_key: key,
+  model: configured_model,
+  timeout_ms: configured_timeout,
+  retry: false
+)
+```
 
-The kernel does not use `TypeSafeSDK.Batch` as a replacement for GenStage or
-`SystemRegulator` backpressure. Batch APIs solve independent SDK fan-out; kernel
-pressure and authority remain Autonomic concerns.
+Autonomic deliberately sets `retry: false`. Retry semantics are not duplicated at this layer; a semantic request either produces a contract-valid response or becomes degraded/unavailable evidence.
+
+## OTP execution model
+
+`Autonomic.Typesafe.Bank` uses `TypeSafeSDK.OTP.Server` and a dedicated `Autonomic.Typesafe.Tasks` supervisor.
+
+```text
+caller
+  |
+  v
+Autonomic.Typesafe.Bank
+  |  prepare bounded state + tag request
+  v
+TypeSafeSDK.OTP.Server
+  |
+  +--> task 1 -> TypeSafe/Pristine
+  +--> task 2 -> TypeSafe/Pristine
+  `--> bounded by max_in_flight
+```
+
+The bank GenServer stays responsive while network work is in flight. Semantic tasks do not consume the core `Autonomic.Tasks` slots used by episode/effect orchestration.
+
+The wrapper's `max_in_flight` is a hard local bound. Overload returns a typed error and degrades semantic health; it does not grow an unbounded queue.
 
 ## Required runtime capabilities
 
-The adapter always requires:
+The adapter has a non-removable baseline requirement:
 
 ```elixir
 [:unary_cancellation, :cancellation_cleanup]
 ```
 
-TypeSafeSDK delegates that report to Pristine. The supplied Pristine 0.4.0 Finch
-transport advertises both as supported. Any custom transport that does not prove
-them fails bank startup instead of silently weakening the execution contract.
+Additional deployment requirements may be configured, but cannot remove that base. Startup calls `TypeSafeSDK.RuntimeCapabilities.check/2`; unsupported or unverified required capabilities fail startup rather than silently weakening the execution contract.
 
-## Tests and live gate
+## Request contract
 
-Unit/component tests use `TypeSafeSDK.Test` only. The live gate is
-`packages/autonomic_typesafe/test/live_gate_test.exs` and requires
-`TYPESAFE_API_KEY`. It records request/model/usage/timing/fingerprint/capability
-provenance without credentials, state text or raw bodies.
+The evaluation defaults include:
+
+```elixir
+[
+  model: configured_model,
+  retry: false,
+  max_request_bytes: request_limit,
+  response_contract: [
+    on_unknown_answer: :error,
+    allowed_models: configured_allow_set_or_nil
+  ]
+]
+```
+
+`max_request_bytes` is enforced by TypeSafeSDK against the complete serialized wire request. This is separate from Autonomic's earlier evidence-state budget.
+
+A non-empty `allowed_models` list is exact-membership policy. Model drift is a response-contract error before Autonomic normalizes the answer.
+
+## Response contract
+
+After TypeSafeSDK accepts the response, Autonomic still verifies two application-specific requirements:
+
+1. the response Prepared fingerprint equals the bank's stored contract ID;
+2. no required requested sensor arrived as a future/unknown answer family.
+
+Unexpected answer IDs are already rejected by the SDK response contract. A future answer type under a requested key is intentionally not coerced to false/zero/safe; the adapter returns `{:unknown_required_answers, keys}`.
+
+## Provenance
+
+Every observation records:
+
+```text
+response.model
+configured requested model
+request ID
+TypeSafeSDK.version()
+SensorBank.version()
+Prepared fingerprint
+usage
+retry count
+elapsed time
+observation time
+```
+
+That makes semantic evidence inspectable and reproducible enough to answer "which model and which semantic contract produced this decision?" without logging the raw secret-bearing request.
+
+## Testing the integration instead of mocking it away
+
+Component tests use `TypeSafeSDK.Test`, not a parallel fake semantic client. They exercise the SDK's request serialization, response-contract handling, exact byte budget, answer normalization, runtime capability checks, transport failures, and bounded OTP execution.
+
+The live gate uses the real configured TypeSafe endpoint and requires `TYPESAFE_API_KEY`:
+
+```bash
+cd packages/autonomic_typesafe
+TYPESAFE_API_KEY=... mix test test/live_gate_test.exs --include live
+```
+
+The gate records only non-secret structural provenance.

@@ -101,14 +101,16 @@ defmodule Autonomic.Postgres.MixProject do
         LICENSE: [title: "License"],
         "guides/01-postgres-authority.md": [title: "PostgreSQL Authority"],
         "guides/02-schema-model.md": [title: "Schema Model"],
-        "guides/03-epoch-fencing-and-recovery.md": [title: "Epoch Fencing & Recovery"]
+        "guides/03-epoch-fencing-and-recovery.md": [title: "Epoch Fencing & Recovery"],
+        "guides/04-semantic-evidence-and-trajectories.md": [title: "Semantic Evidence & Trajectories"]
       ],
       groups_for_extras: [
         Overview: ["README.md", "CHANGELOG.md", "LICENSE"],
         Guides: [
           "guides/01-postgres-authority.md",
           "guides/02-schema-model.md",
-          "guides/03-epoch-fencing-and-recovery.md"
+          "guides/03-epoch-fencing-and-recovery.md",
+          "guides/04-semantic-evidence-and-trajectories.md"
         ]
       ],
       groups_for_modules: [

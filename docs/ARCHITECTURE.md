@@ -1,40 +1,98 @@
-# Architecture and kernel invariants
+# Architecture and Kernel Invariants
 
-The normative architecture is in `docs/spec/01_SYSTEM_ARCHITECTURE.md`; this document describes how the repository realizes it.
+The normative architecture is in `docs/spec/01_SYSTEM_ARCHITECTURE.md`; this document maps the current repository implementation.
+
+## Four-package reference composition
+
+The repository publishes four separate Mix projects:
+
+```text
+                         application composition
+
+                         +-------------+
+                         |  autonomic  |
+                         | core kernel |
+                         +------+------+
+                                ^
+             +------------------+------------------+
+             |                  |                  |
+   +---------+---------+ +------+-----------+ +----+----------------+
+   | autonomic_linux   | | autonomic_postgres| | autonomic_typesafe |
+   | ExecutionDomain   | | Store             | | SemanticSensor     |
+   +-------------------+ +--------------------+ +---------------------+
+```
+
+The adapters depend on core; core does not depend on them. Runtime composition is selected through configuration.
+
+The TypeSafe-centered reference configuration is:
+
+```elixir
+config :autonomic,
+  domain_backend: Autonomic.Linux.Backend,
+  store: Autonomic.Store.Postgres,
+  sensor: Autonomic.Typesafe.Sensor
+```
 
 ## Trusted and untrusted planes
 
-`Autonomic.EpisodeSupervisor` owns a per-episode rest-for-one tree: `AuthorityGovernor`, `EffectSocket`, `SensorArray`, `Homeostat`, `SensorConsumer`, and the `:gen_statem` `EpisodeController`. Global trusted services are the registry, task supervisor, rate limiter, system regulator and `EffectBroker`.
+`Autonomic.EpisodeSupervisor` owns a per-episode rest-for-one tree. The trusted control plane owns authority, effect mediation, sensor ingestion, Homeostat trajectory state, verification orchestration, trusted target configuration, and persistence.
 
-The worker runs only through `Autonomic.Linux.Backend`. The backend speaks a bounded packet-4 JSON protocol to the privileged external Rust launcher. The launcher creates a separate user/mount/PID/network/IPC/UTS namespace set, a cgroup-v2 subtree, a read-only rootfs, and a disposable overlayfs workspace. The sandbox receives one broker-owned Unix socket at `/run/autonomic/effect.sock`; it receives no host home, secrets, Docker socket, cloud credentials or authoritative Git checkout.
+The current `Autonomic.Linux.Backend` executes untrusted workers in local Linux namespace/cgroup/seccomp/OverlayFS containment. The worker receives a broker-owned AF_UNIX socket but no routable network or trusted credentials.
+
+**Current implementation boundary:** the Linux containment and trusted BEAM control plane share the same host kernel. This is not a remote-worker or microVM architecture. Stronger execution isolation can be introduced through a different `Autonomic.ExecutionDomain` implementation without changing the semantic/store contracts.
+
+## Semantic control plane
+
+Observable worker and effect state becomes `Autonomic.ObservationFrame`. The reference semantic adapter:
+
+1. redacts and bounds approved observable state;
+2. evaluates one prepared TypeSafe bank;
+3. returns five typed `SemanticObservation` values with probability/confidence/provenance;
+4. reports semantic health to `SystemRegulator`.
+
+Core consumes those observations in two places:
+
+- `Homeostat` — temporal drift/uncertainty/authority/destructive-pressure regulation;
+- `EffectBroker` — semantic allow/deny evidence for an exact effect revision when policy requires it.
+
+See [`TYPESAFE_CONTROL_LOOP.md`](TYPESAFE_CONTROL_LOOP.md).
 
 ## Authority flow
 
-1. Admission validates an `EpisodeSpec` against the signed/deterministic hard envelope.
-2. PostgreSQL creates/fetches the episode and durable epoch.
-3. `AuthorityGovernor` issues a finite lease for the current epoch and policy version.
-4. Class 0/1 work executes inside the disposable domain.
-5. Class 2+ work is proposed to `EffectBroker` with an exact payload digest and version vector.
-6. The store persists `proposed`, then `prepared`; required decisions are recorded against the exact revision.
-7. At commit, the store locks **episode → effect → lease**, rereads the durable epoch/policy/trajectory/revision, verifies unexpired decisions, and persists `commit_intent` before adapter actuation.
-8. Adapter success becomes `committed`; ambiguous post-intent failures become `commit_unknown` and require reconciliation/operator handling.
+1. admission validates an `EpisodeSpec` against the deterministic hard envelope;
+2. PostgreSQL establishes the durable episode/epoch;
+3. `AuthorityGovernor` issues finite epoch/policy-bound capability leases;
+4. Class 0/1 work runs inside the execution domain;
+5. Class 2+ work is proposed to `EffectBroker` with payload identity and version vector;
+6. required decisions are collected against the exact proposal revision;
+7. commit revalidates epoch/lease/policy/trajectory/revision and persists `commit_intent` before external actuation;
+8. target outcome becomes committed/failed/unknown and is durably reconciled.
 
 ## Precedence
 
-Dominance is not weighted voting:
+Semantic evidence is intentionally subordinate to deterministic authority:
 
-`Kernel Denial ≻ Capability Violation ≻ Deterministic Invariant ≻ Signed Policy ≻ Human Authority ≻ Semantic Observation`
+```text
+Kernel denial
+  > capability violation
+  > deterministic invariant
+  > signed policy
+  > human authority
+  > semantic observation
+```
 
-A seccomp or forbidden-path violation is a hard deterministic observation and bypasses Homeostat smoothing. TypeSafe/Jev may recommend continue/narrow/yield/preempt but cannot expand a lease or hard envelope.
+A TypeSafe result can make the system more conservative. It cannot make a forbidden operation legal.
 
-## Recovery
+## Trajectory control
 
-A repair durably advances epoch, which revokes old leases and stales old uncommitted effects. The old cgroup must be destroyed and proven empty before the old upperdir is accepted as gone. The latest stable checkpoint is digest-verified, restored into a **new epoch/generation**, a reduced repair lease is minted, and recovery lineage is persisted. Controller restart uses persisted domain identity and takes the same conservative recovery path.
+Homeostat maintains smoothed drift, volatility, uncertainty, scope pressure, authority pressure, destructive pressure, verification/approval pressure, autonomy balance, and blast-radius budget. Regime changes yield concrete controller behavior. Recovery from risky regimes is hysteretic.
+
+Deterministic hard violations bypass smoothing and enter containment immediately.
+
+## Durability
+
+`autonomic_postgres` persists the authority state required to survive process failure, including observation frames, trajectory state, effect decisions, and recovery lineage. Semantic evidence therefore has audit provenance without becoming the source of truth for authority.
 
 ## Backpressure
 
-`SensorArray` is demand-driven through GenStage. Critical deterministic frames are never intentionally dropped; low-priority semantic work may be shed under configured pressure. `SystemRegulator` aggregates semantic/verifier/effect pressure into admission modes. Sensitive effects yield instead of bypassing a required verifier.
-
-## Bounded broker execution
-
-`Autonomic.EffectBroker` keeps no in-memory authority, but it does bound concurrent orchestration work. Calls are dispatched to the supervised task pool up to `:effect_concurrency`; excess work is rejected with `:effect_broker_saturated` instead of building an unbounded internal queue. Active pressure is reported to `SystemRegulator`, whose hysteretic modes propagate saturation to admission and sensitive-commit policy. PostgreSQL row locks and durable state transitions—not task scheduling—remain the race/fencing authority.
+Sensor ingestion and effect orchestration are bounded. Semantic overload degrades semantic health; broker saturation rejects excess work rather than building unbounded queues. PostgreSQL transactions and version checks—not task scheduling—remain the fencing authority.
