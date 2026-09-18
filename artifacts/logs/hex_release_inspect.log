@@ -65,6 +65,7 @@ Building autonomic 0.1.0
     guides/02-invariants.md
     guides/01-architecture.md
     guides/03-effect-broker.md
+    guides/05-typesafe-control-loop.md
     .formatter.exs
     CHANGELOG.md
     LICENSE
@@ -80,11 +81,11 @@ homeostatic regulation, and verification recovery.
     Changelog: https://github.com/nshkrdotcom/autonomic/blob/main/packages/autonomic/CHANGELOG.md
     GitHub: https://github.com/nshkrdotcom/autonomic
     HexDocs: https://hexdocs.pm/autonomic
-    License: https://github.com/nshkrdotcom/autonomic/blob/main/LICENSE
+    License: https://github.com/nshkrdotcom/autonomic/blob/main/packages/autonomic/LICENSE
   Elixir: ~> 1.20
-Package checksum: ef7efee5813aa74fa94d6891cc5fa6b6ce0c68a51dcabc9a3b32c7eaebaffd8f
+Package checksum: acf10cb0fc72fe359c4dba63ac173b6341b3d47a54c96e44debe44a5ab415e4e
 Saved to autonomic-0.1.0.tar
-  [OK] Built: autonomic-0.1.0.tar (51200 bytes)
+  [OK] Built: autonomic-0.1.0.tar (55808 bytes)
 
 Building 'autonomic_linux' in /home/home/p/g/n/autonomic/_release_stage/0.1.0/autonomic_linux...
 Building autonomic_linux 0.1.0
@@ -111,10 +112,11 @@ Building autonomic_linux 0.1.0
     config/config.exs
     config/prod.exs
     assets
-    assets/autonomic.svg
+    assets/autonomic_linux.svg
     guides
     guides/03-host-provisioning.md
     guides/01-linux-isolation.md
+    guides/04-trust-boundary-and-control-plane.md
     guides/02-launcher-protocol.md
     .formatter.exs
     CHANGELOG.md
@@ -130,11 +132,11 @@ providing cgroup v2, namespaces, seccomp filtering, and overlayfs sandboxing.
     Changelog: https://github.com/nshkrdotcom/autonomic/blob/main/packages/autonomic_linux/CHANGELOG.md
     GitHub: https://github.com/nshkrdotcom/autonomic
     HexDocs: https://hexdocs.pm/autonomic_linux
-    License: https://github.com/nshkrdotcom/autonomic/blob/main/LICENSE
+    License: https://github.com/nshkrdotcom/autonomic/blob/main/packages/autonomic_linux/LICENSE
   Elixir: ~> 1.20
-Package checksum: 4dcb7656b5b4771e22f1f8a1e29626e115794422cad71e1d9c5f9053b6225c65
+Package checksum: d85faf64627f5e1408bb66caa84131e1bd7f5c0ef20f59d6a4cb09bab835fc27
 Saved to autonomic_linux-0.1.0.tar
-  [OK] Built: autonomic_linux-0.1.0.tar (32256 bytes)
+  [OK] Built: autonomic_linux-0.1.0.tar (35328 bytes)
 
 Building 'autonomic_postgres' in /home/home/p/g/n/autonomic/_release_stage/0.1.0/autonomic_postgres...
 Building autonomic_postgres 0.1.0
@@ -162,9 +164,10 @@ Building autonomic_postgres 0.1.0
     config/config.exs
     config/prod.exs
     assets
-    assets/autonomic.svg
+    assets/autonomic_postgres.svg
     guides
     guides/03-epoch-fencing-and-recovery.md
+    guides/04-semantic-evidence-and-trajectories.md
     guides/01-postgres-authority.md
     guides/02-schema-model.md
     .formatter.exs
@@ -181,11 +184,11 @@ and epoch fencing backend for the Autonomic Kernel architecture.
     Changelog: https://github.com/nshkrdotcom/autonomic/blob/main/packages/autonomic_postgres/CHANGELOG.md
     GitHub: https://github.com/nshkrdotcom/autonomic
     HexDocs: https://hexdocs.pm/autonomic_postgres
-    License: https://github.com/nshkrdotcom/autonomic/blob/main/LICENSE
+    License: https://github.com/nshkrdotcom/autonomic/blob/main/packages/autonomic_postgres/LICENSE
   Elixir: ~> 1.20
-Package checksum: 48553ecaa6a70a3fd11b651cf6c21e0097bf53b738d820fcca7b57a3352ba30f
+Package checksum: dc4c9fb7968123c9044961ae2f5cbdd88c4b6fdc0f719e851406b3cebf886bc5
 Saved to autonomic_postgres-0.1.0.tar
-  [OK] Built: autonomic_postgres-0.1.0.tar (23552 bytes)
+  [OK] Built: autonomic_postgres-0.1.0.tar (26112 bytes)
 
 Building 'autonomic_typesafe' in /home/home/p/g/n/autonomic/_release_stage/0.1.0/autonomic_typesafe...
 Building autonomic_typesafe 0.1.0
@@ -209,11 +212,12 @@ Building autonomic_typesafe 0.1.0
     config/config.exs
     config/prod.exs
     assets
-    assets/autonomic.svg
+    assets/autonomic_typesafe.svg
     guides
     guides/03-evidence-budgeting-and-drift.md
     guides/02-typesafe-sdk-integration.md
     guides/01-semantic-sensors.md
+    guides/04-end-to-end-control-loop.md
     .formatter.exs
     CHANGELOG.md
     LICENSE
@@ -228,11 +232,11 @@ providing evidence redaction, drift monitoring, and anomaly detection.
     Changelog: https://github.com/nshkrdotcom/autonomic/blob/main/packages/autonomic_typesafe/CHANGELOG.md
     GitHub: https://github.com/nshkrdotcom/autonomic
     HexDocs: https://hexdocs.pm/autonomic_typesafe
-    License: https://github.com/nshkrdotcom/autonomic/blob/main/LICENSE
+    License: https://github.com/nshkrdotcom/autonomic/blob/main/packages/autonomic_typesafe/LICENSE
   Elixir: ~> 1.20
-Package checksum: be1701ea75087c177b405af066bcbe156e14916d4ea203576a10a73aae8436f0
+Package checksum: b1b593454eaf0b4b10f5f94cebc86121a0ab438937f29874991991af1e6fd809
 Saved to autonomic_typesafe-0.1.0.tar
-  [OK] Built: autonomic_typesafe-0.1.0.tar (21504 bytes)
+  [OK] Built: autonomic_typesafe-0.1.0.tar (25600 bytes)
 
 All 4 package tarballs built in /home/home/p/g/n/autonomic/_release_stage/0.1.0/tarballs
 
@@ -240,7 +244,7 @@ All 4 package tarballs built in /home/home/p/g/n/autonomic/_release_stage/0.1.0/
 
 Inspecting 'autonomic' (autonomic-0.1.0.tar):
   Tarball archive members: ['VERSION', 'CHECKSUM', 'metadata.config', 'contents.tar.gz']
-  Extracted 40 files into /home/home/p/g/n/autonomic/_release_stage/0.1.0/unpacked/autonomic
+  Extracted 41 files into /home/home/p/g/n/autonomic/_release_stage/0.1.0/unpacked/autonomic
   [OK] Found README.md
   [OK] Found LICENSE
   [OK] Found CHANGELOG.md
@@ -248,7 +252,7 @@ Inspecting 'autonomic' (autonomic-0.1.0.tar):
 
 Inspecting 'autonomic_linux' (autonomic_linux-0.1.0.tar):
   Tarball archive members: ['VERSION', 'CHECKSUM', 'metadata.config', 'contents.tar.gz']
-  Extracted 21 files into /home/home/p/g/n/autonomic/_release_stage/0.1.0/unpacked/autonomic_linux
+  Extracted 22 files into /home/home/p/g/n/autonomic/_release_stage/0.1.0/unpacked/autonomic_linux
   [OK] Found README.md
   [OK] Found LICENSE
   [OK] Found CHANGELOG.md
@@ -256,7 +260,7 @@ Inspecting 'autonomic_linux' (autonomic_linux-0.1.0.tar):
 
 Inspecting 'autonomic_postgres' (autonomic_postgres-0.1.0.tar):
   Tarball archive members: ['VERSION', 'CHECKSUM', 'metadata.config', 'contents.tar.gz']
-  Extracted 18 files into /home/home/p/g/n/autonomic/_release_stage/0.1.0/unpacked/autonomic_postgres
+  Extracted 19 files into /home/home/p/g/n/autonomic/_release_stage/0.1.0/unpacked/autonomic_postgres
   [OK] Found README.md
   [OK] Found LICENSE
   [OK] Found CHANGELOG.md
@@ -264,7 +268,7 @@ Inspecting 'autonomic_postgres' (autonomic_postgres-0.1.0.tar):
 
 Inspecting 'autonomic_typesafe' (autonomic_typesafe-0.1.0.tar):
   Tarball archive members: ['VERSION', 'CHECKSUM', 'metadata.config', 'contents.tar.gz']
-  Extracted 18 files into /home/home/p/g/n/autonomic/_release_stage/0.1.0/unpacked/autonomic_typesafe
+  Extracted 19 files into /home/home/p/g/n/autonomic/_release_stage/0.1.0/unpacked/autonomic_typesafe
   [OK] Found README.md
   [OK] Found LICENSE
   [OK] Found CHANGELOG.md

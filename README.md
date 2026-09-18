@@ -75,26 +75,26 @@ The repository ships a hostile fixture (`test/fixtures/coding_agent/HOSTILE_INJE
 │  │  EpisodeController (:gen_statem)    AuthorityGovernor   Homeostat   │  │
 │  │  EffectBroker    SnapshotManager    RepairManager   SystemRegulator │  │
 │  │  SensorArray (GenStage, demand-driven)           VerificationRunner │  │
-│  └───────────┬──────────────────┬──────────────────────────┬───────────┘  │
-│              │                  │                          │              │
-│      control / epoch     brokered effects           semantic sensor       │
-│              │                  │                          │              │
-│  ┌───────────▼──────────┐  ┌────▼─────────────┐  ┌─────────▼──────────┐   │
+│  └───────────┬──────────────────────┬──────────────────────┬───────────┘  │
+│              │                      │                      │              │
+│      control / epoch         brokered effects       semantic sensor       │
+│              │                      │                      │              │
+│  ┌───────────▼──────────┐  ┌────────▼─────────┐  ┌─────────▼──────────┐   │
 │  │ autonomic_linux      │  │ Effect adapters  │  │ autonomic_typesafe │   │
 │  │ namespaces, cgroup2  │  │ Git / GitRemote  │  │ sensor bank only   │   │
 │  │ seccomp, overlayfs   │  │ HTTP / Artifact  │  │ never authority    │   │
 │  │ Rust launcher        │  │ (trusted creds)  │  └────────────────────┘   │
-│  └───────────┬──────────┘  └────┬─────────────┘                           │
-│              │                  │        ┌────────────────────────────┐   │
-│  ┌───────────▼──────────────┐   │        │ autonomic_postgres         │   │
-│  │ UNTRUSTED EXECUTION      │   │        │ epochs, leases, effects,   │   │
-│  │ agent / shell / compiler │   │        │ decisions, checkpoints,    │   │
-│  │ package manager / tests  │   │        │ recovery lineage, events   │   │
-│  │ no host FS · no Internet │   │        └────────────────────────────┘   │
-│  │ one AF_UNIX broker socket│   │                                         │
-│  └──────────────────────────┘   │                                         │
-└─────────────────────────────────┼─────────────────────────────────────────┘
-                                  ▼
+│  └───────────┬──────────┘  └───────┬──────────┘                           │
+│              │                     │     ┌────────────────────────────┐   │
+│  ┌───────────▼──────────────┐      │     │ autonomic_postgres         │   │
+│  │ UNTRUSTED EXECUTION      │      │     │ epochs, leases, effects,   │   │
+│  │ agent / shell / compiler │      │     │ decisions, checkpoints,    │   │
+│  │ package manager / tests  │      │     │ recovery lineage, events   │   │
+│  │ no host FS · no Internet │      │     └────────────────────────────┘   │
+│  │ one AF_UNIX broker socket│      │                                      │
+│  └──────────────────────────┘      │                                      │
+└────────────────────────────────────┼──────────────────────────────────────┘
+                                     ▼
            EXTERNAL WORLD — Git remotes, APIs, registries, humans
 ```
 

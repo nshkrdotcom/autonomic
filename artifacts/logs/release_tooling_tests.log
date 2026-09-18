@@ -1,6 +1,6 @@
-START test_fixture cwd=. log=tmpavx_mlb8/test_fixture.log
+START test_fixture cwd=. log=tmpskei5m_l/test_fixture.log
 FAIL  test_fixture 0.3s
-START test_fixture cwd=. log=tmpavx_mlb8/test_fixture.log
+START test_fixture cwd=. log=tmpskei5m_l/test_fixture.log
 PASS  test_fixture 0.3s
 ...ERROR: Requested compatibility version does not match core version
 .
@@ -9,7 +9,7 @@ Ran 4 tests in 0.762s
 
 OK
 === Staging Autonomic Hex Packages for version 0.1.0 ===
-Destination: /tmp/tmp8c4c8rym/0.1.0
+Destination: /tmp/tmph65zfsub/0.1.0
 
 Staging package 'autonomic'...
   [OK] Staged 'autonomic' with versioned Hex dependencies
@@ -20,4 +20,4 @@ Staging package 'autonomic_postgres'...
 Staging package 'autonomic_typesafe'...
   [OK] Staged 'autonomic_typesafe' with versioned Hex dependencies
 
-All 4 packages staged successfully at /tmp/tmp8c4c8rym/0.1.0
+All 4 packages staged successfully at /tmp/tmph65zfsub/0.1.0

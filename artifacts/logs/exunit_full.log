@@ -1,17 +1,17 @@
 
 === [autonomic] in packages/autonomic ===
 $ /home/home/.asdf/shims/mix test
-Running ExUnit with seed: 471557, max_cases: 48
+Running ExUnit with seed: 571831, max_cases: 48
 Excluding tags: [:postgres, :linux, :live, :reference, :db_outage]
 
 ..........
-Finished in 0.1 seconds (0.02s async, 0.1s sync)
+Finished in 0.1 seconds (0.03s async, 0.1s sync)
 
 Result: 10 passed
 
 === [autonomic_linux] in packages/autonomic_linux ===
 $ /home/home/.asdf/shims/mix test
-Running ExUnit with seed: 403201, max_cases: 48
+Running ExUnit with seed: 471541, max_cases: 48
 Excluding tags: [:postgres, :linux, :live, :reference, :db_outage]
 
 All tests have been excluded.
@@ -22,7 +22,7 @@ Result: 0 tests, 3 excluded
 
 === [autonomic_postgres] in packages/autonomic_postgres ===
 $ /home/home/.asdf/shims/mix test
-Running ExUnit with seed: 384972, max_cases: 48
+Running ExUnit with seed: 250681, max_cases: 48
 Excluding tags: [:postgres, :linux, :live, :reference, :db_outage]
 
 All tests have been excluded.
@@ -33,22 +33,19 @@ Result: 0 tests, 12 excluded
 
 === [autonomic_typesafe] in packages/autonomic_typesafe ===
 $ /home/home/.asdf/shims/mix test
-==> autonomic
-Compiling 1 file (.ex)
-==> autonomic_typesafe
-Running ExUnit with seed: 688950, max_cases: 48
+Running ExUnit with seed: 261895, max_cases: 48
 Excluding tags: [:live]
 
-.........
-17:34:13.903 [warning] Ignoring a TypeSafe answer with an unrecognized future type; inspect response.raw explicitly
-.
+
+18:58:11.459 [warning] Ignoring a TypeSafe answer with an unrecognized future type; inspect response.raw explicitly
+..........
 Finished in 0.1 seconds (0.00s async, 0.1s sync)
 
 Result: 10 passed, 1 excluded
 
 === [autonomic_acceptance] in integration/autonomic_acceptance ===
 $ /home/home/.asdf/shims/mix test
-Running ExUnit with seed: 761635, max_cases: 48
+Running ExUnit with seed: 418374, max_cases: 48
 Excluding tags: [:postgres, :linux, :live, :reference, :db_outage]
 
 All tests have been excluded.
