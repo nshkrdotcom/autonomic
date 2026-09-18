@@ -90,7 +90,7 @@ defmodule Autonomic.Postgres.MixProject do
     [
       main: "readme",
       name: "Autonomic Postgres",
-      source_ref: "autonomic_postgres-v#{@version}",
+      source_ref: "v#{@version}-autonomic_postgres",
       source_url: @source_url,
       homepage_url: @docs_url,
       assets: %{"assets" => "assets"},

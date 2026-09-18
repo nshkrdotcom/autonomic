@@ -95,7 +95,7 @@ defmodule Autonomic.Typesafe.MixProject do
     [
       main: "readme",
       name: "Autonomic TypeSafe",
-      source_ref: "autonomic_typesafe-v#{@version}",
+      source_ref: "v#{@version}-autonomic_typesafe",
       source_url: @source_url,
       homepage_url: @docs_url,
       assets: %{"assets" => "assets"},

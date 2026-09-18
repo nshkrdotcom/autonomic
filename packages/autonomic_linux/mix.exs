@@ -135,7 +135,7 @@ defmodule Autonomic.Linux.MixProject do
     [
       main: "readme",
       name: "Autonomic Linux",
-      source_ref: "autonomic_linux-v#{@version}",
+      source_ref: "v#{@version}-autonomic_linux",
       source_url: @source_url,
       homepage_url: @docs_url,
       assets: %{"assets" => "assets"},

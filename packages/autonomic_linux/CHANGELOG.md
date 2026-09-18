@@ -16,4 +16,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - OverlayFS disposable layer management with rollback capability.
 - Preflight validation suite for host prerequisites.
 
-[0.1.0]: https://github.com/nshkrdotcom/autonomic/releases/tag/autonomic_linux-v0.1.0
+[0.1.0]: https://github.com/nshkrdotcom/autonomic/releases/tag/v0.1.0-autonomic_linux

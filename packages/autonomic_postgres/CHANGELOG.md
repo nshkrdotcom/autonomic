@@ -14,4 +14,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Atomic epoch advancement with strict CAS fencing.
 - Transactional effect ledger with commit-intent and reconciliation tracking.
 
-[0.1.0]: https://github.com/nshkrdotcom/autonomic/releases/tag/autonomic_postgres-v0.1.0
+[0.1.0]: https://github.com/nshkrdotcom/autonomic/releases/tag/v0.1.0-autonomic_postgres

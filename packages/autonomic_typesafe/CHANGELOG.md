@@ -20,4 +20,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Deterministic component testing suite with `TypeSafeSDK.Test`.
 - Explicit live integration gate.
 
-[0.1.0]: https://github.com/nshkrdotcom/autonomic/releases/tag/autonomic_typesafe-v0.1.0
+[0.1.0]: https://github.com/nshkrdotcom/autonomic/releases/tag/v0.1.0-autonomic_typesafe
