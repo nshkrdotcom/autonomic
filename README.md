@@ -74,12 +74,12 @@ The repository ships a hostile fixture (`test/fixtures/coding_agent/HOSTILE_INJE
 │  ┌──────────────────────── AUTONOMIC KERNEL (BEAM) ────────────────────┐  │
 │  │  EpisodeController (:gen_statem)    AuthorityGovernor   Homeostat   │  │
 │  │  EffectBroker    SnapshotManager    RepairManager   SystemRegulator │  │
-│  │  SensorArray (GenStage, demand-driven)             VerificationRunner│ │
-│  └───────────┬──────────────────┬───────────────────────┬──────────────┘  │
-│              │                  │                       │                 │
-│      control / epoch     brokered effects        semantic sensor          │
-│              │                  │                       │                 │
-│  ┌───────────▼──────────┐  ┌────▼─────────────┐  ┌──────▼─────────────┐   │
+│  │  SensorArray (GenStage, demand-driven)           VerificationRunner │  │
+│  └───────────┬──────────────────┬──────────────────────────┬───────────┘  │
+│              │                  │                          │              │
+│      control / epoch     brokered effects           semantic sensor       │
+│              │                  │                          │              │
+│  ┌───────────▼──────────┐  ┌────▼─────────────┐  ┌─────────▼──────────┐   │
 │  │ autonomic_linux      │  │ Effect adapters  │  │ autonomic_typesafe │   │
 │  │ namespaces, cgroup2  │  │ Git / GitRemote  │  │ sensor bank only   │   │
 │  │ seccomp, overlayfs   │  │ HTTP / Artifact  │  │ never authority    │   │
@@ -95,7 +95,7 @@ The repository ships a hostile fixture (`test/fixtures/coding_agent/HOSTILE_INJE
 │  └──────────────────────────┘   │                                         │
 └─────────────────────────────────┼─────────────────────────────────────────┘
                                   ▼
-                   EXTERNAL WORLD — Git remotes, APIs, registries, humans
+           EXTERNAL WORLD — Git remotes, APIs, registries, humans
 ```
 
 Per-episode processes run under a `rest_for_one` `EpisodeSupervisor`, so losing the authority governor tears down everything downstream of it rather than leaving a worker running against a dead authority.
