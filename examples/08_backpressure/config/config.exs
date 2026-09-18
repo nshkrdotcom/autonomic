@@ -14,5 +14,4 @@ config :autonomic,
   sensor_queue: 64
 
 config :autonomic,
-  effect_concurrency: 1,
   sensor_queue: 2

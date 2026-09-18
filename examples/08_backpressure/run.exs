@@ -115,7 +115,10 @@ state =
 queued = :queue.to_list(state.queue)
 
 IO.inspect(
-  %{dropped: state.dropped, queued_sequences: Enum.map(queued, fn {_priority, frame} -> frame.sequence end)},
+  %{
+    dropped: state.dropped,
+    queued_sequences: Enum.map(queued, fn {_priority, frame} -> frame.sequence end)
+  },
   label: "sensor queue"
 )
 

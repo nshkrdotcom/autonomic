@@ -9,7 +9,10 @@ defmodule Autonomic.Dev.MemoryAdapter do
     target = Keyword.fetch!(opts, :trusted_target)
     expected_id = Map.get(target, "id") || Map.get(target, :id)
     public_id = Map.get(effect.target, "id") || Map.get(effect.target, :id)
-    if is_nil(expected_id) or expected_id == public_id, do: :ok, else: {:error, :target_scope_mismatch}
+
+    if is_nil(expected_id) or expected_id == public_id,
+      do: :ok,
+      else: {:error, :target_scope_mismatch}
   end
 
   @impl true
@@ -51,12 +54,28 @@ defmodule Autonomic.Dev.MemoryAdapter do
     key = key(effect, target)
 
     case TargetStore.get(key) do
-      digest when digest == effect.payload_digest -> {:committed, receipt(effect, key, :reconciled)}
-      nil -> if(Map.get(target, "reconcile_unknown", false), do: {:unknown, :authoritative_evidence_unavailable}, else: :not_committed)
-      _ -> {:unknown, :target_contains_different_revision}
+      digest when digest == effect.payload_digest ->
+        {:committed, receipt(effect, key, :reconciled)}
+
+      nil ->
+        if(Map.get(target, "reconcile_unknown", false),
+          do: {:unknown, :authoritative_evidence_unavailable},
+          else: :not_committed
+        )
+
+      _ ->
+        {:unknown, :target_contains_different_revision}
     end
   end
 
-  defp key(effect, target), do: {Map.get(effect.target, "id"), Map.get(target, "object_key", effect.id)}
-  defp receipt(effect, key, mode), do: %{receipt_ref: "memory:#{effect.id}", key: inspect(key), payload_digest: effect.payload_digest, mode: mode}
+  defp key(effect, target),
+    do: {Map.get(effect.target, "id"), Map.get(target, "object_key", effect.id)}
+
+  defp receipt(effect, key, mode),
+    do: %{
+      receipt_ref: "memory:#{effect.id}",
+      key: inspect(key),
+      payload_digest: effect.payload_digest,
+      mode: mode
+    }
 end
