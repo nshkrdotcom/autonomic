@@ -3,10 +3,10 @@ name: Tagged release rehearsal
 on:
   push:
     tags:
-      - 'autonomic-v*'
-      - 'autonomic_linux-v*'
-      - 'autonomic_postgres-v*'
-      - 'autonomic_typesafe-v*'
+      - 'v*-autonomic'
+      - 'v*-autonomic_linux'
+      - 'v*-autonomic_postgres'
+      - 'v*-autonomic_typesafe'
 
 permissions:
   contents: read
@@ -32,9 +32,9 @@ jobs:
           python3 - <<'PY'
           import os, pathlib, re, subprocess
           tag = os.environ['RELEASE_TAG']
-          match = re.fullmatch(r'(autonomic(?:_linux|_postgres|_typesafe)?)-v(\d+\.\d+\.\d+)', tag)
+          match = re.fullmatch(r'v(\d+\.\d+\.\d+)-(autonomic(?:_linux|_postgres|_typesafe)?)', tag)
           assert match, f'Invalid release tag: {tag}'
-          package, version = match.groups()
+          version, package = match.groups()
           source = pathlib.Path('packages', package, 'mix.exs').read_text()
           assert re.search(r'@version "' + re.escape(version) + '"', source), 'Tag/version mismatch'
           assert subprocess.check_output(['git', 'rev-parse', tag + '^{commit}']) == subprocess.check_output(['git', 'rev-parse', 'HEAD'])
@@ -49,3 +49,5 @@ jobs:
           path: _release_stage/*/tarballs/*.tar
           if-no-files-found: error
       # No publish step or Hex credentials: this workflow only rehearses a release.
+      # The plain repository tag (for example v0.1.0) is intentionally created
+      # after the four package tags and does not trigger another expensive rehearsal.
