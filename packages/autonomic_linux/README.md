@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/autonomic.svg" alt="Autonomic Logo" width="200" height="200">
+  <img src="assets/autonomic_linux.svg" alt="Autonomic Linux Logo" width="200" height="200">
 </p>
 
 # autonomic_linux

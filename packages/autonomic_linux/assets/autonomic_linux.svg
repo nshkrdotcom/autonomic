@@ -1,0 +1,220 @@
+<svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Background Gradient -->
+    <linearGradient id="linuxBgGrad" x1="100" y1="8" x2="100" y2="192" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#061A14" />
+      <stop offset="45%" stop-color="#07131B" />
+      <stop offset="100%" stop-color="#03080E" />
+    </linearGradient>
+
+    <!-- Outer Rim Gradient -->
+    <linearGradient id="linuxRimGrad" x1="20" y1="8" x2="180" y2="192" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#10B981" />
+      <stop offset="30%" stop-color="#06B6D4" />
+      <stop offset="70%" stop-color="#3B82F6" />
+      <stop offset="100%" stop-color="#34D399" />
+    </linearGradient>
+
+    <!-- Inner Core Ambient Glow -->
+    <radialGradient id="linuxCoreGlow" cx="100" cy="100" r="75" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#10B981" stop-opacity="0.32" />
+      <stop offset="40%" stop-color="#06B6D4" stop-opacity="0.16" />
+      <stop offset="75%" stop-color="#3B82F6" stop-opacity="0.05" />
+      <stop offset="100%" stop-color="#07131B" stop-opacity="0" />
+    </radialGradient>
+
+    <!-- Nucleus Radial Glow -->
+    <radialGradient id="linuxNucleusGlow" cx="100" cy="100" r="22" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFFFFF" />
+      <stop offset="25%" stop-color="#34D399" />
+      <stop offset="65%" stop-color="#059669" />
+      <stop offset="100%" stop-color="#047857" stop-opacity="0" />
+    </radialGradient>
+
+    <linearGradient id="linuxChamberGrad" x1="100" y1="60" x2="100" y2="140" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#064E3B" stop-opacity="0.85" />
+      <stop offset="50%" stop-color="#082F49" stop-opacity="0.9" />
+      <stop offset="100%" stop-color="#0F172A" stop-opacity="0.95" />
+    </linearGradient>
+
+    <linearGradient id="seccompTraceGrad" x1="20" y1="20" x2="180" y2="180" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#34D399" stop-opacity="0.9" />
+      <stop offset="50%" stop-color="#22D3EE" stop-opacity="0.8" />
+      <stop offset="100%" stop-color="#3B82F6" stop-opacity="0.9" />
+    </linearGradient>
+
+    <!-- Clip Path for the Hexagon -->
+    <clipPath id="linuxHexClip">
+      <path d="M 94.00,11.46 A 12.00 12.00 0 0 1 106.00,11.46 L 173.67,50.54 A 12.00 12.00 0 0 1 179.67,60.93 L 179.67,139.07 A 12.00 12.00 0 0 1 173.67,149.46 L 106.00,188.54 A 12.00 12.00 0 0 1 94.00,188.54 L 26.33,149.46 A 12.00 12.00 0 0 1 20.33,139.07 L 20.33,60.93 A 12.00 12.00 0 0 1 26.33,50.54 Z" />
+    </clipPath>
+
+    <!-- Glow Filters -->
+    <filter id="linuxSoftGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="3" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+
+    <filter id="linuxIntenseGlow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="4.5" result="blur1" />
+      <feGaussianBlur stdDeviation="1.5" result="blur2" />
+      <feMerge>
+        <feMergeNode in="blur1" />
+        <feMergeNode in="blur2" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- 1. BASE HEXAGON (Transparent Outside) -->
+  <path d="M 94.00,11.46 A 12.00 12.00 0 0 1 106.00,11.46 L 173.67,50.54 A 12.00 12.00 0 0 1 179.67,60.93 L 179.67,139.07 A 12.00 12.00 0 0 1 173.67,149.46 L 106.00,188.54 A 12.00 12.00 0 0 1 94.00,188.54 L 26.33,149.46 A 12.00 12.00 0 0 1 20.33,139.07 L 20.33,60.93 A 12.00 12.00 0 0 1 26.33,50.54 Z" fill="url(#linuxBgGrad)" />
+
+  <!-- Clipped internal elements -->
+  <g clip-path="url(#linuxHexClip)">
+    <!-- Radial Ambient Atmosphere -->
+    <circle cx="100" cy="100" r="85" fill="url(#linuxCoreGlow)" />
+
+    <!-- Linux Namespaces & cgroup v2 Partition Grid -->
+    <g opacity="0.2" stroke="#10B981" stroke-width="0.75">
+      <!-- 6 Symmetrical Namespace Ray Dividers -->
+      <line x1="100" y1="15" x2="100" y2="185" stroke-dasharray="3 3" />
+      <line x1="26" y1="57" x2="174" y2="143" stroke-dasharray="3 3" />
+      <line x1="26" y1="143" x2="174" y2="57" stroke-dasharray="3 3" />
+
+      <!-- Concentric cgroup limits -->
+      <circle cx="100" cy="100" r="75" fill="none" stroke-dasharray="2 4" />
+      <circle cx="100" cy="100" r="58" fill="none" stroke-dasharray="1 5" />
+    </g>
+
+    <!-- OverlayFS Layer Boundaries -->
+    <path d="M 96.00,22.00 A 7.00 7.00 0 0 1 104.00,22.00 L 165.50,57.50 A 7.00 7.00 0 0 1 169.00,63.50 L 169.00,136.50 A 7.00 7.00 0 0 1 165.50,142.50 L 104.00,178.00 A 7.00 7.00 0 0 1 96.00,178.00 L 34.50,142.50 A 7.00 7.00 0 0 1 31.00,136.50 L 31.00,63.50 A 7.00 7.00 0 0 1 34.50,57.50 Z" fill="none" stroke="#064E3B" stroke-width="1.5" />
+    <path d="M 96.00,22.00 A 7.00 7.00 0 0 1 104.00,22.00 L 165.50,57.50 A 7.00 7.00 0 0 1 169.00,63.50 L 169.00,136.50 A 7.00 7.00 0 0 1 165.50,142.50 L 104.00,178.00 A 7.00 7.00 0 0 1 96.00,178.00 L 34.50,142.50 A 7.00 7.00 0 0 1 31.00,136.50 L 31.00,63.50 A 7.00 7.00 0 0 1 34.50,57.50 Z" fill="none" stroke="url(#linuxRimGrad)" stroke-width="1" stroke-opacity="0.4" stroke-dasharray="8 6" />
+
+    <!-- Seccomp BPF Filter Grid Matrix (Left & Right sectors) -->
+    <g stroke="#06B6D4" stroke-width="0.9" opacity="0.45">
+      <!-- Upper left syscall filter array -->
+      <line x1="45" y1="75" x2="65" y2="75" />
+      <line x1="45" y1="83" x2="60" y2="83" />
+      <line x1="45" y1="91" x2="68" y2="91" />
+      <!-- Lower left syscall filter array -->
+      <line x1="45" y1="109" x2="68" y2="109" />
+      <line x1="45" y1="117" x2="60" y2="117" />
+      <line x1="45" y1="125" x2="65" y2="125" />
+      <!-- Upper right syscall filter array -->
+      <line x1="135" y1="75" x2="155" y2="75" />
+      <line x1="140" y1="83" x2="155" y2="83" />
+      <line x1="132" y1="91" x2="155" y2="91" />
+      <!-- Lower right syscall filter array -->
+      <line x1="132" y1="109" x2="155" y2="109" />
+      <line x1="140" y1="117" x2="155" y2="117" />
+      <line x1="135" y1="125" x2="155" y2="125" />
+    </g>
+
+    <!-- Isolation Gateway Nodes (6 Namespace Anchors) -->
+    <g fill="#022C22" stroke="#34D399" stroke-width="1.2">
+      <!-- MNT (Top) -->
+      <rect x="94" y="24" width="12" height="12" rx="2.5" />
+      <!-- PID (Top Right) -->
+      <rect x="151" y="57" width="12" height="12" rx="2.5" transform="rotate(30 157 63)" />
+      <!-- NET (Bottom Right) -->
+      <rect x="151" y="125" width="12" height="12" rx="2.5" transform="rotate(-30 157 131)" />
+      <!-- USR (Bottom) -->
+      <rect x="94" y="158" width="12" height="12" rx="2.5" />
+      <!-- IPC (Bottom Left) -->
+      <rect x="37" y="125" width="12" height="12" rx="2.5" transform="rotate(30 43 131)" />
+      <!-- UTS (Top Left) -->
+      <rect x="37" y="57" width="12" height="12" rx="2.5" transform="rotate(-30 43 63)" />
+    </g>
+    <!-- Anchor Internal LED nodes -->
+    <g fill="#34D399">
+      <circle cx="100" cy="30" r="2" />
+      <circle cx="157" cy="63" r="2" />
+      <circle cx="157" cy="131" r="2" />
+      <circle cx="100" cy="164" r="2" />
+      <circle cx="43" cy="131" r="2" />
+      <circle cx="43" cy="63" r="2" />
+    </g>
+
+    <!-- Containment Bus Channels (Radial conduits to sandbox center) -->
+    <g stroke="url(#seccompTraceGrad)" stroke-width="1.8" stroke-linecap="round">
+      <line x1="100" y1="42" x2="100" y2="66" />
+      <line x1="100" y1="134" x2="100" y2="158" />
+      <line x1="146" y1="70" x2="126" y2="82" />
+      <line x1="54" y1="124" x2="74" y2="112" />
+      <line x1="146" y1="124" x2="126" y2="112" />
+      <line x1="54" y1="70" x2="74" y2="82" />
+    </g>
+
+    <!-- Intermediate Fortress Isolation Wall (cgroup v2 sandbox perimeter) -->
+    <polygon points="100.00,52.00 141.57,76.00 141.57,124.00 100.00,148.00 58.43,124.00 58.43,76.00" fill="url(#linuxChamberGrad)" stroke="#047857" stroke-width="2" />
+    <polygon points="100.00,52.00 141.57,76.00 141.57,124.00 100.00,148.00 58.43,124.00 58.43,76.00" fill="none" stroke="url(#linuxRimGrad)" stroke-width="1.2" stroke-opacity="0.85" />
+
+    <!-- Corner Lock Flanges on Sandbox Perimeter -->
+    <g stroke="#34D399" stroke-width="1.5" stroke-linecap="round" fill="none">
+      <path d="M 88,58 L 100,51 L 112,58" />
+      <path d="M 88,142 L 100,149 L 112,142" />
+      <path d="M 64,83 L 57,77 L 64,71" />
+      <path d="M 136,83 L 143,77 L 136,71" />
+      <path d="M 64,117 L 57,123 L 64,129" />
+      <path d="M 136,117 L 143,123 L 136,129" />
+    </g>
+
+    <!-- Central Rust Launcher Processor Enclave (Heavy Containment Die) -->
+    <rect x="74" y="74" width="52" height="52" rx="8" fill="#041E1A" stroke="#10B981" stroke-width="1.8" />
+    <rect x="78" y="78" width="44" height="44" rx="5" fill="#062822" stroke="#22D3EE" stroke-width="1" stroke-dasharray="4 3" />
+
+    <!-- Micro-interconnect Pins on Launcher Enclave -->
+    <g stroke="#10B981" stroke-width="1.2">
+      <!-- Top pins -->
+      <line x1="84" y1="74" x2="84" y2="70" />
+      <line x1="92" y1="74" x2="92" y2="70" />
+      <line x1="100" y1="74" x2="100" y2="68" />
+      <line x1="108" y1="74" x2="108" y2="70" />
+      <line x1="116" y1="74" x2="116" y2="70" />
+      <!-- Bottom pins -->
+      <line x1="84" y1="126" x2="84" y2="130" />
+      <line x1="92" y1="126" x2="92" y2="130" />
+      <line x1="100" y1="126" x2="100" y2="132" />
+      <line x1="108" y1="126" x2="108" y2="130" />
+      <line x1="116" y1="126" x2="116" y2="130" />
+      <!-- Left pins -->
+      <line x1="74" y1="84" x2="70" y2="84" />
+      <line x1="74" y1="92" x2="70" y2="92" />
+      <line x1="74" y1="100" x2="68" y2="100" />
+      <line x1="74" y1="108" x2="70" y2="108" />
+      <line x1="74" y1="116" x2="70" y2="116" />
+      <!-- Right pins -->
+      <line x1="126" y1="84" x2="130" y2="84" />
+      <line x1="126" y1="92" x2="130" y2="92" />
+      <line x1="126" y1="100" x2="132" y2="100" />
+      <line x1="126" y1="108" x2="130" y2="108" />
+      <line x1="126" y1="116" x2="130" y2="116" />
+    </g>
+
+    <!-- Central Radiant Containment Kernel -->
+    <circle cx="100" cy="100" r="14" fill="url(#linuxNucleusGlow)" filter="url(#linuxIntenseGlow)" />
+    <circle cx="100" cy="100" r="7.5" fill="#FFFFFF" />
+    <circle cx="100" cy="100" r="3.5" fill="#047857" />
+
+    <!-- Corner Status Indicators on Enclave -->
+    <g fill="#34D399" opacity="0.95">
+      <circle cx="82" cy="82" r="1.5" />
+      <circle cx="118" cy="82" r="1.5" />
+      <circle cx="82" cy="118" r="1.5" />
+      <circle cx="118" cy="118" r="1.5" />
+    </g>
+  </g>
+
+  <!-- 2. OUTER HEXAGON RIM & CORNER ACCENTS -->
+  <path d="M 94.00,11.46 A 12.00 12.00 0 0 1 106.00,11.46 L 173.67,50.54 A 12.00 12.00 0 0 1 179.67,60.93 L 179.67,139.07 A 12.00 12.00 0 0 1 173.67,149.46 L 106.00,188.54 A 12.00 12.00 0 0 1 94.00,188.54 L 26.33,149.46 A 12.00 12.00 0 0 1 20.33,139.07 L 20.33,60.93 A 12.00 12.00 0 0 1 26.33,50.54 Z" fill="none" stroke="url(#linuxRimGrad)" stroke-width="2" filter="url(#linuxSoftGlow)" opacity="0.6" />
+  <path d="M 94.00,11.46 A 12.00 12.00 0 0 1 106.00,11.46 L 173.67,50.54 A 12.00 12.00 0 0 1 179.67,60.93 L 179.67,139.07 A 12.00 12.00 0 0 1 173.67,149.46 L 106.00,188.54 A 12.00 12.00 0 0 1 94.00,188.54 L 26.33,149.46 A 12.00 12.00 0 0 1 20.33,139.07 L 20.33,60.93 A 12.00 12.00 0 0 1 26.33,50.54 Z" fill="none" stroke="url(#linuxRimGrad)" stroke-width="1.5" />
+
+  <!-- Precision Corner Dots -->
+  <g fill="#ECFDF5" opacity="0.95">
+    <circle cx="100" cy="11" r="1.75" />
+    <circle cx="174.67" cy="54" r="1.75" />
+    <circle cx="174.67" cy="146" r="1.75" />
+    <circle cx="100" cy="189" r="1.75" />
+    <circle cx="25.33" cy="146" r="1.75" />
+    <circle cx="25.33" cy="54" r="1.75" />
+  </g>
+</svg>

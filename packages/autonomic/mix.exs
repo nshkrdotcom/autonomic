@@ -84,7 +84,7 @@ defmodule Autonomic.MixProject do
         "GitHub" => @source_url,
         "HexDocs" => @docs_url,
         "Changelog" => "#{@source_url}/blob/main/packages/autonomic/CHANGELOG.md",
-        "License" => "#{@source_url}/blob/main/LICENSE"
+        "License" => "#{@source_url}/blob/main/packages/autonomic/LICENSE"
       },
       maintainers: ["nshkrdotcom"]
     ]

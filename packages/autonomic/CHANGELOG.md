@@ -1,6 +1,6 @@
-# Changelog: `autonomic`
+# Changelog
 
-All notable changes to the `autonomic` core kernel package will be documented in this file.
+All notable changes to `autonomic` will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
@@ -17,3 +17,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Authoritative effect adapters for Git, GitRemote CAS, bounded HTTP, and content-addressed artifacts.
 - Behaviours for execution domains (`Autonomic.ExecutionDomain`), stores (`Autonomic.Store`), and sensors (`Autonomic.SemanticSensor`).
 - Poncho standalone package structure with independent Hex publication support.
+
+[0.1.0]: https://github.com/nshkrdotcom/autonomic/releases/tag/autonomic-v0.1.0

@@ -36,11 +36,25 @@ defmodule Autonomic.Linux.MixProject do
 
   defp deps do
     [
-      {:autonomic, path: "../autonomic"},
+      autonomic_dependency(),
       {:ex_doc, "~> 0.40", only: :dev, runtime: false},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false}
     ]
+  end
+
+  defp autonomic_dependency do
+    case System.get_env("AUTONOMIC_PATH") do
+      nil ->
+        if Mix.env() == :prod or System.get_env("HEX_BUILD") == "true" do
+          {:autonomic, "~> 0.1.0"}
+        else
+          {:autonomic, "~> 0.1.0", path: "../autonomic"}
+        end
+
+      path ->
+        {:autonomic, "~> 0.1.0", path: Path.expand(path)}
+    end
   end
 
   defp aliases do
@@ -118,7 +132,7 @@ defmodule Autonomic.Linux.MixProject do
         "GitHub" => @source_url,
         "HexDocs" => @docs_url,
         "Changelog" => "#{@source_url}/blob/main/packages/autonomic_linux/CHANGELOG.md",
-        "License" => "#{@source_url}/blob/main/LICENSE"
+        "License" => "#{@source_url}/blob/main/packages/autonomic_linux/LICENSE"
       },
       maintainers: ["nshkrdotcom"]
     ]
@@ -132,7 +146,7 @@ defmodule Autonomic.Linux.MixProject do
       source_url: @source_url,
       homepage_url: @docs_url,
       assets: %{"assets" => "assets"},
-      logo: "assets/autonomic.svg",
+      logo: "assets/autonomic_linux.svg",
       extras: [
         "README.md": [filename: "readme", title: "Overview"],
         "CHANGELOG.md": [title: "Changelog"],

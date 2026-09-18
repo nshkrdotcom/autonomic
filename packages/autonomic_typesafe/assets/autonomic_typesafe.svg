@@ -1,0 +1,179 @@
+<svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Background Gradient -->
+    <linearGradient id="tsBgGrad" x1="100" y1="8" x2="100" y2="192" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#150D2A" />
+      <stop offset="45%" stop-color="#0E081D" />
+      <stop offset="100%" stop-color="#06030D" />
+    </linearGradient>
+
+    <!-- Outer Rim Gradient -->
+    <linearGradient id="tsRimGrad" x1="20" y1="8" x2="180" y2="192" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#22D3EE" />
+      <stop offset="30%" stop-color="#8B5CF6" />
+      <stop offset="70%" stop-color="#EC4899" />
+      <stop offset="100%" stop-color="#06B6D4" />
+    </linearGradient>
+
+    <!-- Inner Core Ambient Glow -->
+    <radialGradient id="tsCoreGlow" cx="100" cy="100" r="75" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#8B5CF6" stop-opacity="0.35" />
+      <stop offset="40%" stop-color="#EC4899" stop-opacity="0.18" />
+      <stop offset="75%" stop-color="#06B6D4" stop-opacity="0.06" />
+      <stop offset="100%" stop-color="#0E081D" stop-opacity="0" />
+    </radialGradient>
+
+    <!-- Nucleus Radial Glow -->
+    <radialGradient id="tsNucleusGlow" cx="100" cy="100" r="22" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFFFFF" />
+      <stop offset="25%" stop-color="#F472B6" />
+      <stop offset="65%" stop-color="#9333EA" />
+      <stop offset="100%" stop-color="#4C1D95" stop-opacity="0" />
+    </radialGradient>
+
+    <!-- Lens Prismatic Facet Gradient -->
+    <linearGradient id="prismGrad" x1="100" y1="60" x2="100" y2="140" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#3B0764" stop-opacity="0.9" />
+      <stop offset="50%" stop-color="#1E1B4B" stop-opacity="0.95" />
+      <stop offset="100%" stop-color="#0F172A" stop-opacity="0.9" />
+    </linearGradient>
+
+    <!-- Beam Gradient -->
+    <linearGradient id="beamGrad" x1="100" y1="20" x2="100" y2="180" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#22D3EE" stop-opacity="0.9" />
+      <stop offset="50%" stop-color="#F43F5E" stop-opacity="0.85" />
+      <stop offset="100%" stop-color="#A855F7" stop-opacity="0.9" />
+    </linearGradient>
+
+    <!-- Clip Path for the Hexagon -->
+    <clipPath id="tsHexClip">
+      <path d="M 94.00,11.46 A 12.00 12.00 0 0 1 106.00,11.46 L 173.67,50.54 A 12.00 12.00 0 0 1 179.67,60.93 L 179.67,139.07 A 12.00 12.00 0 0 1 173.67,149.46 L 106.00,188.54 A 12.00 12.00 0 0 1 94.00,188.54 L 26.33,149.46 A 12.00 12.00 0 0 1 20.33,139.07 L 20.33,60.93 A 12.00 12.00 0 0 1 26.33,50.54 Z" />
+    </clipPath>
+
+    <!-- Glow Filters -->
+    <filter id="tsSoftGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="3" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+
+    <filter id="tsIntenseGlow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="4.5" result="blur1" />
+      <feGaussianBlur stdDeviation="1.5" result="blur2" />
+      <feMerge>
+        <feMergeNode in="blur1" />
+        <feMergeNode in="blur2" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- 1. BASE HEXAGON (Transparent Outside) -->
+  <path d="M 94.00,11.46 A 12.00 12.00 0 0 1 106.00,11.46 L 173.67,50.54 A 12.00 12.00 0 0 1 179.67,60.93 L 179.67,139.07 A 12.00 12.00 0 0 1 173.67,149.46 L 106.00,188.54 A 12.00 12.00 0 0 1 94.00,188.54 L 26.33,149.46 A 12.00 12.00 0 0 1 20.33,139.07 L 20.33,60.93 A 12.00 12.00 0 0 1 26.33,50.54 Z" fill="url(#tsBgGrad)" />
+
+  <!-- Clipped internal elements -->
+  <g clip-path="url(#tsHexClip)">
+    <!-- Radial Ambient Atmosphere -->
+    <circle cx="100" cy="100" r="85" fill="url(#tsCoreGlow)" />
+
+    <!-- Semantic Sensor Radar Grid & Drift Scanning Arcs -->
+    <g opacity="0.22" stroke="#A855F7" stroke-width="0.75">
+      <line x1="100" y1="15" x2="100" y2="185" stroke-dasharray="2 4" />
+      <line x1="26" y1="57" x2="174" y2="143" stroke-dasharray="2 4" />
+      <line x1="26" y1="143" x2="174" y2="57" stroke-dasharray="2 4" />
+      <circle cx="100" cy="100" r="76" fill="none" />
+      <circle cx="100" cy="100" r="62" fill="none" stroke-dasharray="2 4" />
+      <circle cx="100" cy="100" r="46" fill="none" stroke-dasharray="1 5" />
+    </g>
+
+    <!-- 2. EVIDENCE REDACTION & BOUNDING FENCE -->
+    <path d="M 96.00,21.00 A 8.00 8.00 0 0 1 104.00,21.00 L 166.00,56.80 A 8.00 8.00 0 0 1 170.00,63.70 L 170.00,136.30 A 8.00 8.00 0 0 1 166.00,143.20 L 104.00,179.00 A 8.00 8.00 0 0 1 96.00,179.00 L 34.00,143.20 A 8.00 8.00 0 0 1 30.00,136.30 L 30.00,63.70 A 8.00 8.00 0 0 1 34.00,56.80 Z" fill="none" stroke="#581C87" stroke-width="1.5" />
+    <path d="M 96.00,21.00 A 8.00 8.00 0 0 1 104.00,21.00 L 166.00,56.80 A 8.00 8.00 0 0 1 170.00,63.70 L 170.00,136.30 A 8.00 8.00 0 0 1 166.00,143.20 L 104.00,179.00 A 8.00 8.00 0 0 1 96.00,179.00 L 34.00,143.20 A 8.00 8.00 0 0 1 30.00,136.30 L 30.00,63.70 A 8.00 8.00 0 0 1 34.00,56.80 Z" fill="none" stroke="url(#tsRimGrad)" stroke-width="1.2" stroke-opacity="0.5" stroke-dasharray="10 8" />
+
+    <!-- Sensor Bank Aperture Nodes (6 Peripheral Sensors) -->
+    <g fill="#1E0B36" stroke="#22D3EE" stroke-width="1.2">
+      <!-- Top: Scope Drift Sensor -->
+      <polygon points="100,22 106,28 100,34 94,28" />
+      <!-- Top Right: Authority Escalation Sensor -->
+      <polygon points="158,56 164,62 158,68 152,62" />
+      <!-- Bottom Right: Evidence Sufficiency Sensor -->
+      <polygon points="158,132 164,138 158,144 152,138" />
+      <!-- Bottom: Effect Irreversibility Sensor -->
+      <polygon points="100,166 106,172 100,178 94,172" />
+      <!-- Bottom Left: Trajectory Regime Sensor -->
+      <polygon points="42,132 48,138 42,144 36,138" />
+      <!-- Top Left: Anomaly Detector Sensor -->
+      <polygon points="42,56 48,62 42,68 36,62" />
+    </g>
+    <!-- Sensor Aperture Illuminators -->
+    <g fill="#EC4899">
+      <circle cx="100" cy="28" r="1.75" />
+      <circle cx="158" cy="62" r="1.75" />
+      <circle cx="158" cy="138" r="1.75" />
+      <circle cx="100" cy="172" r="1.75" />
+      <circle cx="42" cy="138" r="1.75" />
+      <circle cx="42" cy="62" r="1.75" />
+    </g>
+
+    <!-- 3. PREPARED CONTRACT FOCAL BEAMS (Radial Refraction Vectors) -->
+    <g stroke="url(#beamGrad)" stroke-width="1.8" stroke-linecap="round">
+      <line x1="100" y1="40" x2="100" y2="68" />
+      <line x1="100" y1="132" x2="100" y2="160" />
+      <line x1="148" y1="72" x2="126" y2="84" />
+      <line x1="52" y1="128" x2="74" y2="116" />
+      <line x1="148" y1="128" x2="126" y2="116" />
+      <line x1="52" y1="72" x2="74" y2="84" />
+    </g>
+
+    <!-- 4. CENTRAL PRISMATIC SENSOR EYE & CRYSTAL ENVELOPE -->
+    <!-- Outer Octagonal Prismatic Iris -->
+    <polygon points="100.00,54.00 139.84,77.00 139.84,123.00 100.00,146.00 60.16,123.00 60.16,77.00" fill="url(#prismGrad)" stroke="#7C3AED" stroke-width="2" />
+    <polygon points="100.00,54.00 139.84,77.00 139.84,123.00 100.00,146.00 60.16,123.00 60.16,77.00" fill="none" stroke="url(#tsRimGrad)" stroke-width="1.2" stroke-opacity="0.85" />
+
+    <!-- Prismatic Sensor Facets (Internal refraction triangles) -->
+    <g stroke="#C084FC" stroke-width="1" fill="none" opacity="0.6">
+      <line x1="100" y1="54" x2="100" y2="146" />
+      <line x1="60.16" y1="77" x2="139.84" y2="123" />
+      <line x1="60.16" y1="123" x2="139.84" y2="77" />
+    </g>
+
+    <!-- Drift Monitoring Calibration Reticle & Waveform -->
+    <g stroke="#22D3EE" stroke-width="1.4" stroke-linecap="round" fill="none" opacity="0.85">
+      <!-- Upper / Lower Reticles -->
+      <path d="M 86,64 L 100,56 L 114,64" />
+      <path d="M 86,136 L 100,144 L 114,136" />
+      <!-- Lateral Sensor Guides -->
+      <path d="M 68,90 L 62,100 L 68,110" />
+      <path d="M 132,90 L 138,100 L 132,110" />
+    </g>
+
+    <!-- Inner Prepared Contract Diamond -->
+    <polygon points="100,75 125,100 100,125 75,100" fill="#2E1065" stroke="url(#tsRimGrad)" stroke-width="1.6" />
+
+    <!-- Radiant TypeSafe/Jev Semantic Sensor Core -->
+    <circle cx="100" cy="100" r="14" fill="url(#tsNucleusGlow)" filter="url(#tsIntenseGlow)" />
+    <circle cx="100" cy="100" r="7" fill="#FFFFFF" />
+    <circle cx="100" cy="100" r="3.5" fill="#9333EA" />
+
+    <!-- Drift & Confidence Threshold Precision Marks -->
+    <g fill="#F472B6" opacity="0.95">
+      <circle cx="100" cy="71" r="1.5" />
+      <circle cx="100" cy="129" r="1.5" />
+      <circle cx="71" cy="100" r="1.5" />
+      <circle cx="129" cy="100" r="1.5" />
+    </g>
+  </g>
+
+  <!-- 5. OUTER HEXAGON RIM & CORNER ACCENTS -->
+  <path d="M 94.00,11.46 A 12.00 12.00 0 0 1 106.00,11.46 L 173.67,50.54 A 12.00 12.00 0 0 1 179.67,60.93 L 179.67,139.07 A 12.00 12.00 0 0 1 173.67,149.46 L 106.00,188.54 A 12.00 12.00 0 0 1 94.00,188.54 L 26.33,149.46 A 12.00 12.00 0 0 1 20.33,139.07 L 20.33,60.93 A 12.00 12.00 0 0 1 26.33,50.54 Z" fill="none" stroke="url(#tsRimGrad)" stroke-width="2" filter="url(#tsSoftGlow)" opacity="0.6" />
+  <path d="M 94.00,11.46 A 12.00 12.00 0 0 1 106.00,11.46 L 173.67,50.54 A 12.00 12.00 0 0 1 179.67,60.93 L 179.67,139.07 A 12.00 12.00 0 0 1 173.67,149.46 L 106.00,188.54 A 12.00 12.00 0 0 1 94.00,188.54 L 26.33,149.46 A 12.00 12.00 0 0 1 20.33,139.07 L 20.33,60.93 A 12.00 12.00 0 0 1 26.33,50.54 Z" fill="none" stroke="url(#tsRimGrad)" stroke-width="1.5" />
+
+  <!-- Precision Corner Dots -->
+  <g fill="#FDF4FF" opacity="0.95">
+    <circle cx="100" cy="11" r="1.75" />
+    <circle cx="174.67" cy="54" r="1.75" />
+    <circle cx="174.67" cy="146" r="1.75" />
+    <circle cx="100" cy="189" r="1.75" />
+    <circle cx="25.33" cy="146" r="1.75" />
+    <circle cx="25.33" cy="54" r="1.75" />
+  </g>
+</svg>
