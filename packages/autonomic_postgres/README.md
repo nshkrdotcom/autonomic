@@ -43,6 +43,8 @@ def deps do
 end
 ```
 
+`autonomic_postgres` is opt-in from the application's point of view, but its Mix dependency is **autonomic_postgres → autonomic**. Installing this package does not make `autonomic` depend on it; an application chooses this adapter by adding the package and configuring the corresponding core behaviour.
+
 ## How do I configure it?
 
 In your `config/config.exs`:
@@ -77,14 +79,16 @@ mix ecto.migrate -r Autonomic.Store.Repo
 `autonomic_postgres` is the official durable authority adapter:
 
 ```text
+     autonomic_postgres                      other backends
+              │                                     │
+              └──────────────────┬──────────────────┘
+                                 ▼
                       ┌─────────────────────┐
                       │      autonomic      │
-                      └──────────┬──────────┘
-                                 │
-              ┌──────────────────┴──────────────────┐
-              ▼                                     ▼
-     autonomic_postgres                      other backends
+                      └─────────────────────┘
 ```
+
+The arrows are dependency arrows: concrete adapters depend on the core contracts. The application chooses which implementation to configure at runtime.
 
 ## Where are the full system docs?
 

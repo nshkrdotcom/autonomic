@@ -66,6 +66,8 @@ def deps do
 end
 ```
 
+`autonomic_typesafe` is opt-in from the application's point of view, but its Mix dependency is **autonomic_typesafe → autonomic**. Installing this package does not make `autonomic` depend on it; an application chooses this adapter by adding the package and configuring the corresponding core behaviour.
+
 ## Configuration
 
 ```elixir
@@ -111,3 +113,5 @@ non-secret structural provenance.
 
 See the package guides and repository-level `docs/TYPESAFE_SENSORS.md` for the
 full integration contract.
+
+For the repository-wide adapter/core dependency model and full-stack installation recipe, see [`docs/PACKAGE_COMPOSITION.md`](https://github.com/nshkrdotcom/autonomic/blob/main/docs/PACKAGE_COMPOSITION.md).

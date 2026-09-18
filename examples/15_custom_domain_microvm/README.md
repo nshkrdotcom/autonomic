@@ -17,3 +17,5 @@ mix run
 ```
 
 The script exits non-zero if its final invariant does not hold.
+
+This example intentionally depends on `autonomic` and its own `Autonomic.ExecutionDomain` skeleton, **not** `autonomic_linux`. A real custom-domain package would depend on `autonomic`; the core package never forces the official Linux backend into that application.

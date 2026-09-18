@@ -42,6 +42,8 @@ def deps do
 end
 ```
 
+`autonomic_linux` is opt-in from the application's point of view, but its Mix dependency is **autonomic_linux → autonomic**. Installing this package does not make `autonomic` depend on it; an application chooses this adapter by adding the package and configuring the corresponding core behaviour.
+
 ## How do I configure it?
 
 In your `config/config.exs` or `config/runtime.exs`:
@@ -70,14 +72,16 @@ config :autonomic_linux,
 `autonomic_linux` is an optional adapter implementing execution containment:
 
 ```text
+       autonomic_linux                      other backends
+              │                                     │
+              └──────────────────┬──────────────────┘
+                                 ▼
                       ┌─────────────────────┐
                       │      autonomic      │
-                      └──────────┬──────────┘
-                                 │
-              ┌──────────────────┴──────────────────┐
-              ▼                                     ▼
-       autonomic_linux                      other backends
+                      └─────────────────────┘
 ```
+
+The arrows are dependency arrows: concrete adapters depend on the core contracts. The application chooses which implementation to configure at runtime.
 
 ## Where are the full system docs?
 

@@ -9,14 +9,30 @@ cd examples/01_first_episode
 mix run
 ```
 
-Every numbered directory is its own Mix project and uses the repository's `packages/autonomic` via a path dependency. The `run` alias resolves dependencies before executing `run.exs`, so the documented entrypoint remains one command:
+Every numbered directory is its own Mix project. Most deliberately use the repository's `packages/autonomic` plus the private `examples/dev_stack` harness through `path:` dependencies. These are repository teaching/conformance projects, not one-to-one Hex installation templates. The `run` alias resolves dependencies before executing `run.exs`, so the documented entrypoint remains one command:
 
 ```bash
 cd examples/NN_name
 mix run
 ```
 
-Most examples need only Elixir/OTP. `14_custom_store_sqlite` additionally uses the `sqlite3` executable; `16_worker_sdk_python` uses Python 3 for its protocol self-test; `17_full_stack_linux` executes the real privileged path only when run on a qualified Linux host with `AUTONOMIC_RUN_PRIVILEGED=1`. Those examples make prerequisite absence explicit instead of substituting weaker behavior.
+Most examples need only Elixir/OTP. `14_custom_store_sqlite` additionally uses the `sqlite3` executable; `16_worker_sdk_python` uses Python 3 for its protocol self-test; `17_full_stack_linux` executes the real privileged host provisioning/preflight path only when run on a qualified Linux host with `AUTONOMIC_RUN_PRIVILEGED=1`. Those examples make prerequisite absence explicit instead of substituting weaker behavior.
+
+## Published-package composition
+
+The repository examples and a consumer application's Hex dependencies are intentionally different views of the same architecture:
+
+| Use case | Consumer `mix.exs` packages | Why |
+| :--- | :--- | :--- |
+| Core / custom implementations | `autonomic` | Core owns behaviours and kernel semantics but no concrete Linux/PostgreSQL/TypeSafe dependency. |
+| Official Linux containment | `autonomic` + `autonomic_linux` | The Linux package implements `Autonomic.ExecutionDomain` and depends on core. |
+| Official PostgreSQL authority | `autonomic` + `autonomic_postgres` | The PostgreSQL package implements `Autonomic.Store` and depends on core. |
+| Official semantic sensors | `autonomic` + `autonomic_typesafe` | The TypeSafe package implements `Autonomic.SemanticSensor` and depends on core. |
+| Full official stack | all four packages | The application composes core with all three opt-in adapters. |
+
+The dependency arrows point **from adapters to core**. `autonomic` does not declare the three adapters as optional dependencies. The private `integration/autonomic_acceptance` project is the repository's direct all-four-package composition harness.
+
+Examples 14 and 15 intentionally prove replaceability: the SQLite example does not depend on `autonomic_postgres`, and the custom-domain example does not depend on `autonomic_linux`. Example 17 is a host provisioning/preflight wrapper; a real application using that production stack installs all four packages. See [`../docs/PACKAGE_COMPOSITION.md`](../docs/PACKAGE_COMPOSITION.md) for exact dependency recipes.
 
 ## Trust delta
 

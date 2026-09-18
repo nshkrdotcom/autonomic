@@ -195,6 +195,16 @@ defp deps do
 end
 ```
 
+These are **application composition choices**, not dependencies declared by the core package. The Mix dependency direction is adapter → core:
+
+```text
+autonomic_linux ───────┐
+autonomic_postgres ────┼──> autonomic
+autonomic_typesafe ────┘
+```
+
+`autonomic` never pulls the three adapters in as optional dependencies. Each adapter is a separate package that depends on core; an application opts in by listing the adapter packages it wants. Keeping `autonomic` explicit in the application's `mix.exs` is recommended even when it would also arrive transitively through an adapter. See [Package composition](docs/PACKAGE_COMPOSITION.md) for core-only, selective-adapter, full-stack, and example mappings.
+
 Wire the implementations — core resolves them through configuration, never through compile-time dependencies:
 
 ```elixir
@@ -561,7 +571,7 @@ uv run --no-project python scripts/verify_packages.py  # resolve/compile/test ou
 
 ## Documentation map
 
-**Start here** — [Architecture](docs/ARCHITECTURE.md) · [Security model](docs/SECURITY.md) · [Operations](docs/OPERATIONS.md) · [Development](docs/DEVELOPMENT.md)
+**Start here** — [Architecture](docs/ARCHITECTURE.md) · [Package composition](docs/PACKAGE_COMPOSITION.md) · [Security model](docs/SECURITY.md) · [Operations](docs/OPERATIONS.md) · [Development](docs/DEVELOPMENT.md)
 
 **Building on it** — [Effect adapter authoring](docs/EFFECT_ADAPTERS.md) · [Semantic sensors](docs/TYPESAFE_SENSORS.md) · [Persistence and recovery](docs/PERSISTENCE_RECOVERY.md) · [Host provisioning](docs/HOST_PROVISIONING.md)
 

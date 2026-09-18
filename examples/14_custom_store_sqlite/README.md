@@ -17,3 +17,5 @@ mix run
 ```
 
 The script exits non-zero if its final invariant does not hold.
+
+This example intentionally depends on `autonomic` and its own SQLite implementation, **not** `autonomic_postgres`. That is the extension contract in action: a consumer that provides another `Autonomic.Store` implementation does not need the PostgreSQL package merely because it uses core.

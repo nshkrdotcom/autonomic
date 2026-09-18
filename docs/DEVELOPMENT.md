@@ -4,6 +4,20 @@
 
 `.tool-versions` pins Elixir 1.20.4 / OTP 29.0.6 and Rust 1.90.0. PostgreSQL is a real integration dependency. Do not replace the authority store, Linux backend or semantic SDK with dummy production implementations to make tests easier.
 
+## Package composition
+
+This repository contains four publishable packages, not one package with three optional Mix dependencies. The dependency direction is:
+
+```text
+autonomic_linux ───────┐
+autonomic_postgres ────┼──> autonomic
+autonomic_typesafe ────┘
+```
+
+`autonomic` is the implementation-independent core. The three adapters depend on core and never on one another. `integration/autonomic_acceptance` intentionally composes all four through repository `path:` dependencies; a real consumer uses the equivalent versioned Hex dependencies. Numbered examples may instead use the private `examples/dev_stack` harness when the point of the example is core semantics or extension authoring rather than the official production adapters.
+
+See [`PACKAGE_COMPOSITION.md`](PACKAGE_COMPOSITION.md) for installation recipes and the exact mapping between repository examples and published packages.
+
 ## Setup
 
 ```bash

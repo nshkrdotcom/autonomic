@@ -53,6 +53,21 @@ def deps do
 end
 ```
 
+For the full official stack, the **application** opts into all three adapters explicitly:
+
+```elixir
+def deps do
+  [
+    {:autonomic, "~> 0.1.0"},
+    {:autonomic_linux, "~> 0.1.0"},
+    {:autonomic_postgres, "~> 0.1.0"},
+    {:autonomic_typesafe, "~> 0.1.0"}
+  ]
+end
+```
+
+This does not make the adapters dependencies of `autonomic`. The dependency direction is the reverse: each adapter depends on core, and applications choose which adapters to install.
+
 ## How do I configure it?
 
 Configure the runtime implementations and effect adapters in your `config/config.exs`:
@@ -84,6 +99,10 @@ config :autonomic,
 `autonomic` is the central hub of the dependency graph:
 
 ```text
+       autonomic_linux   autonomic_postgres   autonomic_typesafe
+              │                  │                   │
+              └──────────────────┼───────────────────┘
+                                 ▼
                       ┌─────────────────────┐
                       │      autonomic      │
                       │                     │
@@ -94,14 +113,11 @@ config :autonomic,
                       │ Store behaviour     │
                       │ Exec behaviour      │
                       │ Sensor behaviour    │
-                      └──────────┬──────────┘
-                                 │
-              ┌──────────────────┼──────────────────┐
-              │                  │                  │
-              ▼                  ▼                  ▼
-       autonomic_linux   autonomic_postgres  autonomic_typesafe
+                      └─────────────────────┘
 ```
+
+The arrows above are Mix dependency arrows: adapter → core. Runtime calls flow through core behaviours into the configured implementation, but package ownership remains one-way.
 
 ## Where are the full system docs?
 
-See the repository root at [GitHub](https://github.com/nshkrdotcom/autonomic) and [HexDocs](https://hexdocs.pm/autonomic).
+See the repository root at [GitHub](https://github.com/nshkrdotcom/autonomic), [HexDocs](https://hexdocs.pm/autonomic), and the repository [package-composition guide](https://github.com/nshkrdotcom/autonomic/blob/main/docs/PACKAGE_COMPOSITION.md).
