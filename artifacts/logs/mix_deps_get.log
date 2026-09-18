@@ -2,7 +2,7 @@
 === [autonomic] in packages/autonomic ===
 $ /home/home/.asdf/shims/mix deps.get
 Resolving Hex dependencies...
-Resolution completed in 0.028s
+Resolution completed in 0.031s
 Unchanged:
   bunt 1.0.0
   credo 1.7.19
@@ -29,7 +29,7 @@ All dependencies have been fetched
 === [autonomic_linux] in packages/autonomic_linux ===
 $ /home/home/.asdf/shims/mix deps.get
 Resolving Hex dependencies...
-Resolution completed in 0.039s
+Resolution completed in 0.033s
 Unchanged:
   bunt 1.0.0
   credo 1.7.19
@@ -55,7 +55,7 @@ Unchanged:
 === [autonomic_postgres] in packages/autonomic_postgres ===
 $ /home/home/.asdf/shims/mix deps.get
 Resolving Hex dependencies...
-Resolution completed in 0.047s
+Resolution completed in 0.044s
 Unchanged:
   bunt 1.0.0
   credo 1.7.19
@@ -86,7 +86,7 @@ Unchanged:
 === [autonomic_typesafe] in packages/autonomic_typesafe ===
 $ /home/home/.asdf/shims/mix deps.get
 Resolving Hex dependencies...
-Resolution completed in 0.033s
+Resolution completed in 0.038s
 Unchanged:
   abnf_parsec 2.1.0
   bunt 1.0.0
@@ -126,7 +126,7 @@ Unchanged:
 === [autonomic_acceptance] in integration/autonomic_acceptance ===
 $ /home/home/.asdf/shims/mix deps.get
 Resolving Hex dependencies...
-Resolution completed in 0.038s
+Resolution completed in 0.032s
 Unchanged:
   abnf_parsec 2.1.0
   db_connection 2.10.2

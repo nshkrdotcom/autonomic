@@ -5,7 +5,7 @@ Checking 4 source files ...
 
 Please report incorrect results: https://github.com/rrrene/credo/issues
 
-Analysis took 0.00 seconds (0.00s to load, 0.00s running 67 checks on 4 files)
+Analysis took 0.01 seconds (0.00s to load, 0.01s running 67 checks on 4 files)
 0 mods/funs, found no issues.
 
 Use `mix credo explain` to explain issues, `mix credo --help` for options.

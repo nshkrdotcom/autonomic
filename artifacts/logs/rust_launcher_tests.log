@@ -2,10 +2,10 @@
      Running unittests src/main.rs (packages/autonomic_linux/native/autonomic_launcher/target/debug/deps/autonomic_launcher-c887e21400a4e2dd)
 
 running 4 tests
-test tests::framed_protocol_rejects_zero_and_oversize ... ok
 test tests::base64_decoder_is_bounded_and_strict ... ok
-test tests::validates_hex_episode_ids ... ok
+test tests::framed_protocol_rejects_zero_and_oversize ... ok
 test tests::rejects_parent_traversal ... ok
+test tests::validates_hex_episode_ids ... ok
 
 test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
 

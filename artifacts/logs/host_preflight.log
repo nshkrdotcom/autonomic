@@ -17,5 +17,5 @@ ok   rootfs path               /opt/autonomic/rootfs/tmp
 ok   rootfs path               /opt/autonomic/rootfs/proc
 ok   launcher                  /usr/local/libexec/autonomic_launcher
 ok   state root                /var/lib/autonomic
-WARN PostgreSQL test DB         AUTONOMIC_TEST_DATABASE_URL not set
+ok   PostgreSQL test DB         reachable
 preflight: PASS

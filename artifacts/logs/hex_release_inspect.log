@@ -82,7 +82,7 @@ homeostatic regulation, and verification recovery.
     HexDocs: https://hexdocs.pm/autonomic
     License: https://github.com/nshkrdotcom/autonomic/blob/main/LICENSE
   Elixir: ~> 1.20
-Package checksum: 45e4127bc61d7b715bbd3eb4eee1b73a81976993e5f23b926d9271d60c0312a2
+Package checksum: ef7efee5813aa74fa94d6891cc5fa6b6ce0c68a51dcabc9a3b32c7eaebaffd8f
 Saved to autonomic-0.1.0.tar
   [OK] Built: autonomic-0.1.0.tar (51200 bytes)
 

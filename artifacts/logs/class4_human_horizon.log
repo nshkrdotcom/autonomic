@@ -1,8 +1,8 @@
-Running ExUnit with seed: 446641, max_cases: 48
+Running ExUnit with seed: 63699, max_cases: 48
 Excluding tags: [:linux, :live, :reference, :db_outage]
 Including tags: [:postgres]
 
 .
-Finished in 0.4 seconds (0.00s async, 0.4s sync)
+Finished in 0.2 seconds (0.00s async, 0.2s sync)
 
 Result: 1 passed
