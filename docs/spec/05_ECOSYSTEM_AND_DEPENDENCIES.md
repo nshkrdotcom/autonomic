@@ -137,27 +137,17 @@ The isolation backend SHOULD NOT use a NIF for namespace/seccomp/cgroup control.
 ```elixir
 [
   {:autonomic_kernel, in_umbrella: true},
-  {:typesafe_sdk, "~> 0.2.0"}
+  {:typesafe_sdk, "~> 0.4.0"}
 ]
 ```
 
-During implementation, the attached `typesafe_sdk.xml` is authoritative for the exact package version and public names. This revised docset is grounded to TypeSafeSDK 0.2.0 and the production adapter MUST prefer its strict semantic layer:
+The active semantic baseline is TypeSafeSDK 0.4.0. The production adapter uses strict semantic constructors, one reusable Prepared bank, native Prepared fingerprints, exact serialized request-byte budgets, strict response contracts, stable response metadata and `TypeSafeSDK.OTP.Server`. There is no older-SDK compatibility path.
 
-- `TypeSafeSDK.new_client/1`;
-- `TypeSafeSDK.noul/2`, `choice/3`, `score/3`;
-- `TypeSafeSDK.prepare/1` / `prepare!/1`;
-- `TypeSafeSDK.evaluate/4` / `evaluate!/4`;
-- `TypeSafeSDK.Response` and `TypeSafeSDK.Answer.*`;
-- `TypeSafeSDK.RuntimeCapabilities`;
-- `TypeSafeSDK.Test` only for deterministic component tests.
+TypeSafeSDK 0.4.0 owns its Pristine 0.4.0 runtime dependency. Autonomic does not add another TypeSafe HTTP stack, retry engine or transport pool. The adapter always requires `:unary_cancellation` and `:cancellation_cleanup` through `TypeSafeSDK.RuntimeCapabilities`; configured requirements are additive. The supplied Pristine 0.4 Finch transport advertises both base capabilities as supported.
 
-The legacy wire-oriented `system_one` API remains useful for SDK parity/compatibility testing but is not the normative kernel adapter path. Do not copy SDK internals or reach directly into generated/Pristine modules.
+`TypeSafeSDK.OTP.Server` runs semantic work under the package-owned `Autonomic.Typesafe.Tasks` supervisor with a finite `max_in_flight`. This local SDK concurrency bound supplements rather than replaces GenStage/SystemRegulator pressure control.
 
-The supplied TypeSafeSDK 0.2.0 source requires Pristine `~> 0.3.1`. That transport/runtime dependency is owned by the SDK. Autonomic must not add another HTTP stack, retry engine, or TypeSafe-specific Finch client around it. Transport guarantees that the SDK reports as unverified remain unverified until the configured adapter proves them.
-
-TypeSafeSDK 0.3 is **optional**. If the attached package is 0.3+ and provides public semantic-contract fingerprinting, strict response contracts, or request-byte limits, use those actual APIs and remove only equivalent adapter-local compatibility code. Do not make 0.3 a prerequisite and do not invent functions that are absent from the attached source.
-
-If the implementation environment uses a sibling checkout rather than Hex, the **only** accepted local-development variation is a normal Mix path dependency pointing at the real `typesafe_sdk` checkout. Do not vendor a fork into this umbrella.
+During source-checkout development, `TYPESAFE_SDK_PATH` may point at the real sibling TypeSafe checkout. Release staging MUST rewrite that source-only path override back to `{:typesafe_sdk, "~> 0.4.0"}`. Do not vendor a fork.
 
 ### `apps/autonomic_store`
 

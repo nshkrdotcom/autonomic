@@ -4,31 +4,10 @@ defmodule Autonomic.Typesafe.SensorComponentTest do
   alias Autonomic.{Canonical, ObservationFrame}
   alias Autonomic.Typesafe.{Bank, Evidence, Sensor, SensorBank}
 
-  test "prepared bank uses the strict TypeSafe test transport and preserves provenance" do
-    client = TypeSafeSDK.Test.client(model: "jev-fixture")
+  test "prepared bank uses TypeSafeSDK 0.4 contracts and preserves provenance" do
+    client = TypeSafeSDK.Test.client(model: "jev-fixture") |> safe_stub(model: "jev-fixture")
+    start_bank(client)
 
-    client =
-      TypeSafeSDK.Test.stub(
-        client,
-        [
-          scope_drift: {:noul, 0.05},
-          authority_escalation: {:noul, 0.02},
-          evidence_sufficiency:
-            {:score, 1.95, probabilities: %{0 => 0.01, 1 => 0.04, 2 => 0.95}, confidence: 0.96},
-          irreversibility:
-            {:score, 3.0,
-             probabilities: %{0 => 0.0, 1 => 0.01, 2 => 0.04, 3 => 0.9, 4 => 0.05},
-             confidence: 0.91},
-          trajectory_regime:
-            {:choice, :stable,
-             probabilities: %{stable: 0.96, uncertain: 0.02, drifting: 0.01, unstable: 0.01},
-             confidence: 0.96}
-        ],
-        model: "jev-fixture",
-        usage: %{input_tokens: 12, output_tokens: 7}
-      )
-
-    assert :ok = Bank.install_client(client)
     frame = frame(%{stdout: "all tests passed"})
     assert {:ok, observations} = Sensor.observe(frame)
 
@@ -40,8 +19,15 @@ defmodule Autonomic.Typesafe.SensorComponentTest do
              :trajectory_regime
            ]
 
+    status = Bank.status()
+    assert status.available
+    assert status.semantic_contract_id =~ "typesafe-prepared-v1:"
+    assert status.semantic_contract_id == SensorBank.contract_id(SensorBank.prepare!())
+    assert get_in(status, [:runtime_capabilities, :runtime, :unary_cancellation, :status]) == :supported
+    assert get_in(status, [:runtime_capabilities, :runtime, :cancellation_cleanup, :status]) == :supported
+
     assert Enum.all?(observations, &(&1.sensor_bank_version == SensorBank.version()))
-    assert Enum.all?(observations, &(&1.semantic_contract_id == SensorBank.contract_id()))
+    assert Enum.all?(observations, &(&1.semantic_contract_id == status.semantic_contract_id))
     assert Enum.all?(observations, &(&1.model == "jev-fixture"))
     assert is_binary(Canonical.json(observations))
     assert Enum.find(observations, &(&1.sensor == :trajectory_regime)).value == :stable
@@ -66,16 +52,14 @@ defmodule Autonomic.Typesafe.SensorComponentTest do
     assert budget.sent_bytes <= 4_096
   end
 
-  test "semantic contract identity is stable over its declarative manifest" do
-    assert SensorBank.contract_id() ==
-             "sha256:" <>
-               Canonical.hash(
-                 "autonomic.typesafe-sensor-manifest.v1\n" <>
-                   Canonical.json(SensorBank.manifest())
-               )
+  test "semantic contract identity is the SDK Prepared fingerprint" do
+    prepared = SensorBank.prepare!()
+
+    assert SensorBank.contract_id(prepared) == TypeSafeSDK.Prepared.fingerprint(prepared)
+    assert SensorBank.contract_id(prepared) =~ "typesafe-prepared-v1:"
   end
 
-  test "future unknown required answers fail closed" do
+  test "future answer types for required sensors fail closed" do
     client = TypeSafeSDK.Test.client(model: "jev-fixture")
 
     body = %{
@@ -109,28 +93,103 @@ defmodule Autonomic.Typesafe.SensorComponentTest do
     }
 
     client = TypeSafeSDK.Test.stub_response(client, body, request_id: "req-future")
-    assert :ok = Bank.install_client(client)
+    start_bank(client)
 
-    assert {:error, {:unknown_required_answers, ids}} =
-             Sensor.observe(frame(%{stdout: "looks safe"}))
-
+    assert {:error, {:unknown_required_answers, ids}} = Sensor.observe(frame(%{stdout: "looks safe"}))
     assert "scope_drift" in Enum.map(ids, &to_string/1)
     assert :ok = TypeSafeSDK.Test.verify!(client)
     assert :ok = TypeSafeSDK.Test.close(client)
   end
 
-  test "configured concrete model drift is semantic degradation, not authority" do
+  test "configured concrete model drift is rejected by the SDK response contract" do
     previous = Application.get_env(:autonomic_typesafe, :allowed_models, [])
     Application.put_env(:autonomic_typesafe, :allowed_models, ["jev-approved"])
     on_exit(fn -> Application.put_env(:autonomic_typesafe, :allowed_models, previous) end)
 
-    client = TypeSafeSDK.Test.client(model: "jev-other")
-    client = safe_stub(client, model: "jev-other")
-    assert :ok = Bank.install_client(client)
+    client = TypeSafeSDK.Test.client(model: "jev-other") |> safe_stub(model: "jev-other")
+    start_bank(client)
 
-    assert {:error, {:concrete_model_drift, "jev-other", ["jev-approved"]}} =
-             Sensor.observe(frame(%{}))
+    assert {:error,
+            %TypeSafeSDK.Error{
+              type: :response_contract,
+              details: %{violation: :model_not_allowed}
+            }} = Sensor.observe(frame(%{}))
 
+    assert :ok = TypeSafeSDK.Test.verify!(client)
+    assert :ok = TypeSafeSDK.Test.close(client)
+  end
+
+  test "the SDK exact serialized-request budget rejects oversize requests before transport" do
+    previous = Application.get_env(:autonomic_typesafe, :request_limit, 65_536)
+    Application.put_env(:autonomic_typesafe, :request_limit, 256)
+    on_exit(fn -> Application.put_env(:autonomic_typesafe, :request_limit, previous) end)
+
+    client = TypeSafeSDK.Test.client(model: "jev-fixture") |> safe_stub(model: "jev-fixture")
+    start_bank(client)
+
+    assert {:error,
+            %TypeSafeSDK.Error{
+              type: :request_too_large,
+              details: %{actual_bytes: actual, max_bytes: 256}
+            }} = Sensor.observe(frame(%{stdout: String.duplicate("x", 64)}))
+
+    assert actual > 256
+    assert TypeSafeSDK.Test.requests(client) == []
+    assert :ok = TypeSafeSDK.Test.verify!(client)
+    assert :ok = TypeSafeSDK.Test.close(client)
+  end
+
+  test "TypeSafe OTP integration stays responsive and enforces max_in_flight" do
+    owner = self()
+    client = TypeSafeSDK.Test.client(model: "jev-fixture")
+
+    client =
+      TypeSafeSDK.Test.stub_callback(client, fn _request ->
+        send(owner, {:typesafe_request_started, self()})
+
+        receive do
+          :release_typesafe_request ->
+            {:answers, safe_specs(), [model: "jev-fixture"]}
+        end
+      end)
+
+    start_bank(client, max_in_flight: 1)
+
+    first = Task.async(fn -> Sensor.observe(frame(%{stdout: "first"}), mode: :slow) end)
+    assert_receive {:typesafe_request_started, worker}, 2_000
+
+    # The bank is not blocked by the network task, and semantic work lives on
+    # the adapter-owned task supervisor rather than Autonomic.Tasks.
+    assert %{available: true, last_error: nil} = Bank.status()
+    assert Task.Supervisor.children(Autonomic.Typesafe.Tasks) != []
+
+    assert {:error,
+            %TypeSafeSDK.Error{
+              type: :runtime_capability,
+              details: %{scope: :otp_server, max_in_flight: 1}
+            }} = Sensor.observe(frame(%{stdout: "second"}), mode: :slow)
+
+    send(worker, :release_typesafe_request)
+    assert {:ok, observations} = Task.await(first, 5_000)
+    assert length(observations) == 5
+    assert :ok = TypeSafeSDK.Test.verify!(client)
+    assert :ok = TypeSafeSDK.Test.close(client)
+  end
+
+  test "observe options are strict and rejected before transport" do
+    client = TypeSafeSDK.Test.client(model: "jev-fixture") |> safe_stub(model: "jev-fixture")
+    start_bank(client)
+
+    assert {:error, %TypeSafeSDK.Error{type: :invalid_request}} =
+             Sensor.observe(frame(%{}), mode: :slow, mode: :fast)
+
+    assert {:error, %TypeSafeSDK.Error{type: :invalid_request}} =
+             Sensor.observe(frame(%{}), mode: :unsupported)
+
+    assert {:error, %TypeSafeSDK.Error{type: :invalid_request}} =
+             Sensor.observe(frame(%{}), %{mode: :slow})
+
+    assert TypeSafeSDK.Test.requests(client) == []
     assert :ok = TypeSafeSDK.Test.verify!(client)
     assert :ok = TypeSafeSDK.Test.close(client)
   end
@@ -138,8 +197,12 @@ defmodule Autonomic.Typesafe.SensorComponentTest do
   test "transport outage degrades semantic health and never produces a safe observation" do
     client = TypeSafeSDK.Test.client(model: "jev-fixture")
     client = TypeSafeSDK.Test.stub_transport_error(client, :econnrefused)
-    assert :ok = Bank.install_client(client)
-    assert {:error, _} = Sensor.observe(frame(%{}))
+    start_bank(client)
+
+    assert {:error, %TypeSafeSDK.Error{type: :connection}} = Sensor.observe(frame(%{}))
+    status = Bank.status()
+    assert %{type: :connection} = status.last_error
+    refute Map.has_key?(status.last_error, :body)
     assert Autonomic.SystemRegulator.snapshot().health.semantic == :degraded
     refute Autonomic.SystemRegulator.sensitive_commit_allowed?()
     Autonomic.SystemRegulator.semantic_health(:healthy)
@@ -147,34 +210,39 @@ defmodule Autonomic.Typesafe.SensorComponentTest do
     assert :ok = TypeSafeSDK.Test.close(client)
   end
 
-  test "relied-on transport capabilities are required fail closed" do
+  test "relied-on runtime capabilities are required fail closed" do
     previous = Application.get_env(:autonomic_typesafe, :required_capabilities, [])
     Application.put_env(:autonomic_typesafe, :required_capabilities, [:bounded_queue])
     on_exit(fn -> Application.put_env(:autonomic_typesafe, :required_capabilities, previous) end)
 
     client = TypeSafeSDK.Test.client(model: "jev-fixture")
-    assert {:error, %TypeSafeSDK.Error{type: :runtime_capability}} = Bank.install_client(client)
+
+    assert {:error, %TypeSafeSDK.Error{type: :runtime_capability}} =
+             Bank.start_link(client: client, name: :autonomic_typesafe_capability_failure)
+
     assert :ok = TypeSafeSDK.Test.close(client)
   end
 
-  defp safe_stub(client, opts) do
-    TypeSafeSDK.Test.stub(
-      client,
-      [
-        scope_drift: {:noul, 0.01},
-        authority_escalation: {:noul, 0.01},
-        evidence_sufficiency:
-          {:score, 2.0, probabilities: %{0 => 0.0, 1 => 0.0, 2 => 1.0}, confidence: 0.99},
-        irreversibility:
-          {:score, 1.0,
-           probabilities: %{0 => 0.0, 1 => 1.0, 2 => 0.0, 3 => 0.0, 4 => 0.0}, confidence: 0.99},
-        trajectory_regime:
-          {:choice, :stable,
-           probabilities: %{stable: 0.99, uncertain: 0.005, drifting: 0.003, unstable: 0.002},
-           confidence: 0.99}
-      ],
-      opts
-    )
+  defp start_bank(client, opts \\ []) do
+    start_supervised!({Bank, Keyword.merge([client: client], opts)})
+  end
+
+  defp safe_stub(client, opts), do: TypeSafeSDK.Test.stub(client, safe_specs(), opts)
+
+  defp safe_specs do
+    [
+      scope_drift: {:noul, 0.01},
+      authority_escalation: {:noul, 0.01},
+      evidence_sufficiency:
+        {:score, 2.0, probabilities: %{0 => 0.0, 1 => 0.0, 2 => 1.0}, confidence: 0.99},
+      irreversibility:
+        {:score, 1.0,
+         probabilities: %{0 => 0.0, 1 => 1.0, 2 => 0.0, 3 => 0.0, 4 => 0.0}, confidence: 0.99},
+      trajectory_regime:
+        {:choice, :stable,
+         probabilities: %{stable: 0.99, uncertain: 0.005, drifting: 0.003, unstable: 0.002},
+         confidence: 0.99}
+    ]
   end
 
   defp score_answer(score, probabilities, labels) do

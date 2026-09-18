@@ -20,12 +20,13 @@ This checklist maps `docs/spec/11_ACCEPTANCE_GATES.md` to concrete code and exec
 | C Git CAS | exact base OID, trusted worktree, `git update-ref` CAS | reconciliation/reference tests |
 | C HTTP boundary | trusted base host/path/method, redirects off, TLS verification, limits/credentials/rate limits | AF_UNIX HTTP integration test |
 | C ambiguous commit | post-intent adapter uncertainty → `commit_unknown`; explicit reconciliation | `reconciliation_test.exs` |
-| D TypeSafe 0.2 strict API | strict Noul/Choice/Score, prepare once, `evaluate/4`, `Response`/`Answer` helpers | `sensor_component_test.exs` |
+| D TypeSafe 0.4 strict API | fixed Noul/Choice/Score bank, SDK `Prepared` fingerprint, strict response contract, exact request-byte budget, `Response`/`Answer` helpers | `sensor_component_test.exs` |
 | D live TypeSafe | real configured SDK client and non-secret provenance artifact | `live_gate_test.exs` |
-| D sensor provenance | bank version/contract id/SDK/model/request/usage/retry/timing fields | component + live gate |
-| D redaction/budget | `Autonomic.Typesafe.Evidence` pre-transport redaction/limits | component tests |
-| D unknown/model drift | fail-closed unknown required answer and configured actual model | component tests |
-| D runtime capabilities | `TypeSafeSDK.RuntimeCapabilities.check/2` | component + live gate |
+| D sensor provenance | SDK Prepared fingerprint plus bank/SDK/model/request/usage/retry/timing fields; status stores privacy-safe error metadata | component + live gate |
+| D redaction/budget | `Autonomic.Typesafe.Evidence` redaction/state bound + SDK exact serialized `max_request_bytes` preflight | component tests |
+| D unknown/model drift | SDK unknown-ID/model response contract plus fail-closed future type for any required sensor | component tests |
+| D runtime capabilities | require `:unary_cancellation` + `:cancellation_cleanup` through `TypeSafeSDK.RuntimeCapabilities.check/2` | component + live gate |
+| D bounded OTP semantic work | `TypeSafeSDK.OTP.Server`, package-owned `Autonomic.Typesafe.Tasks`, explicit `max_in_flight`, SDK/Pristine cancellation cleanup | component tests |
 | D temporal Homeostat | EWMA/hysteresis with deterministic bypass | real-Postgres trajectory test |
 | E demand/backpressure | GenStage `SensorArray`, non-droppable critical facts, `SystemRegulator` modes | `regulation_test.exs` and reference gate |
 | E speculation budget | episode worker timeout + regulator admission + sensitive commit gate | component/reference tests |

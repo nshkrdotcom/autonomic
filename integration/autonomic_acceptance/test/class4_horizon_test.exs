@@ -34,7 +34,7 @@ defmodule Autonomic.Store.Class4HorizonTest do
     Application.put_env(:autonomic, :decision_keys, %{"operator" => Base.encode64(public)})
 
     client = safe_client()
-    assert :ok = Bank.install_client(client)
+    start_supervised!({Bank, client: client})
 
     on_exit(fn ->
       Application.put_env(:autonomic, :targets, old_targets)

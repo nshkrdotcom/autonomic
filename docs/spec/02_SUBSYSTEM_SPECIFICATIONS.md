@@ -283,23 +283,23 @@ Concurrently ingest independent deterministic and semantic sensors and produce n
 
 ### Semantic source
 
-`AutonomicTypesafe.Sensor` uses the TypeSafeSDK 0.2 strict semantic API: construct the production sensor bank with `noul/choice/score`, prepare it once with `prepare/1` or `prepare!/1`, and invoke `evaluate/4` for each bounded observable window. The adapter returns normalized observations while leaving semantic request/response validation to the SDK.
+`Autonomic.Typesafe.Sensor` targets TypeSafeSDK 0.4.0 only. The bank is built once with strict `noul/choice/score` questions and one reusable `TypeSafeSDK.Prepared`; evaluations run through `TypeSafeSDK.OTP.Server` so HTTP latency does not serialize the bank process.
 
 The adapter MUST:
 
-- build the sensor questions from one versioned declarative bank specification and reuse one validated `TypeSafeSDK.Prepared` value rather than rebuilding questions for every frame;
-- redact secrets before semantic requests;
-- cap the redacted observable state before the SDK boundary and record truncation/coalescing facts;
-- preserve actual response model, requested model when relevant, SDK version, request id, usage, retries, logical/runtime latency, sensor-bank version and semantic-contract id;
-- use `TypeSafeSDK.Response` / `TypeSafeSDK.Answer.*` helpers rather than reimplementing ranking, margin, expected-score or certainty math;
-- treat a required answer represented only as an unknown future answer tag as unavailable/degraded, never safe;
-- enforce any kernel policy that pins allowed actual models and treat mismatch as contract drift, not as an SDK assertion about model quality;
-- preserve raw response references only according to the configured retention/redaction policy;
-- use explicit timeout/retry policy suitable to the fast or slow loop; retries MUST NOT be mistaken for proof that a previous ambiguous upstream attempt was not processed;
-- inspect `TypeSafeSDK.RuntimeCapabilities` where transport guarantees matter and fail closed rather than assuming queue/body/cancellation properties that are unadvertised;
-- keep GenStage/SystemRegulator backpressure authoritative at the kernel level; SDK batch concurrency is not a substitute for system-wide pressure control.
+- derive the semantic-contract ID from `TypeSafeSDK.Prepared.fingerprint/1`;
+- redact secrets and bound observable state before the SDK boundary;
+- configure TypeSafe `max_request_bytes:` for the exact final serialized request;
+- configure an SDK response contract for unexpected answer IDs and any exact allowed-model set;
+- reject any remaining future answer type under a required sensor key as unavailable/degraded, never safe;
+- normalize through `TypeSafeSDK.Response` / `TypeSafeSDK.Answer.*` and stable `Response.metadata/1`;
+- preserve actual/requested model, SDK version, request ID, usage, retries, timing, bank version and Prepared fingerprint;
+- use the package-owned `Autonomic.Typesafe.Tasks` supervisor and a finite TypeSafe OTP `max_in_flight` bound;
+- require `:unary_cancellation` and `:cancellation_cleanup` through `TypeSafeSDK.RuntimeCapabilities`;
+- keep retries disabled unless policy explicitly changes, and never implement retry loops locally; and
+- keep GenStage/SystemRegulator backpressure authoritative at the kernel level.
 
-`TypeSafeSDK.Test` is the preferred deterministic component-test seam because it preserves production serialization/retry/decode behavior, but it never satisfies the mandatory live TypeSafe gate.
+`TypeSafeSDK.Test` is the deterministic component-test seam because it preserves production serialization, request-budget, response-contract and decode behavior. It never satisfies the mandatory live TypeSafe gate.
 
 ### Backpressure
 

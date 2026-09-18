@@ -2,6 +2,13 @@
 
 Date: 2026-09-17
 
+> **Historical verification notice (TypeSafe upgrade):** this document records the
+> pre-TypeSafeSDK-0.4 Poncho migration verification. The TypeSafe-specific test counts,
+> live artifact and release-ready report described below were invalidated by the
+> greenfield TypeSafeSDK 0.4.0 integration change. For current source and required
+> re-verification steps, use `HANDOFF_TYPESAFE_0.4.0.md`. Do not restore 0.2/0.3
+> compatibility.
+
 ## Repository state
 
 The umbrella is removed. The four standalone public projects are

@@ -392,11 +392,11 @@ The four extension points are plain behaviours — bring your own backend withou
 
 ### Semantic sensor bank
 
-The semantic layer is not one `safe?` classifier. It is a versioned manifest of bounded sensors with a SHA-256 contract id persisted alongside every observation:
+The semantic layer is not one `safe?` classifier. It is a versioned fixed bank whose machine contract identity is the TypeSafeSDK 0.4 `Prepared` fingerprint persisted alongside every observation:
 
 `scope_drift` · `authority_escalation` · `evidence_sufficiency` · `irreversibility` · `trajectory_regime`
 
-An unknown or missing required answer is treated as **semantic unavailability**, never as an implicit "safe". A response model outside the configured `allowed_models` set is semantic-contract drift. Evidence is secret-redacted and byte-budgeted before it leaves the trusted plane.
+TypeSafeSDK enforces the exact serialized request budget, unexpected-answer-ID policy and configured concrete-model allow-set before Autonomic normalization. A future answer type under a required requested key is still rejected by Autonomic rather than treated as implicitly safe. Evaluations run through bounded `TypeSafeSDK.OTP.Server` workers owned by `Autonomic.Typesafe.Tasks`, isolated from core effect/episode task slots. Evidence is secret-redacted and independently byte-bounded before it crosses the SDK boundary.
 
 ---
 
@@ -418,7 +418,7 @@ An unknown or missing required answer is treated as **semantic unavailability**,
 | `:automatic_verification` | `true` | Run slow verification automatically at `evaluating` |
 | `:policy_keys` / `:decision_keys` / `:signer` | `%{}` | Ed25519 verification keys for signed policy and decisions |
 
-`:autonomic_linux` takes `enabled`, `executable`, `rootfs`, `state_root`, `sudo`. `:autonomic_typesafe` takes `api_key`, `model`, `allowed_models`, `required_capabilities`, `timeout_ms`, `slow_timeout_ms`, `evidence_limit`, `request_limit`. A complete operator template lives in [`config/autonomic.example.json`](config/autonomic.example.json).
+`:autonomic_linux` takes `enabled`, `executable`, `rootfs`, `state_root`, `sudo`. `:autonomic_typesafe` takes `autostart`, `api_key`, `model`, `allowed_models`, `required_capabilities` (additional requirements; unary cancellation + cleanup are mandatory), `timeout_ms`, `slow_timeout_ms`, `max_in_flight`, `evidence_limit`, and `request_limit`. The TypeSafe adapter targets TypeSafeSDK 0.4.0 only; `request_limit` is enforced by the SDK against the exact serialized request, while `evidence_limit` bounds the redacted semantic state before SDK serialization. A complete operator template lives in [`config/autonomic.example.json`](config/autonomic.example.json).
 
 ---
 
@@ -443,7 +443,7 @@ The threat model assumes the worker, the repository contents, stdout/stderr, too
 | **Kernel / DB** | PostgreSQL is the authority for epoch, policy version, leases, effect state, decisions, checkpoints and recovery lineage. DB loss blocks authoritative commits; no cache is ever promoted to authority. |
 | **OS** | Namespaces, cgroup v2, read-only rootfs, overlayfs, `PR_SET_NO_NEW_PRIVS`, seccomp, network namespace. The reference filter denies namespace/mount/ptrace/key/BPF/perf escape syscalls and traps INET sockets. |
 | **Effect** | Only trusted adapters receive target configuration and credentials. The worker supplies a bounded target-relative request and payload bytes — never a host path or credential. |
-| **Semantic** | `Autonomic.Typesafe.Evidence` redacts secret-shaped fields and enforces a byte budget before evaluation. Unknown required tags, model drift and outages fail closed as degradation. |
+| **Semantic** | `Autonomic.Typesafe.Evidence` redacts/bounds observable state; TypeSafeSDK 0.4 enforces exact final request size and strict response/model contracts. Unknown required future types, runtime-capability failures, overload and outages fail closed as degradation. |
 | **Launcher** | A small external privileged process. Packet-framed JSON with protocol versioning, per-action allowed fields, request/reply limits and structural argv/env transfer. It does **not** execute worker-supplied shell strings. Each lifecycle request uses a one-shot Port so a running worker cannot block a concurrent destroy or freeze. |
 
 The launcher should be given a narrow sudoers rule for its exact immutable path, or the kernel should run under an already-privileged service account with `AUTONOMIC_NO_SUDO=1`. Workers must never be able to execute the launcher binary.
@@ -458,7 +458,7 @@ Operational runbooks: [`COMMIT_UNKNOWN`](docs/runbooks/COMMIT_UNKNOWN.md) · [`D
 
 Safety claims here are gates, not prose. `scripts/qc` executes them and writes a machine-readable conformance report that binds the source tree and every executed gate log by SHA-256; `release_ready` is only true when every mandatory gate actually ran and passed on that host.
 
-Selected gates from [`artifacts/conformance_report.json`](artifacts/conformance_report.json):
+Selected gates that `scripts/qc --strict` must populate into [`artifacts/conformance_report.json`](artifacts/conformance_report.json):
 
 | Gate | What it proves |
 | :--- | :--- |

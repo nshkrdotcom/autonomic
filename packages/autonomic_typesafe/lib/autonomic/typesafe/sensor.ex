@@ -1,5 +1,5 @@
 defmodule Autonomic.Typesafe.Sensor do
-  @moduledoc "Autonomic.SemanticSensor adapter backed exclusively by the TypeSafeSDK 0.2 strict public API."
+  @moduledoc "Autonomic.SemanticSensor adapter backed exclusively by the TypeSafeSDK 0.4 public semantic API."
   @behaviour Autonomic.SemanticSensor
 
   @impl true

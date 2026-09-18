@@ -63,20 +63,22 @@ The project is not complete until every mandatory gate below is green in an envi
 
 ## D. Semantic supervision
 
-- production TypeSafeSDK 0.2+ integrated, not reimplemented;
-- production adapter uses strict `noul/choice/score` + reusable `prepare` + `evaluate`, not the legacy wire-oriented API;
-- mandatory live `evaluate` gate green and records SDK version, actual model, request id, usage/retries/timing with secrets excluded;
-- Noul/Choice/Score sensor bank decoded and normalized correctly through SDK response/answer helpers;
-- sensor-bank version and semantic-contract id are persisted with observations;
-- secret redaction and bounded semantic-state/request budget tested before transport;
-- required unknown future answer tags become semantic degradation/unavailability, never `safe`;
-- configured actual-model contract drift is detected and routed through policy without treating model difference itself as deterministic danger;
+- production TypeSafeSDK 0.4.0 integrated, not reimplemented;
+- no 0.2/0.3 compatibility shims or legacy production `system_one` path;
+- one reusable strict Noul/Choice/Score Prepared bank;
+- native `TypeSafeSDK.Prepared.fingerprint/1` persisted as the semantic-contract ID;
+- mandatory live gate records SDK version, actual/requested model, request ID, usage/retries/timing and Prepared fingerprint with secrets excluded;
+- secret redaction and bounded semantic-state evidence budget tested;
+- TypeSafe exact `max_request_bytes:` rejects oversized final requests before transport;
+- SDK response contract rejects unexpected answer IDs and configured exact-model drift;
+- a future answer type under a required requested sensor key becomes semantic degradation/unavailability, never `safe`;
+- `TypeSafeSDK.OTP.Server` runs through the package-owned `Autonomic.Typesafe.Tasks` and the bank remains responsive while network work is blocked;
+- `max_in_flight` overload is bounded, observable and fails closed;
+- `:unary_cancellation` and `:cancellation_cleanup` are required through `TypeSafeSDK.RuntimeCapabilities`;
 - TypeSafe outage/degradation path tested;
-- `TypeSafeSDK.RuntimeCapabilities` is reported and any transport capability the deployment relies on is required fail-closed;
 - `TypeSafeSDK.Test` covers deterministic adapter semantics but is not counted as the live gate;
-- temporal Homeostat/hysteresis tested;
-- model output does not directly invoke authority mutation;
-- completion does not depend on TypeSafeSDK 0.3: if 0.3 native contract-fingerprint/strict-response/request-budget features are absent, equivalent adapter-level semantics are proven on 0.2.
+- temporal Homeostat/hysteresis tested; and
+- model output does not directly invoke authority mutation.
 
 ## E. Backpressure
 

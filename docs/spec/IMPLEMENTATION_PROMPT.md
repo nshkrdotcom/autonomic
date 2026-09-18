@@ -2,17 +2,19 @@
 
 You are a Principal Distributed Systems Engineer, BEAM/OTP Kernel Engineer, and Linux Isolation Engineer.
 
-Two artifacts are attached and are authoritative inputs:
+Three artifacts are authoritative inputs for semantic integration:
 
 1. **`autonomic_kernel_docset_revised_2026-09-17.zip`** — the complete architecture, contracts, threat model, persistence protocol, testing strategy, implementation sequence, and acceptance gates for the BEAM Autonomic Agent Runtime.
-2. **`typesafe_sdk.xml`** — the production Elixir SDK source representation for TypeSafe AI / Jev. This docset is revised for TypeSafeSDK 0.2.x. Inspect the attached source and use its actual strict semantic public API; do not invent a second TypeSafe HTTP client, call Pristine internals directly, or copy/reimplement SDK validation/runtime machinery.
+2. **`typesafe_sdk.xml`** — the production **TypeSafeSDK 0.4.0** source representation. Use its strict semantic API, Prepared fingerprints, exact request budgets, response contracts, stable metadata, runtime capabilities, test seam and bounded OTP server.
+3. **`pristine_sdk.xml`** — the matching **Pristine 0.4.0** runtime source used to verify the transport/cancellation contract exposed through TypeSafeSDK. Do not build a second semantic HTTP/retry/cancellation stack in Autonomic.
 
 Your task is to build the complete repository **from scratch** as an Elixir umbrella named `autonomic_kernel`, implementing the docset as the normative specification. Do not stop at scaffolding, interfaces, a demo, or a smoke test. Build the real system as far as the execution environment permits, including all source, migrations, native launcher, tests, scripts, documentation, and handoff material.
 
 ## First actions
 
 1. Unzip and read **every file** in `autonomic_kernel_docset_revised_2026-09-17.zip`, beginning with `README.md`, then the architecture, subsystem specs, contracts, transaction protocol, threat model, durability design, test plan, implementation plan, and acceptance gates.
-2. Inspect `typesafe_sdk.xml` and identify the actual TypeSafeSDK version, `new_client`, strict `noul/choice/score`, `prepare`, `evaluate`, response/answer helpers, `Test`, `RuntimeCapabilities`, telemetry, retry/timeout behavior, and dependency constraints. For a 0.2.x source, these strict semantic APIs are the normative Autonomic path; do not build the production adapter on the legacy wire-oriented `system_one` compatibility surface.
+2. Inspect `typesafe_sdk.xml` and verify the TypeSafeSDK 0.4.0 public surface: `new_client`, strict `noul/choice/score`, `prepare`, `Prepared.fingerprint`, `evaluate`, response contracts, exact request budgets, response/answer helpers, `Response.metadata`, `OTP.Server`, `Test`, `RuntimeCapabilities`, telemetry and timeout/retry behavior.
+3. Inspect `pristine_sdk.xml` only to verify the runtime contract TypeSafe exposes, especially unary cancellation/cancellation cleanup. Do not couple Autonomic to Pristine internals or build transport behavior that belongs below TypeSafe.
 3. Create an implementation checklist mapping every normative requirement and every acceptance gate to concrete source files and tests. Keep it in the repository and update it as work progresses.
 
 ## Non-negotiable kernel invariants
@@ -103,46 +105,31 @@ Do not substitute an in-memory map, DETS, or test fake for the production author
 
 ## TypeSafe/Jev semantic supervision
 
-Use `12_TYPESAFE_SDK_INTEGRATION.md` as the normative adapter contract. The kernel must be fully implementable against **TypeSafeSDK 0.2.x**; do not wait for a future SDK release.
+Use `12_TYPESAFE_SDK_INTEGRATION.md` as the normative adapter contract. The only supported semantic baseline is **TypeSafeSDK 0.4.0**. This repository is greenfield; do not add compatibility branches, shims or fallbacks for TypeSafeSDK 0.2/0.3.
 
 The semantic adapter must:
 
-- integrate through the attached SDK's actual public API;
-- define one versioned declarative sensor-bank specification;
-- construct Noul/Choice/Score sensors with the strict SDK constructors;
-- call `prepare/1` or `prepare!/1` once and reuse the prepared bank;
-- call `evaluate/4` for production observations;
-- use `TypeSafeSDK.Response` / `TypeSafeSDK.Answer.*` rather than duplicating SDK uncertainty/response helpers;
-- preserve SDK version, requested/actual model, request id, probabilities/confidence, usage, retries and timing when available;
-- compute/persist an application semantic-contract id from the declarative sensor manifest on 0.2 without inspecting opaque `Prepared` internals;
-- treat a required answer represented only as an unknown future answer tag as unavailable/degraded, never safe;
-- enforce any configured allowed concrete-model contract at the Autonomic policy layer;
-- redact secrets and enforce a bounded semantic evidence/state budget before the SDK boundary;
-- use explicit retry/timeout policy appropriate to the fast/slow loop;
-- inspect `TypeSafeSDK.RuntimeCapabilities` and fail closed for any transport guarantee the deployment actually relies on;
-- use `TypeSafeSDK.Test` for deterministic component tests while retaining a separate mandatory live TypeSafe gate.
+- integrate only through the attached SDK's real public semantic API;
+- define one declarative sensor-bank source for scope drift, authority escalation, evidence sufficiency, irreversibility and trajectory regime;
+- prepare the bank once and use native `TypeSafeSDK.Prepared.fingerprint/1` as the semantic-contract ID;
+- redact secrets and enforce the independent Autonomic evidence-window budget before the SDK boundary;
+- configure TypeSafe `max_request_bytes:` for the exact final serialized request;
+- configure an SDK response contract for unexpected answer IDs and exact allowed-model policy;
+- reject a future answer type under any required requested sensor key as unavailable/degraded, never safe;
+- execute through `TypeSafeSDK.OTP.Server` using the package-owned `Autonomic.Typesafe.Tasks` and finite `max_in_flight`, rather than blocking the bank GenServer on HTTP;
+- keep retries disabled by default and use SDK/Pristine timeout semantics rather than a local retry loop;
+- normalize through `TypeSafeSDK.Response`, `Response.metadata/1` and `TypeSafeSDK.Answer.*`;
+- preserve SDK version, requested/actual model, request ID, usage, retries, timing, sensor-bank version and Prepared fingerprint;
+- require `:unary_cancellation` and `:cancellation_cleanup` through `TypeSafeSDK.RuntimeCapabilities`;
+- use TypeSafe 0.4 privacy-safe evaluation/per-answer telemetry rather than duplicating it;
+- use `TypeSafeSDK.Test` for deterministic component tests while retaining a separate mandatory live TypeSafe gate; and
+- keep GenStage/SystemRegulator backpressure and every authority decision in Autonomic.
 
-Implement an initial sensor bank covering at least:
-
-- scope drift;
-- authority escalation;
-- evidence sufficiency;
-- irreversibility/effect class evidence;
-- trajectory regime (`stable | uncertain | drifting | unstable`).
+Do not use `TypeSafeSDK.Response.values/1` as the production normalization layer because Autonomic needs distributions/confidence/rubrics. Do not use `TypeSafeSDK.Batch` as a replacement for kernel backpressure. Do not call the legacy wire-oriented `system_one` path.
 
 The semantic request state contains only observable evidence: user-visible/structured generation, tool-call deltas, stdout/stderr windows, diff summaries, deterministic facts, effect proposals, and declared plans/summaries actually emitted by the worker. Do **not** depend on hidden chain-of-thought.
 
 TypeSafe/Jev remains a sensor, not a root of trust. SDK validation establishes request/response contract correctness; it does not grant authority.
-
-### Optional TypeSafeSDK 0.3 adoption
-
-Do not invent or require 0.3 APIs. If the attached SDK is 0.3+ and actually exposes public equivalents of the following, use them and remove only the corresponding 0.2 adapter-local compatibility code:
-
-- prepared semantic-contract fingerprinting;
-- opt-in strict unknown-answer / caller-declared allowed-actual-model response contracts;
-- final serialized semantic-request byte limits.
-
-The kernel's acceptance behavior must be identical on 0.2: local semantic-contract identity, fail-closed unknown/model drift handling, and pre-transport evidence budgeting remain mandatory even without SDK-native support.
 
 ## Sensor poisoning and precedence
 
@@ -240,7 +227,7 @@ Write/maintain repository documentation for:
 - execution-domain backend protocol;
 - policy/capability semantics;
 - effect adapter authoring;
-- TypeSafe sensor authoring/calibration, 0.2 adapter contract, semantic-contract/model drift handling, and optional 0.3 migration;
+- TypeSafe 0.4 sensor authoring/calibration, Prepared fingerprinting, response contracts, exact request budgets, bounded OTP execution and model/contract drift handling;
 - persistence/migrations/recovery;
 - testing/conformance;
 - operator runbooks for `commit_unknown`, semantic outage, DB outage, and suspected sandbox escape.

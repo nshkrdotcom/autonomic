@@ -17,20 +17,45 @@ TypeSafe/Jev semantic sensor bank backend for the Autonomic Kernel.
 
 ## What is this package?
 
-`autonomic_typesafe` implements `Autonomic.SemanticSensor` backed by TypeSafeSDK 0.2.x. It prepares semantic evaluation banks for detecting code drift, authority escalation, stealth persistence, and trajectory anomalies in untrusted coding workers.
+`autonomic_typesafe` implements `Autonomic.SemanticSensor` on the TypeSafeSDK
+**0.4.0** semantic API. It evaluates a fixed, prepared bank for scope drift,
+authority escalation, evidence sufficiency, effect irreversibility and trajectory
+regime while keeping semantic evidence outside Autonomic's root of trust.
 
-## When should I install it?
+This is a greenfield integration. There is no TypeSafeSDK 0.2/0.3 compatibility
+path, legacy shim or alternate semantic HTTP client.
 
-Install `autonomic_typesafe` when your Autonomic Kernel deployment requires semantic oversight and AI-based drift analysis alongside deterministic policies.
+## Runtime design
 
-## What does it depend on?
+The adapter deliberately delegates reusable mechanics to TypeSafeSDK 0.4:
 
-- `autonomic` (~> 0.1.0)
-- `typesafe_sdk` (~> 0.2.0)
+- `TypeSafeSDK.Prepared.fingerprint/1` is the semantic-contract identity;
+- `response_contract:` enforces exact allowed-model policy and rejects unexpected
+  answer IDs;
+- `max_request_bytes:` enforces the exact serialized request budget before egress;
+- `TypeSafeSDK.Response.metadata/1` supplies bounded stable response provenance and `TypeSafeSDK.Error.metadata/1` supplies privacy-safe status diagnostics;
+- `TypeSafeSDK.OTP.Server` keeps the bank responsive while evaluations run under
+  the package-owned `Autonomic.Typesafe.Tasks` supervisor with an explicit `max_in_flight` bound; and
+- TypeSafe's per-answer telemetry is emitted after semantic validation.
+
+Autonomic still owns the concerns that are kernel-specific: observable-window
+construction, secret redaction, evidence budgeting, fail-closed treatment of an
+unknown answer *type for a required sensor*, semantic health and authority policy.
+
+TypeSafeSDK continues to own its Pristine runtime. `autonomic_typesafe` does not
+implement retries, HTTP transport, a second queue, or transport cancellation.
+
+## Dependencies
+
+- `autonomic` (`~> 0.1.0` when published)
+- `typesafe_sdk` (`~> 0.4.0`)
+
+TypeSafeSDK 0.4.0 in turn requires Pristine 0.4.0. The supplied Pristine Finch
+transport advertises verified unary cancellation and cancellation cleanup; this
+adapter always requires those capabilities because the TypeSafe OTP server
+uses scoped cancellation for bounded in-flight work.
 
 ## Installation
-
-Add `autonomic_typesafe` to your `mix.exs`:
 
 ```elixir
 def deps do
@@ -41,9 +66,7 @@ def deps do
 end
 ```
 
-## How do I configure it?
-
-In your `config/config.exs` or `config/runtime.exs`:
+## Configuration
 
 ```elixir
 config :autonomic,
@@ -52,32 +75,39 @@ config :autonomic,
 config :autonomic_typesafe,
   api_key: System.get_env("TYPESAFE_API_KEY"),
   model: "jev-latest",
-  timeout_ms: 3000,
+  allowed_models: [],
+  timeout_ms: 3_000,
+  slow_timeout_ms: 10_000,
+  max_in_flight: 8,
   evidence_limit: 32_768,
-  request_limit: 65_536
+  request_limit: 65_536,
+  required_capabilities: [] # optional additional requirements; cancellation base is mandatory
 ```
 
-## What public modules and concepts does it own?
+`allowed_models: []` means that no concrete model allow-set is enforced. `required_capabilities` adds deployment-specific requirements on top of the adapter’s non-removable `:unary_cancellation` and `:cancellation_cleanup` base. For a
+calibrated deployment, set a non-empty list of exact model IDs. `request_limit`
+is the TypeSafeSDK full serialized-request limit; `evidence_limit` is the separate
+Autonomic observable-state budget and remains necessary.
 
-- `Autonomic.Typesafe.Sensor` — Implements `Autonomic.SemanticSensor`.
-- `Autonomic.Typesafe.Bank` — Manages prepared sensor banks and request dispatch.
-- `Autonomic.Typesafe.Evidence` — Sanitizes, redacts, and bounds observation payloads.
-- `Autonomic.Typesafe.Application` — OTP application supervisor.
+When no API key is configured, the package application starts without a bank and
+`Autonomic.Typesafe.Sensor.observe/2` returns `{:error, :typesafe_not_configured}`.
+Tests disable autostart and inject real `TypeSafeSDK.Test` clients directly into a
+supervised bank; production has no client hot-swap API.
 
-## How does it fit into Autonomic?
+## Public modules
 
-`autonomic_typesafe` acts as an optional sensor adapter:
+- `Autonomic.Typesafe.Sensor` — `Autonomic.SemanticSensor` implementation.
+- `Autonomic.Typesafe.SensorBank` — declarative question bank and Prepared contract.
+- `Autonomic.Typesafe.Bank` — bounded OTP execution and response normalization.
+- `Autonomic.Typesafe.Evidence` — observable-state sanitization and redaction.
+- `Autonomic.Typesafe.Application` — dedicated semantic task supervision plus optional bank supervision.
 
-```text
-                      ┌─────────────────────┐
-                      │      autonomic      │
-                      └──────────┬──────────┘
-                                 │
-              ┌──────────────────┴──────────────────┐
-              ▼                                     ▼
-     autonomic_typesafe                      other sensors
-```
+## Testing
 
-## Where are the full system docs?
+Deterministic component tests use the real TypeSafeSDK serialization, validation,
+response-contract, request-budget and transport seam through `TypeSafeSDK.Test`.
+The separate `:live` gate uses an authorized real endpoint and records only
+non-secret structural provenance.
 
-See the repository root at [GitHub](https://github.com/nshkrdotcom/autonomic) and [HexDocs](https://hexdocs.pm/autonomic_typesafe).
+See the package guides and repository-level `docs/TYPESAFE_SENSORS.md` for the
+full integration contract.

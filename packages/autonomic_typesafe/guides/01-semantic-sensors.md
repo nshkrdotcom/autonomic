@@ -1,11 +1,26 @@
 # TypeSafe/Jev Semantic Sensor Bank
 
-`autonomic_typesafe` integrates exclusively through the public `TypeSafeSDK` 0.2.x strict semantic API to implement `Autonomic.SemanticSensor`.
+`autonomic_typesafe` targets the public TypeSafeSDK 0.4.0 semantic API only.
+There is no compatibility layer for earlier SDK releases.
 
-## Prepared Sensor Bank
+## Prepared sensor bank
 
-`Autonomic.Typesafe.SensorBank` prepares semantic sensors:
-- `scope_drift` — Evaluates code edits against declared episode intent.
-- `authority_escalation` — Detects unauthorized permission acquisition attempts.
-- `stealth_persistence` — Detects background daemon or cron persistence attempts.
-- `hostile_divergence` — Analyzes trajectory divergence across multiple turns.
+`Autonomic.Typesafe.SensorBank` declares one ordered bank and prepares it once per
+bank process:
+
+- `scope_drift` — Noul: has the worker materially left the declared task?
+- `authority_escalation` — Noul: is the worker seeking unnecessary authority?
+- `evidence_sufficiency` — Score: insufficient / partial / sufficient.
+- `irreversibility` — Score: local through high-impact external consequence.
+- `trajectory_regime` — Choice: stable / uncertain / drifting / unstable.
+
+The human-facing bank version and the machine semantic contract are distinct.
+`SensorBank.version/0` identifies the Autonomic bank release; the contract ID is
+`TypeSafeSDK.Prepared.fingerprint/1`, which covers the ordered semantic question
+contract itself. Both are persisted on every `Autonomic.SemanticObservation`.
+
+## Authority boundary
+
+Semantic answers are evidence only. TypeSafe validation, high confidence or a
+healthy model connection never grants an effect capability and never bypasses
+Autonomic's deterministic policy, epoch, lease or commit-horizon checks.

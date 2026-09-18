@@ -2,7 +2,10 @@
   "project": "autonomic_kernel",
   "delivered_at": "2026-09-17",
   "reviewed_repository_baseline": "cb0a886",
+  "source_upgrade": "typesafe_sdk_0.4.0_greenfield",
+  "verification_status": "target_host_handoff_pending",
   "conformance_report": "artifacts/conformance_report.json",
   "live_semantic_evidence": "artifacts/typesafe_live_gate.json",
-  "note": "Git revision is obtained from git rev-parse HEAD. The conformance report binds the source tree and executed gate logs by SHA-256; release readiness requires every mandatory gate passed."
+  "handoff": "HANDOFF_TYPESAFE_0.4.0.md",
+  "note": "The pre-upgrade conformance/live evidence was invalidated by the TypeSafeSDK 0.4.0 source change. Current artifacts are pending markers, not executed proof. Release readiness requires target-host lock resolution, strict QC, package verification, and the live TypeSafe gate to regenerate authoritative evidence."
 }

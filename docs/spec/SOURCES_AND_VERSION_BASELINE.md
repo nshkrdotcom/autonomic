@@ -50,32 +50,22 @@ Firecracker's own project documentation explicitly notes that safe multi-tenant 
 
 ## TypeSafe SDK basis
 
-The implementation agent receives the current `typesafe_sdk.xml`. This revised docset was grounded against **TypeSafeSDK 0.2.0**, whose strict semantic API is the normative Autonomic integration surface:
+The semantic integration is grounded against the supplied **TypeSafeSDK 0.4.0** source. The active Autonomic surface is:
 
 - `TypeSafeSDK.new_client/1`
-- `TypeSafeSDK.noul/2`
-- `TypeSafeSDK.choice/3`
-- `TypeSafeSDK.score/3`
-- `TypeSafeSDK.prepare/1` and `prepare!/1`
-- `TypeSafeSDK.evaluate/4` and `evaluate!/4`
-- `TypeSafeSDK.evaluate_stream/4` and `evaluate_many/4` for bounded per-enumeration execution where appropriate
-- `TypeSafeSDK.Response` and `TypeSafeSDK.Answer.*` helpers
-- `TypeSafeSDK.Test` for deterministic application/component tests through the production serialization/retry/decode path
-- `TypeSafeSDK.RuntimeCapabilities` for fail-closed transport-capability reporting
-- privacy-oriented `:telemetry` events emitted by the semantic evaluation layer
+- strict `TypeSafeSDK.noul/2`, `choice/3`, `score/3`
+- `TypeSafeSDK.prepare/1` / `prepare!/1`
+- `TypeSafeSDK.Prepared.fingerprint/1`
+- `TypeSafeSDK.evaluate/4`
+- `TypeSafeSDK.Response`, `Response.metadata/1` and `TypeSafeSDK.Answer.*`
+- strict response contracts and exact `max_request_bytes:` request budgets
+- `TypeSafeSDK.RuntimeCapabilities`
+- `TypeSafeSDK.OTP.Server` for bounded non-blocking GenServer integration
+- `TypeSafeSDK.Test` for deterministic application/component tests
+- privacy-oriented evaluation and per-answer telemetry
 
-The 0.2 SDK preserves the older wire-oriented `system_one` API for compatibility, but Autonomic MUST NOT build its production semantic adapter on the legacy path unless a later attached SDK removes the strict `evaluate` surface and the docset is explicitly revised.
+The codebase is greenfield. There is no 0.2/0.3 support path and no local emulation of functionality now present in 0.4. The wire-oriented `system_one` surface is not used by the production Autonomic adapter.
 
-TypeSafeSDK 0.2.0 requires the Pristine 0.3.1 family in the supplied source. Autonomic does not import or reimplement Pristine HTTP semantics; that dependency remains owned behind TypeSafeSDK. In particular, Autonomic MUST NOT introduce a second HTTP/retry client for semantic traffic.
+TypeSafeSDK 0.4.0 requires **Pristine 0.4.0**. Autonomic does not build a second semantic HTTP or retry layer; TypeSafe remains responsible for its Pristine runtime. The supplied Pristine 0.4 Finch transport advertises and implements `:unary_cancellation` and `:cancellation_cleanup`, which are non-removable required runtime capabilities for the TypeSafe bank. Configured `required_capabilities` add stricter deployment requirements; they do not subtract this base.
 
-### Optional TypeSafeSDK 0.3 direction
-
-This docset specifies three independently reusable enhancements that may appear in a later SDK release:
-
-1. versioned fingerprints for prepared semantic question contracts;
-2. opt-in strict response contracts for unknown answer tags and caller-declared allowed actual models;
-3. a locally enforced serialized semantic-request byte budget before transport execution.
-
-These are **not** required to start or complete the kernel against 0.2. On 0.2, `autonomic_typesafe` implements equivalent application-level semantics without reaching into private `Prepared` internals. If the attached SDK is 0.3+ and exposes native versions of these features, use the actual public API found in that source and remove only the corresponding compatibility code. Never guess future function names.
-
-The semantic adapter must inspect the attached XML before implementation and verify the actual version/public names/options found there.
+The semantic adapter must still preserve Autonomic-specific concerns: observable evidence selection/redaction, evidence-window limits, fixed sensor meaning, required-known-answer policy, semantic health, calibration provenance, system backpressure and authority.

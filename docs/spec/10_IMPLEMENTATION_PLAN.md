@@ -138,43 +138,33 @@ Exit: poisoning-independent deterministic containment works.
 
 ## Phase 6 — TypeSafe/Jev semantic sensors
 
-Ground the adapter against the attached TypeSafeSDK source. The normative baseline is 0.2.x and uses the strict semantic API rather than the legacy wire-oriented System One wrapper.
+Ground the adapter against TypeSafeSDK 0.4.0. This is a greenfield baseline; do not preserve 0.2/0.3 compatibility code.
 
 Deliver:
 
-- `AutonomicTypesafe.Sensor` implementing `Autonomic.SemanticSensor`;
-- one versioned declarative sensor-bank specification covering at least scope drift, authority escalation, evidence sufficiency, irreversibility and regime;
-- bank construction with `TypeSafeSDK.noul/choice/score` and one reusable `TypeSafeSDK.Prepared`;
-- bounded observable-window builder and secret redaction;
-- adapter-local semantic-contract id derived from the declarative bank specification on 0.2;
-- configured pre-transport state/request budget enforcement without inspecting private `Prepared` fields;
-- `TypeSafeSDK.evaluate/4` execution with explicit fast/slow timeout and retry policy;
-- response normalization through `TypeSafeSDK.Response` and `TypeSafeSDK.Answer.*`;
-- required-answer checking so unknown future answer tags become semantic degradation, never safe defaults;
-- actual-model provenance and optional kernel policy for allowed concrete model(s);
-- SDK/request/model/usage/retry/timing/sensor-bank/contract provenance on `SemanticObservation`;
+- `Autonomic.Typesafe.Sensor` implementing `Autonomic.SemanticSensor`;
+- one declarative sensor-bank source covering scope drift, authority escalation, evidence sufficiency, irreversibility and regime;
+- one reusable `TypeSafeSDK.Prepared` and native `Prepared.fingerprint/1` contract identity;
+- bounded observable-window construction and secret redaction;
+- exact TypeSafe `max_request_bytes:` enforcement for the final serialized request;
+- SDK `response_contract` enforcement for unexpected answer IDs and exact allowed-model policy;
+- explicit rejection of a future answer type under any required sensor key;
+- `TypeSafeSDK.OTP.Server` using the package-owned `Autonomic.Typesafe.Tasks` and finite `max_in_flight`;
+- fast/slow SDK timeout policy with retries disabled by default;
+- response normalization through `TypeSafeSDK.Response`, `Response.metadata/1` and `TypeSafeSDK.Answer.*`;
+- SDK/request/model/usage/retry/timing/sensor-bank/fingerprint provenance on `SemanticObservation`;
 - semantic service/contract health state;
-- `TypeSafeSDK.RuntimeCapabilities` reporting for any transport guarantees relied upon;
-- deterministic adapter tests through `TypeSafeSDK.Test` while preserving the separate mandatory live gate;
-- bounded sampling/coalescing integrated into the existing GenStage/SystemRegulator pressure path.
+- fail-closed `TypeSafeSDK.RuntimeCapabilities` requirements for unary cancellation and cancellation cleanup;
+- deterministic tests through `TypeSafeSDK.Test`, including request budget, response contract, blocked-request bank responsiveness and max-in-flight overload; and
+- a separate mandatory live gate with non-secret provenance.
 
-Do not implement a second TypeSafe HTTP client, retry engine, semantic response validator, ranking/margin/score helper layer, or global request queue. SDK batch execution may be used for independent TypeSafe calls, but it does not replace kernel backpressure.
-
-### Optional TypeSafeSDK 0.3 adoption
-
-The kernel MUST be complete on 0.2. If the attached SDK is 0.3+ and actually exposes the proposed reusable hardening primitives, adopt them through their real public API:
-
-- prepared semantic-contract fingerprint;
-- strict unknown-answer and caller-declared allowed-model response contracts;
-- serialized request byte budget.
-
-When native support exists, remove only the corresponding adapter-local compatibility code. Do not change Homeostat, authority, backpressure, redaction or service-health ownership and do not invent future APIs.
+Do not implement a second TypeSafe HTTP client, retry engine, semantic response validator, ranking/margin/score helper layer, local Prepared hash, approximate whole-request size estimator, package-global TypeSafe supervisor or compatibility shim. `TypeSafeSDK.Batch` does not replace kernel backpressure.
 
 Exit:
 
 - deterministic TypeSafe adapter tests green through the SDK test seam;
-- mandatory live `evaluate/4` gate recorded with provenance;
-- unknown-answer/model-drift/outage paths fail closed according to kernel policy;
+- mandatory live gate recorded with provenance;
+- request-budget/model-contract/unknown-answer/outage/overload paths fail closed;
 - deterministic rules still dominate a semantic `safe` result in the poisoning test.
 
 ## Phase 7 — Snapshot and repair

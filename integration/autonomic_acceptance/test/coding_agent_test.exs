@@ -82,7 +82,7 @@ defmodule Autonomic.Store.CodingAgentReferenceTest do
     Application.put_env(:autonomic, :targets, %{target_id => target})
 
     client = typesafe_client()
-    assert :ok = Bank.install_client(client)
+    start_supervised!({Bank, client: client})
 
     on_exit(fn ->
       for {_, pid, _, _} <- DynamicSupervisor.which_children(Autonomic.Episodes) do

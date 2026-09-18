@@ -1,59 +1,9 @@
 {
-  "usage": {
-    "input_tokens": 681,
-    "output_tokens": 124
-  },
-  "request_id": "req_01a0b18c8df0794fb8c650704d1350a8",
-  "semantic_contract_id": "sha256:c0361c1d598b071207096f77fa322d0f63904ac0f3e1723029bb016258ddf164",
-  "retries": 0,
-  "requested_model": "jev-latest",
-  "sdk_version": "0.2.0",
-  "sensor_bank_version": "coding-v1",
-  "generated_at": "2026-09-17T22:46:13.472636Z",
-  "actual_model": "jev-1.13.0",
-  "timing_ms": 687.726,
-  "runtime_capabilities": {
-    "runtime": {
-      "bounded_outstanding_requests": "unverified",
-      "bounded_queue": "unverified",
-      "max_response_bytes": "unverified",
-      "cancellation_cleanup": "unverified",
-      "deterministic_overload": "unverified"
-    },
-    "transport": "Pristine.Adapters.Transport.Finch",
-    "assurance": "adapter_advertisement_requires_contract_tests",
-    "sdk": {
-      "batch_cancellation": "owned_tasks_only",
-      "batch_concurrency": "bounded_per_enumeration",
-      "batch_queue": "lazy_enumeration",
-      "ordered_prefetch": "bounded_windows"
-    }
-  },
-  "answers": [
-    {
-      "value": false,
-      "sensor": "scope_drift",
-      "confidence": 0.95
-    },
-    {
-      "value": false,
-      "sensor": "authority_escalation",
-      "confidence": 0.9
-    },
-    {
-      "value": "Partial",
-      "sensor": "evidence_sufficiency",
-      "confidence": 0.0
-    },
-    {
-      "value": 0.405,
-      "sensor": "irreversibility",
-      "confidence": 0.68
-    },
-    {
-      "value": "stable",
-      "sensor": "trajectory_regime",
-      "confidence": 0.91
-    }
-  ]
+  "status": "pending",
+  "verified": false,
+  "target_sdk_version": "0.4.0",
+  "target_pristine_version": "0.4.0",
+  "reason": "The prior TypeSafeSDK 0.2.0 live result is not valid evidence for the greenfield 0.4.0 integration.",
+  "regenerate_command": "./scripts/run_live_typesafe.sh",
+  "note": "No live API call was performed in the delivery environment; do not treat this file as semantic-service evidence until the live gate rewrites it."
 }

@@ -9,8 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Semantic sensor backend implementing `Autonomic.SemanticSensor`.
-- Integration with TypeSafeSDK 0.2.x and Jev model family.
+- Greenfield integration with TypeSafeSDK 0.4.0 and the Jev model family.
+- SDK-native `Prepared` fingerprints as the semantic contract identity.
+- SDK-native strict response contracts and exact serialized request-byte budgets.
+- Bounded non-blocking semantic execution through `TypeSafeSDK.OTP.Server` on the package-owned `Autonomic.Typesafe.Tasks` supervisor.
+- Required Pristine-backed unary cancellation and cancellation-cleanup capabilities, checked through `TypeSafeSDK.RuntimeCapabilities`.
+- Privacy-safe TypeSafe response/error metadata and per-answer telemetry correlation without logging semantic payloads.
 - Evidence redaction, sanitization, and bounding in `Autonomic.Typesafe.Evidence`.
-- Prepared sensor bank for drift, escalation, stealth persistence, and hostile divergence.
+- Fixed Prepared sensor bank for scope drift, authority escalation, evidence sufficiency, effect irreversibility, and trajectory regime.
 - Deterministic component testing suite with `TypeSafeSDK.Test`.
 - Explicit live integration gate.

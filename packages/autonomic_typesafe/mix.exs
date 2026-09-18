@@ -45,7 +45,7 @@ defmodule Autonomic.Typesafe.MixProject do
 
   defp sdk_dependency do
     case System.get_env("TYPESAFE_SDK_PATH") do
-      nil -> {:typesafe_sdk, "~> 0.2.0"}
+      nil -> {:typesafe_sdk, "~> 0.4.0"}
       path -> {:typesafe_sdk, path: Path.expand(path)}
     end
   end

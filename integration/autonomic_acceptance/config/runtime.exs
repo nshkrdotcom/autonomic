@@ -33,12 +33,12 @@ if file = System.get_env("AUTONOMIC_CONFIG") do
     allowed_models: Map.get(document, "allowed_models", []),
     required_capabilities:
       Enum.map(Map.get(document, "required_capabilities", []), fn
+        "unary_cancellation" -> :unary_cancellation
         "bounded_queue" -> :bounded_queue
         "max_response_bytes" -> :max_response_bytes
         "bounded_outstanding_requests" -> :bounded_outstanding_requests
         "deterministic_overload" -> :deterministic_overload
         "cancellation_cleanup" -> :cancellation_cleanup
-        "timeout_propagation" -> :timeout_propagation
-        _ -> raise "Unrecognized required transport capability"
+        _ -> raise "Unrecognized TypeSafe runtime capability"
       end)
 end

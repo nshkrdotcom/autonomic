@@ -103,9 +103,9 @@ defmodule Autonomic.Store.HomeostatTrajectoryTest do
       model: "jev-fixture",
       requested_model: "jev-fixture",
       request_id: "req-trajectory",
-      sdk_version: "0.2.0",
+      sdk_version: "0.4.0",
       sensor_bank_version: "coding-v1",
-      semantic_contract_id: "sha256:test",
+      semantic_contract_id: "typesafe-prepared-v1:test",
       observed_at: Canonical.now(),
       metadata: metadata
     }

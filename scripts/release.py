@@ -189,7 +189,7 @@ def command_stage(args: argparse.Namespace) -> int:
         # Source-only SDK override must never become consumer behavior.
         transformed = re.sub(
             r'defp sdk_dependency do.*?\n  end',
-            'defp sdk_dependency, do: {:typesafe_sdk, "~> 0.2.0"}',
+            'defp sdk_dependency, do: {:typesafe_sdk, "~> 0.4.0"}',
             transformed, flags=re.DOTALL,
         )
         if re.search(r"\b(?:path|in_umbrella|apps_path|build_path|deps_path|config_path|lockfile)\s*:", transformed):

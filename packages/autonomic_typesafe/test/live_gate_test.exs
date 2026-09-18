@@ -2,19 +2,22 @@ defmodule Autonomic.Typesafe.LiveGateTest do
   use ExUnit.Case, async: false
 
   alias Autonomic.{Canonical, ObservationFrame}
-  alias Autonomic.Typesafe.{Bank, Sensor, SensorBank}
+  alias Autonomic.Typesafe.{Bank, Sensor}
 
   @moduletag :live
   @moduletag timeout: 120_000
 
-  test "production TypeSafe evaluate/4 gate records non-secret provenance" do
+  test "production TypeSafe 0.4 evaluate gate records non-secret provenance" do
     key = System.get_env("TYPESAFE_API_KEY")
 
     assert is_binary(key) and String.trim(key) != "",
            "TYPESAFE_API_KEY is required for the live gate"
 
     requested_model = Application.get_env(:autonomic_typesafe, :model, "jev-latest")
-    requirements = Application.get_env(:autonomic_typesafe, :required_capabilities, [])
+    requirements =
+      ([:unary_cancellation, :cancellation_cleanup] ++
+         Application.fetch_env!(:autonomic_typesafe, :required_capabilities))
+      |> Enum.uniq()
 
     client =
       TypeSafeSDK.new_client(
@@ -26,7 +29,7 @@ defmodule Autonomic.Typesafe.LiveGateTest do
       )
 
     assert :ok = TypeSafeSDK.RuntimeCapabilities.check(client, requirements)
-    assert :ok = Bank.install_client(client)
+    start_supervised!({Bank, client: client})
 
     frame = %ObservationFrame{
       episode_id: String.duplicate("f", 32),
@@ -50,7 +53,7 @@ defmodule Autonomic.Typesafe.LiveGateTest do
     assert is_binary(first.request_id) and first.request_id != ""
     assert is_binary(first.model) and first.model != ""
     assert first.sdk_version == TypeSafeSDK.version()
-    assert first.semantic_contract_id == SensorBank.contract_id()
+    assert first.semantic_contract_id == Bank.status().semantic_contract_id
 
     provenance = %{
       generated_at: DateTime.utc_now() |> DateTime.to_iso8601(),

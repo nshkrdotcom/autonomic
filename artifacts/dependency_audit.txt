@@ -1,1 +1,5 @@
-No retired or security advisory packages found
+PENDING REGENERATION
+
+The prior dependency audit was invalidated by the TypeSafeSDK 0.4.0 dependency
+upgrade. Re-run target-host dependency resolution and the strict QC/release audit
+before treating dependency security status as verified.

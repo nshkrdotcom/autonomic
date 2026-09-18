@@ -1,6 +1,6 @@
 # BEAM Autonomic Agent Runtime — Revised Implementation Docset
 
-This archive is the implementation handoff for `autonomic_kernel`, a capability-secure BEAM/OTP execution kernel for probabilistic workers. This revision is dated **2026-09-17** and updates the semantic-integration plan to the production **TypeSafeSDK 0.2.0** surface. TypeSafeSDK 0.3.x features described in this docset are optional forward enhancements, not prerequisites for kernel implementation or acceptance.
+This archive is the implementation handoff for `autonomic_kernel`, a capability-secure BEAM/OTP execution kernel for probabilistic workers. This revision is dated **2026-09-17** and fixes the semantic-integration baseline at **TypeSafeSDK 0.4.0** with its Pristine 0.4.0 runtime. The codebase is greenfield: earlier TypeSafe releases are not supported and no compatibility shim is part of the architecture.
 
 The runtime treats an LLM/coding agent as an **untrusted user-space program**. The trusted system is the OTP kernel plus its durable ledger, authority state, effect broker, and host-isolation backend. Agent processes and sandboxes are disposable. External effects are mediated, epoch-fenced, and committed only after the required deterministic and semantic checks.
 
@@ -28,17 +28,17 @@ Every implementation decision MUST preserve these invariants:
 - `10_IMPLEMENTATION_PLAN.md` — implementation sequence with exit criteria and no throwaway scaffolding.
 - `11_ACCEPTANCE_GATES.md` — final non-negotiable completion gates.
 - `SOURCES_AND_VERSION_BASELINE.md` — dated technology baseline and upstream references.
-- `REVISION_NOTES_2026-09-17.md` — exact scope of the TypeSafeSDK 0.2 revision.
-- `12_TYPESAFE_SDK_INTEGRATION.md` — normative TypeSafeSDK 0.2.0 adapter contract, provenance rules, testing strategy, and optional 0.3 migration path.
-- `IMPLEMENTATION_PROMPT.md` — exact prompt to accompany this archive and the current `typesafe_sdk.xml`.
+- `REVISION_NOTES_2026-09-17.md` — exact scope of the TypeSafeSDK 0.4 greenfield revision.
+- `12_TYPESAFE_SDK_INTEGRATION.md` — normative TypeSafeSDK 0.4.0 adapter contract, provenance, bounded OTP execution and testing strategy.
+- `IMPLEMENTATION_PROMPT.md` — exact prompt to accompany this archive and the current TypeSafeSDK 0.4.0 / Pristine 0.4.0 source snapshots.
 
 ## Semantic SDK baseline
 
-The first implementation targets **TypeSafeSDK 0.2.x** and MUST use its strict semantic layer: `TypeSafeSDK.noul/2`, `choice/3`, `score/3`, `prepare/1` or `prepare!/1`, and `evaluate/4` or `evaluate!/4`. The legacy wire-oriented `system_one` surface remains an SDK compatibility API but is not the normative Autonomic integration path.
+The implementation targets **TypeSafeSDK 0.4.0** and MUST use the strict semantic layer plus the 0.3/0.4 primitives that are now first-class: Prepared fingerprints, exact request-byte budgets, strict response contracts, stable metadata and `TypeSafeSDK.OTP.Server`. The wire-oriented `system_one` surface is not an Autonomic production path.
 
-TypeSafeSDK owns semantic request construction, local semantic validation, request-relative response validation, answer enrichment, retry/timeout plumbing, privacy-oriented semantic telemetry, bounded per-enumeration batch execution, test-fixture transport support, runtime-capability reporting, and wire-schema maintenance. Autonomic owns evidence selection/redaction, sensor meaning, temporal control, service-health policy, model/contract drift consequences, backpressure, and all authority decisions.
+TypeSafeSDK owns semantic request construction/validation, Prepared contracts/fingerprints, final request sizing, response contracts/enrichment, retry/timeout plumbing, privacy-oriented evaluation/per-answer telemetry, bounded OTP evaluation, test transport and runtime-capability reporting. Autonomic owns evidence selection/redaction, sensor meaning, semantic health, model/contract consequences, system-level backpressure and all authority decisions.
 
-A future TypeSafeSDK 0.3 may natively expose semantic-contract fingerprints, strict unknown/model response contracts, and serialized request-size limits. The Autonomic implementation MUST NOT wait for those features: the 0.2 adapter provides equivalent kernel-level semantics locally and delegates to SDK-native facilities only when the attached SDK actually exposes them. Do not invent 0.3 APIs.
+There is no local fallback for features provided by the 0.4 SDK. Do not add version branches or recreate older behavior.
 
 ## Intended repository shape
 

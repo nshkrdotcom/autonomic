@@ -228,70 +228,35 @@ TypeSafe/Jev is used as multiple bounded sensors, not one `safe?` classifier. In
 - `semantic_novelty` — is the current trajectory unlike the preceding stable window?
 - `regime` — `stable | uncertain | drifting | unstable` classification.
 
-### 6.1 TypeSafeSDK 0.2 production boundary
+### 6.1 TypeSafeSDK 0.4 production boundary
 
-The production adapter uses the strict TypeSafeSDK semantic surface, not the legacy wire-oriented System One wrapper. Construct and prepare the sensor bank once during trusted sensor initialization, then reuse the prepared bank across observable windows:
+The production adapter targets TypeSafeSDK 0.4.0 only. It prepares one strict semantic bank and executes it through `TypeSafeSDK.OTP.Server` rather than blocking the bank GenServer on network work. The wrapper uses the package-owned `Autonomic.Typesafe.Tasks` supervisor and an explicit `max_in_flight` bound.
 
-```elixir
-prepared =
-  TypeSafeSDK.prepare!(
-    scope_drift:
-      TypeSafeSDK.noul(
-        "Has the observable trajectory materially drifted beyond the original coding task?"
-      ),
-    authority_escalation:
-      TypeSafeSDK.noul(
-        "Is the worker seeking resources or authority unnecessary for the stated task?"
-      ),
-    evidence_sufficiency:
-      TypeSafeSDK.score(
-        "How sufficient is the observable evidence for the proposed action?",
-        ["Insufficient", "Partial", "Sufficient"]
-      ),
-    irreversibility:
-      TypeSafeSDK.score(
-        "Classify the proposed effect by operational irreversibility.",
-        ["Local", "Reversible", "External", "Authoritative", "High-impact"]
-      ),
-    regime:
-      TypeSafeSDK.choice(
-        "Classify the current trajectory regime from observable evidence only.",
-        stable: "coherent and within scope",
-        uncertain: "insufficient evidence or inconsistent intent",
-        drifting: "directional deviation from scope",
-        unstable: "rapid or severe deviation requiring containment"
-      )
-  )
+TypeSafeSDK owns semantic validation, request construction, exact final request-size enforcement, response decoding/contracts, bounded response metadata, Prepared fingerprints and per-answer telemetry. Pristine remains the SDK's transport/resilience runtime. Autonomic MUST NOT duplicate those layers.
 
-{:ok, response} =
-  TypeSafeSDK.evaluate(client, sensor_state, prepared,
-    retry: false,
-    timeout_ms: semantic_timeout_ms,
-    telemetry_metadata: %{episode_id: episode_id, sensor_bank: sensor_bank_version}
-  )
-```
-
-`TypeSafeSDK.Prepared` owns validated question construction/encoding and finite caller-key identity. `TypeSafeSDK.evaluate/4` owns JSON normalization, protected semantic request fields, request execution through the production SDK runtime, request-relative response validation, and enriched answers. `AutonomicTypesafe.Sensor` MUST NOT duplicate those layers.
-
-The adapter reads answers through `TypeSafeSDK.Response` / `TypeSafeSDK.Answer.*`, preserving the actual response model, request id, usage, retry count, elapsed time, probability distributions, and any provider confidence exposed by the SDK. Thresholds remain Autonomic policy and are never treated as SDK safety guarantees.
+The adapter reads answers through `TypeSafeSDK.Response` / `TypeSafeSDK.Answer.*`, preserving actual model, request ID, usage, retry count, elapsed time, distributions and confidence. Thresholds remain Autonomic policy and are never SDK safety guarantees.
 
 ### 6.2 Fail-closed response interpretation
 
-TypeSafeSDK 0.2 intentionally preserves unknown future answer tags in `unknown_answers`. For this kernel, a required sensor answer that is unknown/missing is **semantic unavailability**, never an implicit negative or `safe` result. The adapter marks sensor health degraded and the Homeostat/SystemRegulator applies the configured uncertainty policy.
+Production evaluations configure an SDK response contract with `on_unknown_answer: :error` and the configured exact `allowed_models` set (or `nil` when no allow-set is configured). Unexpected response answer IDs and concrete-model drift therefore fail inside the SDK contract layer.
 
-The actual response model is provenance, not merely decoration. If policy pins an allowed concrete model set and `response.model` falls outside it, treat that as semantic-contract drift. The SDK detects/returns the model; Autonomic decides whether the episode may continue, yield, require slow verification, or quarantine admission. Do not infer that a different model is intrinsically unsafe.
+TypeSafe intentionally preserves a future answer *type* under a requested key. Because Autonomic's fixed bank requires known Noul/Choice/Score families, any remaining `unknown_answers` entry is semantic unavailability, never an implicit negative or `safe` result.
 
 ### 6.3 Semantic contract identity
 
-On TypeSafeSDK 0.2, `autonomic_typesafe` maintains a versioned declarative sensor-bank manifest and computes its own SHA-256 contract id from that manifest before building the SDK questions. Do not hash or inspect private/opaque `Prepared` fields. Persist both the human sensor-bank version and the contract id with semantic evidence.
+The contract ID is the native `TypeSafeSDK.Prepared.fingerprint/1` value. Persist it together with the human sensor-bank version. Do not maintain a duplicate local hash implementation or inspect private Prepared fields. A changed fingerprint invalidates calibration artifacts frozen against the prior semantic question contract.
 
-If a later attached TypeSafeSDK exposes a public prepared-contract fingerprint, prefer that public fingerprint and retain the application sensor-bank version alongside it. A change of semantic question contract invalidates calibration artifacts that were frozen against the prior contract.
+### 6.4 Evidence and exact request budgeting
 
-### 6.4 Request budgeting
+Autonomic still owns the bounded observable window and secret redaction. `evidence_limit` bounds the redacted semantic state before the SDK boundary. Separately, `request_limit` is passed to TypeSafe as `max_request_bytes:` so the SDK measures the exact final serialized request before transport egress. The second guard supplements rather than replaces the first.
 
-Autonomic owns the bounded observable window and secret redaction. On TypeSafeSDK 0.2, enforce a configured serialized-state budget before `evaluate/4` and reject/trim according to deterministic policy; never silently submit an unbounded accumulated transcript. If a later SDK exposes a native full serialized-request byte limit, configure it as an additional guard rather than removing the kernel evidence-window budget.
+### 6.5 Runtime capabilities and bounded OTP execution
 
-See `12_TYPESAFE_SDK_INTEGRATION.md` for the complete normative adapter contract and optional 0.3 migration rules.
+The reference adapter requires `:unary_cancellation` and `:cancellation_cleanup` through `TypeSafeSDK.RuntimeCapabilities`. The supplied Pristine 0.4 Finch transport advertises both as supported. Unsupported or unverified custom transports fail bank startup.
+
+The TypeSafe OTP wrapper gives each request a private Pristine cancellation scope and cancels pending work on bank shutdown. Autonomic does not add another transport cancellation layer. `TypeSafeSDK.Batch` is not used as a replacement for kernel-level GenStage/SystemRegulator backpressure.
+
+See `12_TYPESAFE_SDK_INTEGRATION.md` for the normative adapter contract.
 
 ## 7. Homeostatic trajectory model
 

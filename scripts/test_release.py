@@ -20,6 +20,10 @@ class ReleaseTests(unittest.TestCase):
                 self.assertFalse((root / 'priv/autonomic_launcher').exists())
                 self.assertFalse((root / 'var').exists())
 
+            typesafe_mix = (Path(temp) / '0.1.0' / 'autonomic_typesafe' / 'mix.exs').read_text()
+            self.assertIn('{:typesafe_sdk, "~> 0.4.0"}', typesafe_mix)
+            self.assertNotIn('TYPESAFE_SDK_PATH', typesafe_mix)
+
 
 if __name__ == '__main__':
     unittest.main()

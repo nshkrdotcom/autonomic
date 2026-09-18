@@ -1,11 +1,36 @@
-# Evidence Budgeting and Model Drift
+# Evidence Budgeting, Contracts and Drift
 
-## Sanitization and Redaction
+## Two independent size bounds
 
-Before any observation frame is sent to the semantic model:
-- `Autonomic.Typesafe.Evidence.bounded/2` scrubs bearer tokens, API keys, private keys, and passwords.
-- Bounded payload sizes prevent prompt injection or denial-of-service via giant observation inputs.
+Autonomic bounds observable evidence before it reaches the SDK. TypeSafeSDK 0.4
+then measures the exact final serialized request, including Prepared questions,
+model and other wire fields.
 
-## Model Drift & Outage Degradation
+- `evidence_limit` protects the kernel's observation-window policy and forces
+  secret redaction/bounded state before semantic evaluation.
+- `request_limit` is forwarded as TypeSafeSDK `max_request_bytes:` and prevents an
+  oversized final JSON request from reaching transport egress.
 
-If the TypeSafe API times out or responds with unknown future shapes, `autonomic_typesafe` logs a warning and degrades gracefully without crashing the BEAM supervisor tree.
+The second guard does not replace the first.
+
+## Model drift
+
+A non-empty `allowed_models` setting becomes the SDK `response_contract`
+`allowed_models` list. Exact membership is enforced by TypeSafeSDK before
+Autonomic normalizes an answer. A mismatch is semantic degradation, never an
+implicit safe result.
+
+## Unknown answers
+
+TypeSafeSDK's strict response contract rejects answer IDs that were not requested.
+The SDK intentionally preserves a future answer type when it occurs under a
+requested key. Autonomic's fixed production bank requires known Noul/Choice/Score
+families, so any remaining `response.unknown_answers` entry is rejected as
+`{:unknown_required_answers, keys}`.
+
+## Outage and overload
+
+Transport errors, request timeouts, response-contract violations, request-budget
+failures and TypeSafe OTP `max_in_flight` overload all return errors and mark
+semantic health degraded. Missing configuration marks semantic health unavailable.
+No such condition produces a synthetic safe observation.
