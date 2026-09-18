@@ -43,8 +43,6 @@ def deps do
 end
 ```
 
-`autonomic_postgres` is opt-in from the application's point of view, but its Mix dependency is **autonomic_postgres → autonomic**. Installing this package does not make `autonomic` depend on it; an application chooses this adapter by adding the package and configuring the corresponding core behaviour.
-
 ## How do I configure it?
 
 In your `config/config.exs`:
@@ -67,6 +65,18 @@ Run database migrations:
 mix ecto.migrate -r Autonomic.Store.Repo
 ```
 
+## Durable Authority & Transactional Ledger
+
+`autonomic_postgres` provides the durable source of truth for the kernel control plane:
+- **Epoch Fencing**: Monotonic episode epochs ensure stale workers and superseded capability leases are rejected atomically.
+- **Capability Leases**: Time-bounded, row-locked authority records for worker actions.
+- **Effect Horizon**: Multi-phase effect state transitions (`prepared` → `evaluating` → `ready` → `commit_intent` → `committed`), binding commits to exact effect revisions and payload digests.
+- **Audit & Recovery**: Immutable event ledger, digest-verified checkpoints, and recovery lineage for deterministic state reconstruction.
+
+All state transitions acquire row locks in a strict hierarchy (`episode` → `effect` → `lease`) to eliminate race conditions and deadlocks.
+
+For schema details and recovery semantics, see [Postgres Authority](guides/01-postgres-authority.md) and [Epoch Fencing and Recovery](guides/03-epoch-fencing-and-recovery.md).
+
 ## What public modules and concepts does it own?
 
 - `Autonomic.Store.Postgres` — Implements `Autonomic.Store` callbacks.
@@ -74,17 +84,9 @@ mix ecto.migrate -r Autonomic.Store.Repo
 - `Autonomic.Store.Schema.*` — Schemas for episodes, capability leases, checkpoints, effects, effect decisions, events, observation frames, and recovery records.
 - `Autonomic.Postgres.Application` — OTP application supervisor managing Repo pool.
 
-## TypeSafe evidence is part of the durable audit path
-
-In the reference composition, `autonomic_typesafe` produces typed semantic observations and core turns them into trajectory state and effect decisions. `autonomic_postgres` is where those consequences become durable.
-
-The store persists observation frames, trajectory/version state, and exact-revision effect decisions so an operator can relate semantic evidence to the authority consequence it influenced. A semantic decision is not a reusable "AI approval": it remains bound to the effect revision, epoch, policy version, trajectory version, and payload identity that were current when it was evaluated.
-
-See [Semantic Evidence and Trajectories](guides/04-semantic-evidence-and-trajectories.md).
-
 ## How does it fit into Autonomic?
 
-`autonomic_postgres` is the official durable authority adapter:
+`autonomic_postgres` is the reference durable authority adapter:
 
 ```text
      autonomic_postgres                      other backends
@@ -96,7 +98,7 @@ See [Semantic Evidence and Trajectories](guides/04-semantic-evidence-and-traject
                       └─────────────────────┘
 ```
 
-The arrows are dependency arrows: concrete adapters depend on the core contracts. The application chooses which implementation to configure at runtime.
+This package implements `Autonomic.Store` and is configured via `:store` in your application configuration.
 
 ## Where are the full system docs?
 

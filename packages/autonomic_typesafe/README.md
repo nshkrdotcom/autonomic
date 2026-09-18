@@ -17,33 +17,23 @@ TypeSafe/Jev semantic sensor bank backend for the Autonomic Kernel.
 
 ## What is this package?
 
-`autonomic_typesafe` implements `Autonomic.SemanticSensor` on the TypeSafeSDK
-**0.4.0** semantic API. It evaluates a fixed, prepared bank for scope drift,
-authority escalation, evidence sufficiency, effect irreversibility and trajectory
+`autonomic_typesafe` implements `Autonomic.SemanticSensor` using TypeSafeSDK
+**0.4.0**. It evaluates a fixed, prepared bank for scope drift,
+authority escalation, evidence sufficiency, effect irreversibility, and trajectory
 regime while keeping semantic evidence outside Autonomic's root of trust.
-
-This is a greenfield integration. There is no TypeSafeSDK 0.2/0.3 compatibility
-path, legacy shim or alternate semantic HTTP client.
 
 ## Runtime design
 
-The adapter deliberately delegates reusable mechanics to TypeSafeSDK 0.4:
+The adapter leverages TypeSafeSDK 0.4 primitives:
 
-- `TypeSafeSDK.Prepared.fingerprint/1` is the semantic-contract identity;
-- `response_contract:` enforces exact allowed-model policy and rejects unexpected
-  answer IDs;
-- `max_request_bytes:` enforces the exact serialized request budget before egress;
-- `TypeSafeSDK.Response.metadata/1` supplies bounded stable response provenance and `TypeSafeSDK.Error.metadata/1` supplies privacy-safe status diagnostics;
-- `TypeSafeSDK.OTP.Server` keeps the bank responsive while evaluations run under
-  the package-owned `Autonomic.Typesafe.Tasks` supervisor with an explicit `max_in_flight` bound; and
-- TypeSafe's per-answer telemetry is emitted after semantic validation.
+- `TypeSafeSDK.Prepared.fingerprint/1` provides machine-contract identity.
+- `response_contract:` enforces allowed-model policy and validates answer IDs.
+- `max_request_bytes:` enforces the exact serialized request budget before egress.
+- `TypeSafeSDK.Response.metadata/1` supplies bounded response provenance, and `TypeSafeSDK.Error.metadata/1` supplies privacy-safe error diagnostics.
+- `TypeSafeSDK.OTP.Server` keeps evaluation responsive under the package-owned `Autonomic.Typesafe.Tasks` supervisor with an explicit `max_in_flight` bound.
+- Per-answer telemetry is emitted after semantic validation.
 
-Autonomic still owns the concerns that are kernel-specific: observable-window
-construction, secret redaction, evidence budgeting, fail-closed treatment of an
-unknown answer *type for a required sensor*, semantic health and authority policy.
-
-TypeSafeSDK continues to own its Pristine runtime. `autonomic_typesafe` does not
-implement retries, HTTP transport, a second queue, or transport cancellation.
+Autonomic handles kernel-specific concerns: observable-window construction, secret redaction, evidence budgeting, and fail-closed evaluation, while delegating transport, request serialization, and scoped cancellation to TypeSafeSDK.
 
 ## Dependencies
 
@@ -65,8 +55,6 @@ def deps do
   ]
 end
 ```
-
-`autonomic_typesafe` remains a separate package so the core contract stays reusable, but the repository's full reference composition installs it and configures `Autonomic.Typesafe.Sensor`. Its Mix dependency is **autonomic_typesafe → autonomic**; the core never depends back on the adapter.
 
 ## Configuration
 
@@ -104,9 +92,9 @@ supervised bank; production has no client hot-swap API.
 - `Autonomic.Typesafe.Evidence` — observable-state sanitization and redaction.
 - `Autonomic.Typesafe.Application` — dedicated semantic task supervision plus optional bank supervision.
 
-## What TypeSafe actually does in the reference system
+## Semantic Sensor Bank
 
-The production bank is a prepared five-query contract, not a single `safe?` prompt:
+The sensor bank evaluates five structured dimensions rather than a single classification:
 
 | Sensor | TypeSafe family | Preserved structure |
 | --- | --- | --- |
@@ -116,12 +104,10 @@ The production bank is a prepared five-query contract, not a single `safe?` prom
 | `irreversibility` | Score | normalized value, expected/modal/ranked levels, probabilities |
 | `trajectory_regime` | Choice | selected regime, confidence, full probabilities, ranking, margin |
 
-One successful evaluation produces five `Autonomic.SemanticObservation` values with shared model/request/fingerprint/usage/timing provenance. Core then uses them in two real control paths:
+Each evaluation produces typed `Autonomic.SemanticObservation` records containing model, request, fingerprint, usage, and timing provenance, feeding into:
 
-1. `Autonomic.Homeostat` smooths semantic risk over time and can continue, yield, narrow authority, or preempt.
-2. `Autonomic.EffectBroker` evaluates required semantic evidence for the exact proposed effect revision and persists a semantic allow/deny decision.
-
-The TypeSafe-facing layer deliberately preserves more structure than current core policy consumes. In particular, EffectBroker currently reduces selected observations to explicit thresholds rather than performing probabilistic fusion across every returned distribution.
+1. `Autonomic.Homeostat`: Smooths semantic risk over time to drive regime transitions (`continue`, `yield`, `narrow`, `preempt`).
+2. `Autonomic.EffectBroker`: Evaluates semantic evidence against policy thresholds for an exact effect revision before commit.
 
 Read the guides in order:
 

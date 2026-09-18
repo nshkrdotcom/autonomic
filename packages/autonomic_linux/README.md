@@ -42,8 +42,6 @@ def deps do
 end
 ```
 
-`autonomic_linux` is opt-in from the application's point of view, but its Mix dependency is **autonomic_linux → autonomic**. Installing this package does not make `autonomic` depend on it; an application chooses this adapter by adding the package and configuring the corresponding core behaviour.
-
 ## How do I configure it?
 
 In your `config/config.exs` or `config/runtime.exs`:
@@ -60,13 +58,16 @@ config :autonomic_linux,
   sudo: true
 ```
 
-## Security boundary: what this package is and is not
+## Security Boundary & Isolation
 
-The current backend is **host-local shared-kernel Linux containment**. The BEAM control plane, TypeSafe client, native launcher, and contained worker are on the same physical/virtual Linux host. The worker is isolated with namespaces, cgroup v2, OverlayFS/chroot boundaries, and seccomp, but this package is not a microVM backend or a remote execution fleet.
+`autonomic_linux` implements host-level containment for untrusted workers using:
+- **Namespaces**: User, mount, PID, network, IPC, and UTS isolation.
+- **cgroup v2**: Strict resource controls (CPU quota, memory limits, process limits).
+- **OverlayFS & Read-only rootfs**: Ephemeral copy-on-write workspace layers that discard worker filesystem mutations upon domain teardown.
+- **Seccomp Filters**: System call filtering that denies privilege escalation, traps raw network socket creation, and converts violations into deterministic evidence.
+- **External Native Launcher**: A standalone Rust helper communicating over length-prefixed JSON IPC without executing worker-controlled shell commands.
 
-TypeSafe runs on the trusted control-plane side. The worker does not need the TypeSafe SDK or API key; observable worker activity is turned into bounded/redacted observation frames and evaluated outside the sandbox.
-
-For a precise threat statement and the future remote/hardware-backed execution shape, see [Trust Boundary, TypeSafe, and the Execution Plane](guides/04-trust-boundary-and-control-plane.md).
+For details on configuration and host prerequisites, see [Linux Isolation](guides/01-linux-isolation.md) and [Host Provisioning](guides/03-host-provisioning.md).
 
 ## What public modules and concepts does it own?
 
@@ -77,7 +78,7 @@ For a precise threat statement and the future remote/hardware-backed execution s
 
 ## How does it fit into Autonomic?
 
-`autonomic_linux` is an optional adapter implementing execution containment:
+`autonomic_linux` provides the reference execution containment backend:
 
 ```text
        autonomic_linux                      other backends
@@ -89,7 +90,7 @@ For a precise threat statement and the future remote/hardware-backed execution s
                       └─────────────────────┘
 ```
 
-The arrows are dependency arrows: concrete adapters depend on the core contracts. The application chooses which implementation to configure at runtime.
+This package implements `Autonomic.ExecutionDomain` and is configured via `:domain_backend` in your application configuration.
 
 ## Where are the full system docs?
 

@@ -53,7 +53,7 @@ def deps do
 end
 ```
 
-For the full official stack, the **application** opts into all three adapters explicitly:
+For a full stack including Linux isolation, PostgreSQL persistence, and semantic sensors:
 
 ```elixir
 def deps do
@@ -65,8 +65,6 @@ def deps do
   ]
 end
 ```
-
-This does not make the adapters dependencies of `autonomic`. The dependency direction is the reverse: each adapter depends on core, and applications choose which adapters to install.
 
 ## How do I configure it?
 
@@ -84,25 +82,23 @@ config :autonomic,
   max_repairs: 3
 ```
 
-## TypeSafe-centered reference runtime
+## Semantic Observation & Control Loop
 
-The core package is adapter-neutral, but the repository's reference semantic path is TypeSafe-centered. With `sensor: Autonomic.Typesafe.Sensor`, observable worker/effect state is evaluated by a fixed prepared TypeSafe bank and returned as typed `Autonomic.SemanticObservation` values.
-
-Those observations are not decorative telemetry:
+The core package defines `Autonomic.SemanticSensor` to admit model-derived evaluation into the control plane while maintaining strict determinism. When a sensor implementation (such as `Autonomic.Typesafe.Sensor`) is configured, observations feed into two kernel subsystems:
 
 ```text
-TypeSafe semantic bank
-  |
-  +--> Homeostat -> temporal drift/uncertainty/authority/destructive pressure
-  |                 -> continue / yield / narrow / preempt
-  |
-  `--> EffectBroker -> semantic decision for an exact effect revision
-                      -> allow / deny as one required decision class
+Semantic Sensor Bank
+  │
+  ├──► Homeostat    ──► smooths drift/uncertainty/pressure over time
+  │                     (continue / yield / narrow / preempt)
+  │
+  └──► EffectBroker ──► evaluates required semantic evidence for an effect revision
+                        (allow / deny as an input to the commit horizon)
 ```
 
-The adapter preserves Noul/Score/Choice distributions, confidence, ranking/margins, actual/requested model, request ID, TypeSafeSDK version, bank version, Prepared fingerprint, usage, retries, and latency. Core policy then interprets that evidence conservatively; it does not treat the semantic model as authority.
+Semantic observations can narrow capabilities, trigger hysteresis, or deny an effect proposal, but they can never mint capabilities or widen authority envelopes.
 
-See [TypeSafe Control Loop](guides/05-typesafe-control-loop.md) for the exact core consumption path and current policy limitations.
+See [TypeSafe Control Loop](guides/05-typesafe-control-loop.md) for the complete reference control loop.
 
 ## What public modules and concepts does it own?
 
@@ -116,7 +112,7 @@ See [TypeSafe Control Loop](guides/05-typesafe-control-loop.md) for the exact co
 
 ## How does it fit into Autonomic?
 
-`autonomic` is the central hub of the dependency graph:
+`autonomic` is the central hub of the architecture:
 
 ```text
        autonomic_linux   autonomic_postgres   autonomic_typesafe
@@ -136,7 +132,7 @@ See [TypeSafe Control Loop](guides/05-typesafe-control-loop.md) for the exact co
                       └─────────────────────┘
 ```
 
-The arrows above are Mix dependency arrows: adapter → core. Runtime calls flow through core behaviours into the configured implementation, but package ownership remains one-way.
+Concrete adapters implement core behaviours (`ExecutionDomain`, `Store`, `SemanticSensor`), allowing runtime implementations to be swapped via configuration without modifying application logic.
 
 ## Where are the full system docs?
 
