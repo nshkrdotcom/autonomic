@@ -179,11 +179,20 @@ def command_stage(args: argparse.Namespace) -> int:
         mix_path = dest_pkg / "mix.exs"
         content = mix_path.read_text(encoding="utf-8")
 
-        # Replace {:autonomic, path: "../autonomic"} with {:autonomic, "~> version"}
+        # Source packages resolve the sibling core from the Poncho checkout.
+        # Distribution artifacts must instead declare the public Hex dependency.
+        transformed = re.sub(
+            r'defp autonomic_dependency do.*?\n  end',
+            f'defp autonomic_dependency, do: {{:autonomic, "~> {version}"}}',
+            content,
+            flags=re.DOTALL,
+        )
+
+        # Also support the simple direct-path source form.
         transformed = re.sub(
             r'\{:autonomic,\s*path:\s*"[^"]+"\}',
             f'{{:autonomic, "~> {version}"}}',
-            content,
+            transformed,
         )
 
         # Source-only SDK override must never become consumer behavior.

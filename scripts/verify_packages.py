@@ -54,7 +54,19 @@ def main():
                 print(f'ISOLATED VERIFY: {package}', flush=True)
                 run(['mix', 'deps.get'], dest)
                 run(['mix', 'compile', '--warnings-as-errors'], dest)
-                run(['mix', 'test'], dest, {'MIX_ENV': 'test'})
+
+                # The PostgreSQL package's default test selection excludes every
+                # integration test. Starting its OTP application here would start
+                # the Repo and attempt a database connection even though no DB test
+                # will execute. This isolated-installation gate verifies that the
+                # packaged test code compiles without requiring host PostgreSQL;
+                # real PostgreSQL behavior is covered by the dedicated integration
+                # and strict-QC gates.
+                test_cmd = ['mix', 'test']
+                if package == 'autonomic_postgres':
+                    test_cmd.append('--no-start')
+
+                run(test_cmd, dest, {'MIX_ENV': 'test'})
                 run(['mix', 'docs', '--warnings-as-errors'], dest)
         finally:
             server.shutdown()

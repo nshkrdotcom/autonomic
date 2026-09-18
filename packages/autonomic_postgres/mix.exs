@@ -46,15 +46,8 @@ defmodule Autonomic.Postgres.MixProject do
 
   defp autonomic_dependency do
     case System.get_env("AUTONOMIC_PATH") do
-      nil ->
-        if Mix.env() == :prod or System.get_env("HEX_BUILD") == "true" do
-          {:autonomic, "~> 0.1.0"}
-        else
-          {:autonomic, "~> 0.1.0", path: "../autonomic"}
-        end
-
-      path ->
-        {:autonomic, "~> 0.1.0", path: Path.expand(path)}
+      nil -> {:autonomic, path: "../autonomic"}
+      path -> {:autonomic, path: Path.expand(path)}
     end
   end
 
