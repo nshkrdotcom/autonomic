@@ -4,6 +4,8 @@ $ /home/home/.asdf/shims/mix compile --warnings-as-errors
 
 === [autonomic_linux] in packages/autonomic_linux ===
 $ /home/home/.asdf/shims/mix compile --warnings-as-errors
+==> autonomic
+Compiling 1 file (.ex)
 
 === [autonomic_postgres] in packages/autonomic_postgres ===
 $ /home/home/.asdf/shims/mix compile --warnings-as-errors

@@ -1,7 +1,7 @@
 
 === [autonomic] in packages/autonomic ===
 $ /home/home/.asdf/shims/mix test
-Running ExUnit with seed: 875780, max_cases: 48
+Running ExUnit with seed: 543145, max_cases: 48
 Excluding tags: [:postgres, :linux, :live, :reference, :db_outage]
 
 ..........
@@ -11,41 +11,143 @@ Result: 10 passed
 
 === [autonomic_linux] in packages/autonomic_linux ===
 $ /home/home/.asdf/shims/mix test
-Running ExUnit with seed: 818367, max_cases: 48
+==> autonomic
+Compiling 1 file (.ex)
+==> autonomic_linux
+Running ExUnit with seed: 514874, max_cases: 48
 Excluding tags: [:postgres, :linux, :live, :reference, :db_outage]
 
 All tests have been excluded.
 
-Finished in 0.07 seconds (0.00s async, 0.07s sync)
+Finished in 0.06 seconds (0.00s async, 0.06s sync)
 
 Result: 0 tests, 3 excluded
 
 === [autonomic_postgres] in packages/autonomic_postgres ===
 $ /home/home/.asdf/shims/mix test
-Running ExUnit with seed: 694792, max_cases: 48
+Running ExUnit with seed: 407304, max_cases: 48
 Excluding tags: [:postgres, :linux, :live, :reference, :db_outage]
 
+
+17:18:49.445 [error] Postgrex.Protocol (#PID<0.320.0> ("db_conn_18")) failed to connect: ** (Postgrex.Error) FATAL 28P01 (invalid_password) password authentication failed for user "autonomic"
+
+17:18:49.445 [error] Postgrex.Protocol (#PID<0.306.0> ("db_conn_4")) failed to connect: ** (Postgrex.Error) FATAL 28P01 (invalid_password) password authentication failed for user "autonomic"
+
+17:18:49.445 [error] Postgrex.Protocol (#PID<0.316.0> ("db_conn_14")) failed to connect: ** (Postgrex.Error) FATAL 28P01 (invalid_password) password authentication failed for user "autonomic"
+
+17:18:49.445 [error] Postgrex.Protocol (#PID<0.310.0> ("db_conn_8")) failed to connect: ** (Postgrex.Error) FATAL 28P01 (invalid_password) password authentication failed for user "autonomic"
+
+17:18:49.445 [error] Postgrex.Protocol (#PID<0.325.0> ("db_conn_23")) failed to connect: ** (Postgrex.Error) FATAL 28P01 (invalid_password) password authentication failed for user "autonomic"
+
+17:18:49.445 [error] Postgrex.Protocol (#PID<0.303.0> ("db_conn_1")) failed to connect: ** (Postgrex.Error) FATAL 28P01 (invalid_password) password authentication failed for user "autonomic"
+
+17:18:49.445 [error] Postgrex.Protocol (#PID<0.326.0> ("db_conn_24")) failed to connect: ** (Postgrex.Error) FATAL 28P01 (invalid_password) password authentication failed for user "autonomic"
+
+17:18:49.445 [error] Postgrex.Protocol (#PID<0.321.0> ("db_conn_19")) failed to connect: ** (Postgrex.Error) FATAL 28P01 (invalid_password) password authentication failed for user "autonomic"
+
+17:18:49.445 [error] Postgrex.Protocol (#PID<0.312.0> ("db_conn_10")) failed to connect: ** (Postgrex.Error) FATAL 28P01 (invalid_password) password authentication failed for user "autonomic"
+
+17:18:49.445 [error] Postgrex.Protocol (#PID<0.309.0> ("db_conn_7")) failed to connect: ** (Postgrex.Error) FATAL 28P01 (invalid_password) password authentication failed for user "autonomic"
+
+17:18:49.445 [error] Postgrex.Protocol (#PID<0.305.0> ("db_conn_3")) failed to connect: ** (Postgrex.Error) FATAL 28P01 (invalid_password) password authentication failed for user "autonomic"
+
+17:18:49.445 [error] Postgrex.Protocol (#PID<0.304.0> ("db_conn_2")) failed to connect: ** (Postgrex.Error) FATAL 28P01 (invalid_password) password authentication failed for user "autonomic"
+
+17:18:49.445 [error] Postgrex.Protocol (#PID<0.311.0> ("db_conn_9")) failed to connect: ** (Postgrex.Error) FATAL 28P01 (invalid_password) password authentication failed for user "autonomic"
+
+17:18:49.445 [error] Postgrex.Protocol (#PID<0.324.0> ("db_conn_22")) failed to connect: ** (Postgrex.Error) FATAL 28P01 (invalid_password) password authentication failed for user "autonomic"
+
+17:18:49.445 [error] Postgrex.Protocol (#PID<0.314.0> ("db_conn_12")) failed to connect: ** (Postgrex.Error) FATAL 28P01 (invalid_password) password authentication failed for user "autonomic"
+
+17:18:49.445 [error] Postgrex.Protocol (#PID<0.313.0> ("db_conn_11")) failed to connect: ** (Postgrex.Error) FATAL 28P01 (invalid_password) password authentication failed for user "autonomic"
+
+17:18:49.445 [error] Postgrex.Protocol (#PID<0.322.0> ("db_conn_20")) failed to connect: ** (Postgrex.Error) FATAL 28P01 (invalid_password) password authentication failed for user "autonomic"
+
+17:18:49.445 [error] Postgrex.Protocol (#PID<0.319.0> ("db_conn_17")) failed to connect: ** (Postgrex.Error) FATAL 28P01 (invalid_password) password authentication failed for user "autonomic"
+
+17:18:49.445 [error] Postgrex.Protocol (#PID<0.307.0> ("db_conn_5")) failed to connect: ** (Postgrex.Error) FATAL 28P01 (invalid_password) password authentication failed for user "autonomic"
+
+17:18:49.445 [error] Postgrex.Protocol (#PID<0.318.0> ("db_conn_16")) failed to connect: ** (Postgrex.Error) FATAL 28P01 (invalid_password) password authentication failed for user "autonomic"
+
+17:18:49.445 [error] Postgrex.Protocol (#PID<0.323.0> ("db_conn_21")) failed to connect: ** (Postgrex.Error) FATAL 28P01 (invalid_password) password authentication failed for user "autonomic"
+
+17:18:49.445 [error] Postgrex.Protocol (#PID<0.308.0> ("db_conn_6")) failed to connect: ** (Postgrex.Error) FATAL 28P01 (invalid_password) password authentication failed for user "autonomic"
+
+17:18:49.445 [error] Postgrex.Protocol (#PID<0.315.0> ("db_conn_13")) failed to connect: ** (Postgrex.Error) FATAL 28P01 (invalid_password) password authentication failed for user "autonomic"
+
+17:18:49.445 [error] Postgrex.Protocol (#PID<0.317.0> ("db_conn_15")) failed to connect: ** (Postgrex.Error) FATAL 28P01 (invalid_password) password authentication failed for user "autonomic"
 All tests have been excluded.
 
-Finished in 0.07 seconds (0.00s async, 0.07s sync)
+Finished in 0.09 seconds (0.00s async, 0.09s sync)
 
-Result: 0 tests, 11 excluded
+Result: 0 tests, 12 excluded
 
 === [autonomic_typesafe] in packages/autonomic_typesafe ===
 $ /home/home/.asdf/shims/mix test
-Running ExUnit with seed: 620827, max_cases: 48
+Running ExUnit with seed: 383693, max_cases: 48
 Excluding tags: [:live]
 
-.....
-12:45:37.754 [warning] Ignoring a TypeSafe answer with an unrecognized future type; inspect response.raw explicitly
-..
+....
+17:18:50.579 [warning] Ignoring a TypeSafe answer with an unrecognized future type; inspect response.raw explicitly
+......
 Finished in 0.1 seconds (0.00s async, 0.1s sync)
 
-Result: 7 passed, 1 excluded
+Result: 10 passed, 1 excluded
 
 === [autonomic_acceptance] in integration/autonomic_acceptance ===
 $ /home/home/.asdf/shims/mix test
-Running ExUnit with seed: 668152, max_cases: 48
+==> autonomic
+warning: mtime (modified time) for "/home/home/p/g/n/autonomic/integration/autonomic_acceptance/_build/test/lib/autonomic/ebin/autonomic.app" was set to the future, resetting to now
+==> autonomic_acceptance
+
+17:18:51.581 [error] Postgrex.Protocol (#PID<0.389.0> ("db_conn_24")) failed to connect: ** (Postgrex.Error) FATAL 28P01 (invalid_password) password authentication failed for user "autonomic"
+
+17:18:51.581 [error] Postgrex.Protocol (#PID<0.379.0> ("db_conn_14")) failed to connect: ** (Postgrex.Error) FATAL 28P01 (invalid_password) password authentication failed for user "autonomic"
+
+17:18:51.581 [error] Postgrex.Protocol (#PID<0.373.0> ("db_conn_8")) failed to connect: ** (Postgrex.Error) FATAL 28P01 (invalid_password) password authentication failed for user "autonomic"
+
+17:18:51.581 [error] Postgrex.Protocol (#PID<0.378.0> ("db_conn_13")) failed to connect: ** (Postgrex.Error) FATAL 28P01 (invalid_password) password authentication failed for user "autonomic"
+
+17:18:51.581 [error] Postgrex.Protocol (#PID<0.386.0> ("db_conn_21")) failed to connect: ** (Postgrex.Error) FATAL 28P01 (invalid_password) password authentication failed for user "autonomic"
+
+17:18:51.581 [error] Postgrex.Protocol (#PID<0.380.0> ("db_conn_15")) failed to connect: ** (Postgrex.Error) FATAL 28P01 (invalid_password) password authentication failed for user "autonomic"
+
+17:18:51.581 [error] Postgrex.Protocol (#PID<0.384.0> ("db_conn_19")) failed to connect: ** (Postgrex.Error) FATAL 28P01 (invalid_password) password authentication failed for user "autonomic"
+
+17:18:51.581 [error] Postgrex.Protocol (#PID<0.365.0> ("db_conn_2")) failed to connect: ** (Postgrex.Error) FATAL 28P01 (invalid_password) password authentication failed for user "autonomic"
+
+17:18:51.581 [error] Postgrex.Protocol (#PID<0.370.0> ("db_conn_7")) failed to connect: ** (Postgrex.Error) FATAL 28P01 (invalid_password) password authentication failed for user "autonomic"
+
+17:18:51.581 [error] Postgrex.Protocol (#PID<0.385.0> ("db_conn_20")) failed to connect: ** (Postgrex.Error) FATAL 28P01 (invalid_password) password authentication failed for user "autonomic"
+
+17:18:51.581 [error] Postgrex.Protocol (#PID<0.381.0> ("db_conn_16")) failed to connect: ** (Postgrex.Error) FATAL 28P01 (invalid_password) password authentication failed for user "autonomic"
+
+17:18:51.581 [error] Postgrex.Protocol (#PID<0.387.0> ("db_conn_22")) failed to connect: ** (Postgrex.Error) FATAL 28P01 (invalid_password) password authentication failed for user "autonomic"
+
+17:18:51.581 [error] Postgrex.Protocol (#PID<0.368.0> ("db_conn_5")) failed to connect: ** (Postgrex.Error) FATAL 28P01 (invalid_password) password authentication failed for user "autonomic"
+
+17:18:51.581 [error] Postgrex.Protocol (#PID<0.369.0> ("db_conn_6")) failed to connect: ** (Postgrex.Error) FATAL 28P01 (invalid_password) password authentication failed for user "autonomic"
+
+17:18:51.581 [error] Postgrex.Protocol (#PID<0.388.0> ("db_conn_23")) failed to connect: ** (Postgrex.Error) FATAL 28P01 (invalid_password) password authentication failed for user "autonomic"
+
+17:18:51.581 [error] Postgrex.Protocol (#PID<0.367.0> ("db_conn_4")) failed to connect: ** (Postgrex.Error) FATAL 28P01 (invalid_password) password authentication failed for user "autonomic"
+
+17:18:51.581 [error] Postgrex.Protocol (#PID<0.382.0> ("db_conn_17")) failed to connect: ** (Postgrex.Error) FATAL 28P01 (invalid_password) password authentication failed for user "autonomic"
+
+17:18:51.581 [error] Postgrex.Protocol (#PID<0.375.0> ("db_conn_10")) failed to connect: ** (Postgrex.Error) FATAL 28P01 (invalid_password) password authentication failed for user "autonomic"
+
+17:18:51.581 [error] Postgrex.Protocol (#PID<0.376.0> ("db_conn_11")) failed to connect: ** (Postgrex.Error) FATAL 28P01 (invalid_password) password authentication failed for user "autonomic"
+
+17:18:51.581 [error] Postgrex.Protocol (#PID<0.383.0> ("db_conn_18")) failed to connect: ** (Postgrex.Error) FATAL 28P01 (invalid_password) password authentication failed for user "autonomic"
+
+17:18:51.581 [error] Postgrex.Protocol (#PID<0.374.0> ("db_conn_9")) failed to connect: ** (Postgrex.Error) FATAL 28P01 (invalid_password) password authentication failed for user "autonomic"
+
+17:18:51.581 [error] Postgrex.Protocol (#PID<0.377.0> ("db_conn_12")) failed to connect: ** (Postgrex.Error) FATAL 28P01 (invalid_password) password authentication failed for user "autonomic"
+
+17:18:51.581 [error] Postgrex.Protocol (#PID<0.364.0> ("db_conn_1")) failed to connect: ** (Postgrex.Error) FATAL 28P01 (invalid_password) password authentication failed for user "autonomic"
+
+17:18:51.581 [error] Postgrex.Protocol (#PID<0.366.0> ("db_conn_3")) failed to connect: ** (Postgrex.Error) FATAL 28P01 (invalid_password) password authentication failed for user "autonomic"
+Running ExUnit with seed: 574239, max_cases: 48
 Excluding tags: [:postgres, :linux, :live, :reference, :db_outage]
 
 All tests have been excluded.

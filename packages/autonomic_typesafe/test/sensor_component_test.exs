@@ -23,8 +23,12 @@ defmodule Autonomic.Typesafe.SensorComponentTest do
     assert status.available
     assert status.semantic_contract_id =~ "typesafe-prepared-v1:"
     assert status.semantic_contract_id == SensorBank.contract_id(SensorBank.prepare!())
-    assert get_in(status, [:runtime_capabilities, :runtime, :unary_cancellation, :status]) == :supported
-    assert get_in(status, [:runtime_capabilities, :runtime, :cancellation_cleanup, :status]) == :supported
+
+    assert get_in(status, [:runtime_capabilities, :runtime, :unary_cancellation, :status]) ==
+             :supported
+
+    assert get_in(status, [:runtime_capabilities, :runtime, :cancellation_cleanup, :status]) ==
+             :supported
 
     assert Enum.all?(observations, &(&1.sensor_bank_version == SensorBank.version()))
     assert Enum.all?(observations, &(&1.semantic_contract_id == status.semantic_contract_id))
@@ -95,7 +99,9 @@ defmodule Autonomic.Typesafe.SensorComponentTest do
     client = TypeSafeSDK.Test.stub_response(client, body, request_id: "req-future")
     start_bank(client)
 
-    assert {:error, {:unknown_required_answers, ids}} = Sensor.observe(frame(%{stdout: "looks safe"}))
+    assert {:error, {:unknown_required_answers, ids}} =
+             Sensor.observe(frame(%{stdout: "looks safe"}))
+
     assert "scope_drift" in Enum.map(ids, &to_string/1)
     assert :ok = TypeSafeSDK.Test.verify!(client)
     assert :ok = TypeSafeSDK.Test.close(client)

@@ -4,6 +4,8 @@ Architectural Boundary Lint PASSED:
   - autonomic_linux: depends only on autonomic
   - autonomic_postgres: depends only on autonomic (no cross-adapter coupling)
   - autonomic_typesafe: depends only on autonomic (no cross-adapter coupling)
+  - examples: no publishable package depends on autonomic_examples_dev
+  - Autonomic.Dev.*: confined to examples/
 
 Validating package metadata in source monorepo:
   [OK] autonomic: valid metadata, README, LICENSE, CHANGELOG

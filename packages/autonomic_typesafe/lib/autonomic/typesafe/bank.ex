@@ -273,7 +273,8 @@ defmodule Autonomic.Typesafe.Bank do
       SemanticObservation,
       Map.merge(common, %{
         sensor: sensor,
-        value: if(sensor == :evidence_sufficiency, do: label, else: Answer.Score.normalized(answer)),
+        value:
+          if(sensor == :evidence_sufficiency, do: label, else: Answer.Score.normalized(answer)),
         confidence: Answer.confidence(answer),
         probabilities: answer.probabilities,
         metadata: %{
@@ -323,9 +324,12 @@ defmodule Autonomic.Typesafe.Bank do
 
   defp client(opts) do
     case Keyword.fetch(opts, :client) do
-      {:ok, %Client{} = client} -> {:ok, client}
+      {:ok, %Client{} = client} ->
+        {:ok, client}
+
       {:ok, _other} ->
         {:error, Error.configuration("Autonomic.Typesafe.Bank requires a TypeSafeSDK.Client")}
+
       :error ->
         case configured_client() do
           {:ok, client} -> {:ok, client}
@@ -366,7 +370,8 @@ defmodule Autonomic.Typesafe.Bank do
   defp validate_observe_options(opts) do
     cond do
       not is_list(opts) or not Keyword.keyword?(opts) ->
-        {:error, Error.invalid_request(["autonomic", "observe_options"], "must be a keyword list")}
+        {:error,
+         Error.invalid_request(["autonomic", "observe_options"], "must be a keyword list")}
 
       length(Keyword.keys(opts)) != length(Enum.uniq(Keyword.keys(opts))) ->
         {:error,
@@ -403,7 +408,8 @@ defmodule Autonomic.Typesafe.Bank do
   defp error_status(_reason), do: %{type: :local, code: :unknown}
 
   defp ranked_entries(entries),
-    do: Enum.map(entries, fn {value, probability} -> %{value: value, probability: probability} end)
+    do:
+      Enum.map(entries, fn {value, probability} -> %{value: value, probability: probability} end)
 
   defp modal_entry(nil), do: nil
   defp modal_entry({level, label}), do: %{level: level, label: label}

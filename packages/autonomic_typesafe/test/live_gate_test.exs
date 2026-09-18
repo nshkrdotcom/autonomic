@@ -14,6 +14,7 @@ defmodule Autonomic.Typesafe.LiveGateTest do
            "TYPESAFE_API_KEY is required for the live gate"
 
     requested_model = Application.get_env(:autonomic_typesafe, :model, "jev-latest")
+
     requirements =
       ([:unary_cancellation, :cancellation_cleanup] ++
          Application.fetch_env!(:autonomic_typesafe, :required_capabilities))

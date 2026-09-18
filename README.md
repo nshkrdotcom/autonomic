@@ -481,7 +481,7 @@ Run everything:
 
 ```bash
 AUTONOMIC_LINUX=1 \
-AUTONOMIC_TEST_DATABASE_URL=ecto://autonomic:autonomic@127.0.0.1:5433/autonomic_test \
+AUTONOMIC_TEST_DATABASE_URL=ecto://autonomic:autonomic@127.0.0.1/autonomic_test \
 ./scripts/qc --strict
 ```
 

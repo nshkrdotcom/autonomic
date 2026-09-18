@@ -295,7 +295,7 @@ defmodule Autonomic.EffectBroker do
     error -> {:error, {:store_unavailable, error}}
   end
 
-  defp maybe_semantic(effect, episode, required, opts) do
+  defp maybe_semantic(effect, episode, required, _opts) do
     if "semantic" in Enum.map(required, &to_string/1) do
       frame = %ObservationFrame{
         episode_id: effect.episode_id,
@@ -312,7 +312,7 @@ defmodule Autonomic.EffectBroker do
         metadata: %{mode: :effect_evaluation}
       }
 
-      case Runtime.sensor().observe(frame, Keyword.put(opts, :mode, :slow)) do
+      case Runtime.sensor().observe(frame, mode: :slow) do
         {:ok, observations} ->
           {decision, evidence} = semantic_decision(observations, episode.policy)
 
