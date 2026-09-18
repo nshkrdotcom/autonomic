@@ -118,9 +118,7 @@ defmodule Autonomic.AuthorityGovernor do
 
   defp audit_reason(reason) when is_binary(reason), do: reason
   defp audit_reason(reason) when is_atom(reason), do: Atom.to_string(reason)
-
-  defp audit_reason(reason),
-    do: inspect(reason, limit: 20, printable_limit: 1_024)
+  defp audit_reason(reason), do: inspect(reason)
 
   defp expansion_source_allowed(source)
        when source in [:signed_policy, :slow_verifier, :human, :parent_capability], do: :ok

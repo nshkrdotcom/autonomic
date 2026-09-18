@@ -1,15 +1,7 @@
 defmodule Autonomic.Dev.Support do
   @moduledoc "Shared helpers for the runnable examples. Never use this module in production."
 
-  alias Autonomic.{
-    Canonical,
-    EffectBroker,
-    EpisodeController,
-    EpisodeSpec,
-    EpisodeSupervisor,
-    Policy
-  }
-
+  alias Autonomic.{Canonical, EffectBroker, EpisodeController, EpisodeSpec, EpisodeSupervisor, Policy}
   alias Autonomic.Dev.{MemoryStore, Recorder, ScriptedSensor, TargetStore}
 
   @default_target "demo"
@@ -33,24 +25,14 @@ defmodule Autonomic.Dev.Support do
   def await!(fun, description, attempts \\ 100) when is_function(fun, 0) do
     Enum.reduce_while(1..attempts, nil, fn _, _ ->
       case fun.() do
-        {:ok, value} ->
-          {:halt, value}
-
-        true ->
-          {:halt, true}
-
-        _ ->
-          Process.sleep(10)
-          {:cont, nil}
+        {:ok, value} -> {:halt, value}
+        true -> {:halt, true}
+        _ -> Process.sleep(10); {:cont, nil}
       end
     end) || raise("timed out waiting for #{description}")
   end
 
-  def default_policy(
-        max_class \\ :class_4_irreversible_high_impact,
-        kinds \\ ["http_read", "http_mutation", "publish", "git_remote", "git_commit"],
-        target_id \\ @default_target
-      ) do
+  def default_policy(max_class \\ :class_4_irreversible_high_impact, kinds \\ ["http_read", "http_mutation", "publish", "git_remote", "git_commit"], target_id \\ @default_target) do
     %{
       "id" => "examples-policy",
       "version" => 1,
@@ -58,25 +40,17 @@ defmodule Autonomic.Dev.Support do
       "semantic" => %{"max_risk" => 0.65},
       "capabilities" =>
         Enum.map(kinds, fn kind ->
-          %{
-            "kind" => kind,
-            "scope" => %{"id" => target_id},
-            "max_class" => Atom.to_string(max_class)
-          }
+          %{"kind" => kind, "scope" => %{"id" => target_id}, "max_class" => Atom.to_string(max_class)}
         end)
     }
   end
 
-  def hard_envelope(
-        max_class \\ :class_4_irreversible_high_impact,
-        kinds \\ [:http_read, :http_mutation, :publish, :git_remote, :git_commit],
-        target_id \\ @default_target
-      ) do
+  def hard_envelope(max_class \\ :class_4_irreversible_high_impact, kinds \\ [:http_read, :http_mutation, :publish, :git_remote, :git_commit], target_id \\ @default_target) do
     %{
       "capabilities" =>
         Enum.map(kinds, fn kind ->
           %{
-            "kind" => to_string(kind),
+            "kind" => Atom.to_string(kind),
             "scope" => %{"id" => target_id},
             "constraints" => %{"max_effect_class" => Atom.to_string(max_class)}
           }
@@ -89,23 +63,13 @@ defmodule Autonomic.Dev.Support do
     id = Keyword.get(opts, :id, Canonical.id())
     max_class = Keyword.get(opts, :max_class, :class_4_irreversible_high_impact)
     target_id = Keyword.get(opts, :target_id, @default_target)
-
-    kinds =
-      Keyword.get(opts, :kinds, [
-        "http_read",
-        "http_mutation",
-        "publish",
-        "git_remote",
-        "git_commit"
-      ])
-
+    kinds = Keyword.get(opts, :kinds, ["http_read", "http_mutation", "publish", "git_remote", "git_commit"])
     %EpisodeSpec{
       id: id,
       origin_intent: Keyword.get(opts, :origin_intent, "Run a deterministic Autonomic example"),
       workspace: Keyword.get(opts, :workspace, %{}),
       policy: Keyword.get(opts, :policy, default_policy(max_class, kinds, target_id)),
-      hard_envelope:
-        Keyword.get(opts, :hard_envelope, hard_envelope(max_class, kinds, target_id)),
+      hard_envelope: Keyword.get(opts, :hard_envelope, hard_envelope(max_class, kinds, target_id)),
       requested_effect_ceiling: max_class,
       worker_argv: [],
       metadata: %{example: true}
@@ -116,30 +80,24 @@ defmodule Autonomic.Dev.Support do
     spec = spec(opts)
     {:ok, _pid} = EpisodeSupervisor.start_episode(spec)
 
-    await!(
-      fn ->
-        case EpisodeController.state(spec.id) do
-          {:running, _} -> {:ok, EpisodeController.trusted_runtime(spec.id)}
-          _ -> false
-        end
-      end,
-      "episode #{spec.id} to enter :running"
-    )
+    await!(fn ->
+      case EpisodeController.state(spec.id) do
+        {:running, _} -> {:ok, EpisodeController.trusted_runtime(spec.id)}
+        _ -> false
+      end
+    end, "episode #{spec.id} to enter :running")
     |> then(&{spec, &1})
   end
 
   def complete_episode!(episode_id) do
     EpisodeController.complete(episode_id)
 
-    await!(
-      fn ->
-        case EpisodeController.state(episode_id) do
-          {:completed, data} -> {:ok, data}
-          _ -> false
-        end
-      end,
-      "episode #{episode_id} to complete"
-    )
+    await!(fn ->
+      case EpisodeController.state(episode_id) do
+        {:completed, data} -> {:ok, data}
+        _ -> false
+      end
+    end, "episode #{episode_id} to complete")
   end
 
   def install_adapter!(kind, class, target_opts \\ %{}, adapter \\ Autonomic.Dev.MemoryAdapter) do
@@ -147,18 +105,8 @@ defmodule Autonomic.Dev.Support do
     adapters = Application.get_env(:autonomic, :effect_adapters, %{})
     id = Map.get(target_opts, "id", @default_target)
 
-    Application.put_env(
-      :autonomic,
-      :targets,
-      Map.put(targets, id, Map.put(target_opts, "id", id))
-    )
-
-    Application.put_env(
-      :autonomic,
-      :effect_adapters,
-      Map.put(adapters, to_string(kind), {adapter, class})
-    )
-
+    Application.put_env(:autonomic, :targets, Map.put(targets, id, Map.put(target_opts, "id", id)))
+    Application.put_env(:autonomic, :effect_adapters, Map.put(adapters, to_string(kind), {adapter, class}))
     :ok
   end
 

@@ -29,6 +29,18 @@ For Linux gates set `AUTONOMIC_LINUX=1`, `AUTONOMIC_ROOTFS`, `AUTONOMIC_LINUX_ST
 
 `./scripts/qc --strict` runs all required gates. `python3 scripts/qc.py --handoff` is only for creating an honest continuation report on a host that lacks mandatory dependencies; it never sets `release_ready=true` when gates are skipped.
 
+The QC runner writes full subprocess output to `artifacts/logs/` while printing concise live progress to the terminal. Long-running gates emit periodic `WAIT` heartbeats; compound gates emit their current package/substep. Set `AUTONOMIC_QC_HEARTBEAT_SECONDS` to change the heartbeat interval (default: 10 seconds). The terminal output never prints environment-secret values.
+
+The reference acceptance helper is fresh-checkout safe for its Mix dependencies:
+
+```bash
+AUTONOMIC_TEST_DATABASE_URL='ecto://autonomic:autonomic@127.0.0.1/autonomic_test' \
+AUTONOMIC_ROOTFS=/opt/autonomic/rootfs \
+bash scripts/run_reference.sh
+```
+
+On a trusted development host, the live TypeSafe gate reads `TYPESAFE_API_KEY` from the host process environment. The credential belongs to the trusted host-side semantic client; it is not passed into the isolated worker domain. An uncredentialed handoff run leaves the live gate pending rather than substituting a fixture.
+
 The test fixture under `test/fixtures/coding_agent` deliberately contains hostile prompt-injection text. It is inert test data, not an instruction to the implementation agent.
 
 ## CI tiers
@@ -54,4 +66,4 @@ Stock OTP 29 opens an IPv4 UDP socket to discover its hostname at startup. The r
 
 Use `MIX_OS_CONCURRENCY_LOCK=0` for a disposable verification workspace, which is owned by one Mix process. Set `ELIXIR_ERL_OPTIONS='+S 2:2 +SDcpu 1 +SDio 1'` to fit its PID budget. The reference scenario and trusted verification target declare these explicitly. Git trusts only `/workspace` inside the rootfs, permitting the namespace-root worker to read its independently cloned repository. The authoritative repository is never mounted there.
 
-PostgreSQL URLs must name the actual listening port. On the acceptance host the dedicated `autonomic_test` database runs on port 5433. Set `AUTONOMIC_TEST_DATABASE_URL=ecto://autonomic:autonomic@127.0.0.1:5433/autonomic_test` before migrations and QC. The outage gate creates and destroys its own temporary PostgreSQL cluster.
+PostgreSQL URLs must name the actual listening port. Set `AUTONOMIC_TEST_DATABASE_URL` to the real test database on the validation host (for example `ecto://autonomic:autonomic@127.0.0.1/autonomic_test` when PostgreSQL listens on its default port). The outage gate creates and destroys its own temporary PostgreSQL cluster.

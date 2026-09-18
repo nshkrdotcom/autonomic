@@ -6,11 +6,10 @@ The examples turn Autonomic's trust model into small, executable assertions. The
 
 ```bash
 cd examples/01_first_episode
-mix deps.get
 mix run
 ```
 
-Every numbered directory is its own Mix project and uses the repository's `packages/autonomic` via a path dependency. After dependencies have been fetched once, run any example with:
+Every numbered directory is its own Mix project and uses the repository's `packages/autonomic` via a path dependency. The `run` alias resolves dependencies before executing `run.exs`, so the documented entrypoint remains one command:
 
 ```bash
 cd examples/NN_name
@@ -83,7 +82,7 @@ There is deliberately no root Mix project in this Poncho repository. A shell loo
 set -euo pipefail
 for example in examples/[0-9][0-9]_*/; do
   echo "==> $example"
-  (cd "$example" && mix deps.get && mix run)
+  (cd "$example" && mix run)
 done
 ```
 
@@ -93,4 +92,4 @@ On a normal laptop, example 14 may report a qualified prerequisite skip if `sqli
 
 Laptop examples prove the kernel-plane logic they actually exercise. They do **not** prove Linux namespace/seccomp/cgroup enforcement, PostgreSQL crash durability/row-lock behavior, live TypeSafe model behavior, or external provider correctness. Those remain the responsibility of the existing privileged, PostgreSQL, and live semantic gates.
 
-The examples handoff in [`HANDOFF.md`](HANDOFF.md) records source-level QC completed in the generation environment and the exact runtime checks still required on an Elixir/OTP host.
+The examples handoff in [`HANDOFF.md`](HANDOFF.md) records the completed Workstation and qualified Ubuntu runtime/QC evidence, including the privileged Linux and live TypeSafe gates.

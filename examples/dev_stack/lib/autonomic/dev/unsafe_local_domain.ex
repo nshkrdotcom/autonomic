@@ -26,11 +26,7 @@ defmodule Autonomic.Dev.UnsafeLocalDomain do
        generation: 1,
        backend: __MODULE__,
        os_ref: nil,
-       metadata: %{
-         workspace_path: root,
-         trust: :unsafe_local,
-         git_base_ref: workspace_base(spec.workspace)
-       }
+       metadata: %{workspace_path: root, trust: :unsafe_local, git_base_ref: workspace_base(spec.workspace)}
      }}
   rescue
     error -> {:error, {:unsafe_local_create_failed, error}}
@@ -84,11 +80,7 @@ defmodule Autonomic.Dev.UnsafeLocalDomain do
          epoch: domain.epoch,
          domain_generation: domain.generation,
          digest: tree_digest(destination),
-         metadata: %{
-           checkpoint_path: destination,
-           unsafe_local: true,
-           environment_digest: Canonical.digest(%{})
-         }
+         metadata: %{checkpoint_path: destination, unsafe_local: true, environment_digest: Canonical.digest(%{})}
        }}
     end
   rescue
@@ -134,14 +126,7 @@ defmodule Autonomic.Dev.UnsafeLocalDomain do
   @impl true
   def inspect_domain(%ExecutionDomain.Domain{} = domain) do
     with :ok <- current_epoch?(domain) do
-      {:ok,
-       %{
-         id: domain.id,
-         epoch: domain.epoch,
-         generation: domain.generation,
-         workspace: workspace_path(domain),
-         unsafe_local: true
-       }}
+      {:ok, %{id: domain.id, epoch: domain.epoch, generation: domain.generation, workspace: workspace_path(domain), unsafe_local: true}}
     end
   end
 
@@ -154,11 +139,8 @@ defmodule Autonomic.Dev.UnsafeLocalDomain do
   end
 
   defp validate_argv(argv) when is_list(argv) and argv != [] and length(argv) <= 256 do
-    if Enum.all?(argv, &(is_binary(&1) and &1 != "" and byte_size(&1) <= 16_384)),
-      do: :ok,
-      else: {:error, :invalid_argv}
+    if Enum.all?(argv, &(is_binary(&1) and &1 != "" and byte_size(&1) <= 16_384)), do: :ok, else: {:error, :invalid_argv}
   end
-
   defp validate_argv(_), do: {:error, :invalid_argv}
 
   defp validate_stdin(nil), do: :ok
@@ -166,21 +148,15 @@ defmodule Autonomic.Dev.UnsafeLocalDomain do
 
   defp resolve_cwd(domain, nil), do: {:ok, workspace_path(domain)}
   defp resolve_cwd(domain, "/workspace"), do: {:ok, workspace_path(domain)}
-
   defp resolve_cwd(domain, cwd) when is_binary(cwd) do
     base = workspace_path(domain)
     relative = String.trim_leading(cwd, "/workspace/")
     path = Path.expand(relative, base)
-
-    if path == base or String.starts_with?(path, base <> "/"),
-      do: {:ok, path},
-      else: {:error, :cwd_outside_workspace}
+    if path == base or String.starts_with?(path, base <> "/"), do: {:ok, path}, else: {:error, :cwd_outside_workspace}
   end
 
   defp copy_workspace(workspace, destination) do
-    source =
-      Map.get(workspace, :lower) || Map.get(workspace, "lower") || Map.get(workspace, :path) ||
-        Map.get(workspace, "path")
+    source = Map.get(workspace, :lower) || Map.get(workspace, "lower") || Map.get(workspace, :path) || Map.get(workspace, "path")
 
     if is_binary(source) and File.dir?(source) do
       File.rm_rf!(destination)
@@ -191,24 +167,12 @@ defmodule Autonomic.Dev.UnsafeLocalDomain do
     end
   end
 
-  defp workspace_base(workspace),
-    do: Map.get(workspace, :base_ref) || Map.get(workspace, "base_ref")
-
+  defp workspace_base(workspace), do: Map.get(workspace, :base_ref) || Map.get(workspace, "base_ref")
   defp workspace_path(domain), do: Map.fetch!(domain.metadata, :workspace_path)
 
-  defp domain_root(episode_id, epoch, generation),
-    do: Path.join([root(), "domains", episode_id, "e#{epoch}-g#{generation}"])
-
-  defp checkpoint_root(episode_id, epoch, generation),
-    do: Path.join([root(), "checkpoints", episode_id, "e#{epoch}-g#{generation}"])
-
-  defp root,
-    do:
-      Application.get_env(
-        :autonomic,
-        :state_dir,
-        Path.join(System.tmp_dir!(), "autonomic-examples")
-      )
+  defp domain_root(episode_id, epoch, generation), do: Path.join([root(), "domains", episode_id, "e#{epoch}-g#{generation}"])
+  defp checkpoint_root(episode_id, epoch, generation), do: Path.join([root(), "checkpoints", episode_id, "e#{epoch}-g#{generation}"])
+  defp root, do: Application.get_env(:autonomic, :state_dir, Path.join(System.tmp_dir!(), "autonomic-examples"))
 
   defp tree_digest(root) do
     root
@@ -222,12 +186,8 @@ defmodule Autonomic.Dev.UnsafeLocalDomain do
 
   defp warn_once do
     key = {__MODULE__, :warned}
-
     unless :persistent_term.get(key, false) do
-      Logger.warning(
-        "AUTONOMIC EXAMPLE ONLY: UnsafeLocalDomain has NO namespaces, cgroups, seccomp, network isolation, or host-secret boundary. Never use it for untrusted code."
-      )
-
+      Logger.warning("AUTONOMIC EXAMPLE ONLY: UnsafeLocalDomain has NO namespaces, cgroups, seccomp, network isolation, or host-secret boundary. Never use it for untrusted code.")
       :persistent_term.put(key, true)
     end
   end

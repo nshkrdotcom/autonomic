@@ -15,7 +15,7 @@ defmodule AutonomicExample17.MixProject do
     [extra_applications: [:logger, :crypto, :autonomic, :autonomic_examples_dev]]
   end
 
-  defp aliases, do: [run: ["run run.exs"]]
+  defp aliases, do: [run: ["deps.get", "run run.exs"]]
 
   defp deps do
     [

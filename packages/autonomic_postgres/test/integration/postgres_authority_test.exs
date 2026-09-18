@@ -3,7 +3,7 @@ defmodule Autonomic.Store.PostgresAuthorityTest do
 
   @moduletag :postgres
 
-  alias Autonomic.{Canonical, CapabilityLease, ProposedEffect, VersionVector}
+  alias Autonomic.{AuthorityGovernor, Canonical, CapabilityLease, ProposedEffect, VersionVector}
   alias Autonomic.Store.{Postgres, Repo}
 
   setup do
@@ -14,6 +14,33 @@ defmodule Autonomic.Store.PostgresAuthorityTest do
     )
 
     :ok
+  end
+
+  test "authority governor persists non-JSON containment reasons safely" do
+    id = Canonical.id()
+    policy = %{"id" => "audit", "version" => 1, "max_effect_class" => 4, "capabilities" => []}
+    hard_envelope = %{"max_effect_class" => 4, "capabilities" => []}
+
+    assert {:ok, _episode} =
+             Postgres.create_episode(%{
+               id: id,
+               state: "running",
+               current_epoch: 1,
+               policy_id: "audit",
+               policy_version: 1,
+               policy: policy,
+               hard_envelope: hard_envelope,
+               origin_intent_digest: Canonical.digest("audit reason regression"),
+               trajectory_version: 0,
+               trajectory_regime: :stable
+             })
+
+    start_supervised!(
+      {AuthorityGovernor, episode_id: id, policy: policy, hard_envelope: hard_envelope}
+    )
+
+    assert {:ok, 2} = AuthorityGovernor.advance_epoch(id, {:contain, :operator_example})
+    assert {:ok, 2} = Postgres.current_epoch(id)
   end
 
   test "concurrent epoch advances serialize monotonically under the episode row lock" do

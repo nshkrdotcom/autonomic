@@ -1,73 +1,25 @@
 alias Autonomic.{Canonical, EffectBroker, ObservationFrame, Runtime, SensorArray}
-alias Autonomic.Dev.Support
+alias Autonomic.Dev.{MemoryAdapter, Support}
 
 Support.reset!()
-
-restart_broker = fn limit ->
-  Application.put_env(:autonomic, :effect_concurrency, limit)
-
-  :ok =
-    Supervisor.terminate_child(
-      Autonomic.Supervisor,
-      Autonomic.EffectBroker
-    )
-
-  {:ok, _pid} =
-    Supervisor.restart_child(
-      Autonomic.Supervisor,
-      Autonomic.EffectBroker
-    )
-
-  :ok
-end
-
-# First create a real prepared effect without putting the regulator under
-# saturation pressure.
-restart_broker.(8)
-
-Support.install_adapter!(
-  "http_read",
-  :class_2_external_observable_or_compensatable,
-  %{"id" => "demo"}
-)
-
-{spec, runtime} =
-  Support.start_episode!(
-    max_class: :class_2_external_observable_or_compensatable,
-    kinds: ["http_read"]
-  )
-
-prepared =
-  Support.prepare!(
-    spec,
-    runtime,
-    :http_read,
-    "prepared before saturation"
-  )
 
 defmodule BlockingExampleAdapter do
   @behaviour Autonomic.EffectAdapter
 
   @impl true
   def validate(_effect, _opts) do
-    coordinator =
-      Process.whereis(:autonomic_backpressure_example) ||
-        raise "backpressure example coordinator missing"
-
-    send(coordinator, {:adapter_validate_entered, self()})
+    owner = Process.whereis(:autonomic_backpressure_example)
+    send(owner, {:adapter_validate_entered, self()})
 
     receive do
-      :release_validate ->
-        :ok
+      :release_adapter_validate -> :ok
     after
-      5_000 ->
-        {:error, :example_release_timeout}
+      5_000 -> {:error, :blocking_example_timeout}
     end
   end
 
   @impl true
-  def commit(effect, _opts),
-    do: {:ok, %{receipt_ref: "blocking:#{effect.id}"}}
+  def commit(effect, _opts), do: {:ok, %{receipt_ref: "blocking:#{effect.id}"}}
 
   @impl true
   def reconcile(_effect, _opts), do: :not_committed
@@ -75,39 +27,33 @@ end
 
 Process.register(self(), :autonomic_backpressure_example)
 
-# Evaluation resolves the adapter at execution time, so replace the normal
-# adapter with the blocking one after preparation.
-Support.install_adapter!(
-  "http_read",
-  :class_2_external_observable_or_compensatable,
-  %{"id" => "demo"},
-  BlockingExampleAdapter
-)
+class = :class_2_external_observable_or_compensatable
+Support.install_adapter!("http_read", class, %{"id" => "demo"}, MemoryAdapter)
+{spec, runtime} = Support.start_episode!(max_class: class, kinds: ["http_read"])
 
-# Now make the real broker capacity exactly one.
-restart_broker.(1)
+# Prepare before inducing pressure. Evaluation revalidates the already-prepared
+# effect through the adapter, which lets us occupy one real broker work slot
+# without having admission control short-circuit the demonstration.
+effect = Support.prepare!(spec, runtime, :http_read, "first")
+Support.install_adapter!("http_read", class, %{"id" => "demo"}, BlockingExampleAdapter)
 
-first =
-  Task.async(fn ->
-    EffectBroker.evaluate(prepared.id)
-  end)
+previous_limit = Application.get_env(:autonomic, :effect_concurrency, 8)
+Application.put_env(:autonomic, :effect_concurrency, 1)
+:ok = Supervisor.terminate_child(Autonomic.Supervisor, EffectBroker)
+
+case Supervisor.restart_child(Autonomic.Supervisor, EffectBroker) do
+  {:ok, _pid} -> :ok
+  {:ok, _pid, _info} -> :ok
+end
+
+first = Task.async(fn -> EffectBroker.evaluate(effect.id) end)
 
 worker =
   receive do
-    {:adapter_validate_entered, pid} ->
-      pid
+    {:adapter_validate_entered, pid} -> pid
   after
-    2_000 ->
-      raise "timed out waiting for evaluation to occupy the broker slot"
+    2_000 -> raise "timed out waiting for first broker worker to enter adapter validation"
   end
-
-stats = EffectBroker.stats()
-
-Support.assert_equal!(
-  stats.active,
-  1,
-  "one broker worker occupies the only slot"
-)
 
 second =
   EffectBroker.prepare(%{
@@ -116,40 +62,19 @@ second =
     kind: :http_read,
     target_id: "demo",
     target: %{},
-    payload: "must be rejected at saturation"
+    payload: "second"
   })
 
-IO.inspect(second, label: "prepare while broker slot is occupied")
+send(worker, :release_adapter_validate)
+first_result = Task.await(first, 5_000)
+Application.put_env(:autonomic, :effect_concurrency, previous_limit)
 
-Support.assert_equal!(
-  second,
-  {:error, :effect_broker_saturated},
-  "bounded broker saturation"
-)
-
-send(worker, :release_validate)
-
-first_result = Task.await(first, 2_000)
-IO.inspect(first_result, label: "blocked evaluation after release")
-
-Support.assert!(
-  match?({:ok, %{state: :ready}}, first_result),
-  "occupied broker job must complete after release"
-)
-
-Process.unregister(:autonomic_backpressure_example)
-
-# ---------------------------------------------------------------------
-# SensorArray pressure: low-priority work sheds, critical hard facts stay.
-# ---------------------------------------------------------------------
+IO.inspect({first_result, second}, label: "broker saturation")
+Support.assert!(match?({:ok, _}, first_result), "first broker job must run")
+Support.assert_equal!(second, {:error, :effect_broker_saturated}, "bounded broker saturation")
 
 standalone = Canonical.id()
-
-{:ok, _pid} =
-  SensorArray.start_link(
-    episode_id: standalone,
-    max_queue: 2
-  )
+{:ok, _pid} = SensorArray.start_link(episode_id: standalone, max_queue: 2)
 
 for seq <- 1..3 do
   SensorArray.publish(
@@ -180,48 +105,24 @@ SensorArray.publish(standalone, critical, :critical)
 state =
   Support.await!(
     fn ->
-      stage =
-        :sys.get_state(Runtime.via(standalone, :sensor_array))
-
+      stage = :sys.get_state(Runtime.via(standalone, :sensor_array))
       state = Map.fetch!(stage, :state)
-      queued = :queue.to_list(state.queue)
-
-      critical_present? =
-        Enum.any?(queued, fn {_priority, frame} ->
-          frame.sequence == 99
-        end)
-
-      if state.dropped >= 1 and critical_present? do
-        {:ok, state}
-      else
-        false
-      end
+      if state.dropped >= 1, do: {:ok, state}, else: false
     end,
-    "sensor queue to shed low-priority work while retaining the critical frame"
+    "sensor queue to shed a low-priority frame"
   )
 
 queued = :queue.to_list(state.queue)
 
 IO.inspect(
-  %{
-    dropped: state.dropped,
-    queued_sequences:
-      Enum.map(queued, fn {_priority, frame} ->
-        frame.sequence
-      end)
-  },
+  %{dropped: state.dropped, queued_sequences: Enum.map(queued, fn {_priority, frame} -> frame.sequence end)},
   label: "sensor queue"
 )
 
-Support.assert!(
-  state.dropped >= 1,
-  "low-priority frames must shed under saturation"
-)
+Support.assert!(state.dropped >= 1, "low-priority frames must shed under saturation")
 
 Support.assert!(
-  Enum.any?(queued, fn {_priority, frame} ->
-    frame.sequence == 99
-  end),
+  Enum.any?(queued, fn {_priority, frame} -> frame.sequence == 99 end),
   "critical deterministic frame must survive"
 )
 

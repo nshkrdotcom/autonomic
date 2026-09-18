@@ -28,6 +28,7 @@ import re
 import shutil
 import subprocess
 import sys
+import time
 import tomllib
 from pathlib import Path
 from typing import Any
@@ -238,6 +239,74 @@ def secret_scan() -> dict[str, Any]:
     }
 
 
+HEARTBEAT_SECONDS = max(int(os.environ.get("AUTONOMIC_QC_HEARTBEAT_SECONDS", "10")), 1)
+
+
+def progress(message: str) -> None:
+    print(message, flush=True)
+
+
+def _terminate_process(process: subprocess.Popen[Any]) -> None:
+    if process.poll() is not None:
+        return
+    try:
+        if os.name == "posix":
+            os.killpg(process.pid, 15)
+        else:
+            process.terminate()
+        process.wait(timeout=5)
+    except Exception:
+        try:
+            if os.name == "posix":
+                os.killpg(process.pid, 9)
+            else:
+                process.kill()
+        except Exception:
+            pass
+
+
+def _run_logged_command(
+    command: list[str],
+    *,
+    cwd: Path,
+    env: dict[str, str],
+    log: Any,
+    timeout: int,
+    label: str,
+) -> int:
+    started = time.monotonic()
+    next_heartbeat = started + HEARTBEAT_SECONDS
+    process = subprocess.Popen(
+        command,
+        cwd=str(cwd),
+        env=env,
+        stdout=log,
+        stderr=subprocess.STDOUT,
+        start_new_session=os.name == "posix",
+    )
+
+    try:
+        while True:
+            return_code = process.poll()
+            if return_code is not None:
+                return return_code
+
+            now = time.monotonic()
+            elapsed = now - started
+            if elapsed >= timeout:
+                _terminate_process(process)
+                raise subprocess.TimeoutExpired(command, timeout)
+
+            if now >= next_heartbeat:
+                progress(f"WAIT  {label} {elapsed:.0f}s")
+                next_heartbeat = now + HEARTBEAT_SECONDS
+
+            time.sleep(0.25)
+    except BaseException:
+        _terminate_process(process)
+        raise
+
+
 def run_gate(
     gate_id: str,
     command: list[str],
@@ -249,6 +318,7 @@ def run_gate(
     LOGS.mkdir(parents=True, exist_ok=True)
     log_path = LOGS / f"{gate_id}.log"
     started = now_iso()
+    timer = time.monotonic()
     merged = os.environ.copy()
     if env:
         merged.update(env)
@@ -256,35 +326,43 @@ def run_gate(
         merged["MIX_ENV"] = "dev"
 
     effective_cwd = cwd or ROOT
+    progress(
+        f"START {gate_id} cwd={effective_cwd.relative_to(ROOT) if effective_cwd != ROOT else '.'} "
+        f"log={log_path.relative_to(ROOT)}"
+    )
+
     try:
         with log_path.open("wb") as log:
-            cp = subprocess.run(
+            return_code = _run_logged_command(
                 command,
-                cwd=str(effective_cwd),
+                cwd=effective_cwd,
                 env=merged,
-                stdout=log,
-                stderr=subprocess.STDOUT,
+                log=log,
                 timeout=timeout,
-                check=False,
+                label=gate_id,
             )
         log_bytes = log_path.read_bytes()
-        status = "passed" if cp.returncode == 0 else "failed"
+        status = "passed" if return_code == 0 else "failed"
         if len(command) > 1 and Path(command[0]).name == "mix" and command[1] == "test" and not re.search(
             rb"Result: [1-9][0-9]*(?:/[0-9]+)? passed", log_bytes
         ):
             status = "failed"
+        elapsed = time.monotonic() - timer
+        progress(f"{'PASS' if status == 'passed' else 'FAIL'}  {gate_id} {elapsed:.1f}s")
         return {
             "id": gate_id,
             "status": status,
             "mandatory": gate_id in MANDATORY,
             "command": command,
-            "exit_code": cp.returncode,
+            "exit_code": return_code,
             "started_at": started,
             "log_sha256": hashlib.sha256(log_bytes).hexdigest(),
             "finished_at": now_iso(),
             "log": str(log_path.relative_to(ROOT)),
         }
     except subprocess.TimeoutExpired:
+        elapsed = time.monotonic() - timer
+        progress(f"FAIL  {gate_id} {elapsed:.1f}s timeout={timeout}s")
         return {
             "id": gate_id,
             "status": "failed",
@@ -296,6 +374,8 @@ def run_gate(
             "log": str(log_path.relative_to(ROOT)),
         }
     except Exception as exc:
+        elapsed = time.monotonic() - timer
+        progress(f"FAIL  {gate_id} {elapsed:.1f}s error={type(exc).__name__}")
         return {
             "id": gate_id,
             "status": "failed",
@@ -318,32 +398,38 @@ def run_compound_gate(
     LOGS.mkdir(parents=True, exist_ok=True)
     log_path = LOGS / f"{gate_id}.log"
     started = now_iso()
+    timer = time.monotonic()
     merged = os.environ.copy()
     if env:
         merged.update(env)
     if gate_id == "exdoc_warnings_as_errors":
         merged["MIX_ENV"] = "dev"
 
+    progress(f"START {gate_id} steps={len(steps)} log={log_path.relative_to(ROOT)}")
     overall_code = 0
     all_commands = []
     with log_path.open("wb") as log:
-        for label, cmd, cwd in steps:
+        for index, (label, cmd, cwd) in enumerate(steps, 1):
             header = f"\n=== [{label}] in {cwd.relative_to(ROOT)} ===\n$ {' '.join(cmd)}\n".encode()
             log.write(header)
             log.flush()
             all_commands.append(f"{label}: {' '.join(cmd)}")
+            progress(f"STEP  {gate_id} {index}/{len(steps)} {label} cwd={cwd.relative_to(ROOT)}")
             try:
-                cp = subprocess.run(
+                return_code = _run_logged_command(
                     cmd,
-                    cwd=str(cwd),
+                    cwd=cwd,
                     env=merged,
-                    stdout=log,
-                    stderr=subprocess.STDOUT,
+                    log=log,
                     timeout=timeout_per_step,
-                    check=False,
+                    label=f"{gate_id}/{label}",
                 )
-                if cp.returncode != 0:
-                    overall_code = cp.returncode
+                if return_code != 0:
+                    overall_code = return_code
+            except subprocess.TimeoutExpired:
+                log.write(f"\nERROR: timeout after {timeout_per_step}s\n".encode())
+                overall_code = 1
+                break
             except Exception as exc:
                 log.write(f"\nERROR: {exc}\n".encode())
                 overall_code = 1
@@ -352,11 +438,12 @@ def run_compound_gate(
     log_bytes = log_path.read_bytes()
     status = "passed" if overall_code == 0 else "failed"
 
-    # For ExUnit test runs: ensure at least one test passed across the projects
     if gate_id == "exunit_full" and status == "passed":
         if not re.search(rb"Result: [1-9][0-9]*(?:/[0-9]+)? passed", log_bytes):
             status = "failed"
 
+    elapsed = time.monotonic() - timer
+    progress(f"{'PASS' if status == 'passed' else 'FAIL'}  {gate_id} {elapsed:.1f}s")
     return {
         "id": gate_id,
         "status": status,
@@ -371,6 +458,7 @@ def run_compound_gate(
 
 
 def pending(gate_id: str, reason: str, command: list[str] | None = None) -> dict[str, Any]:
+    progress(f"PEND  {gate_id}: {reason}")
     item: dict[str, Any] = {
         "id": gate_id,
         "status": "not_run",

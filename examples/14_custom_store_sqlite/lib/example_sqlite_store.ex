@@ -22,36 +22,20 @@ defmodule ExampleSQLiteStore do
   @impl true
   def fetch_effect(id), do: GenServer.call(__MODULE__, {:fetch, "effect", id})
   @impl true
-  def append_event(episode_id, kind, payload),
-    do: GenServer.call(__MODULE__, {:append_event, episode_id, kind, payload})
+  def append_event(episode_id, kind, payload), do: GenServer.call(__MODULE__, {:append_event, episode_id, kind, payload})
 
   @impl true
   def init(path) do
-    sqlite =
-      System.find_executable("sqlite3") || raise "sqlite3 executable is required for this example"
-
+    sqlite = System.find_executable("sqlite3") || raise "sqlite3 executable is required for this example"
     File.rm(path)
     File.mkdir_p!(Path.dirname(path))
-
-    :ok =
-      exec(
-        sqlite,
-        path,
-        "PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; CREATE TABLE episodes(id TEXT PRIMARY KEY, epoch INTEGER NOT NULL); CREATE TABLE objects(kind TEXT NOT NULL, id TEXT NOT NULL, blob TEXT NOT NULL, PRIMARY KEY(kind,id)); CREATE TABLE events(seq INTEGER PRIMARY KEY AUTOINCREMENT, episode_id TEXT NOT NULL, kind TEXT NOT NULL, payload TEXT NOT NULL);"
-      )
-
+    :ok = exec(sqlite, path, "PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; CREATE TABLE episodes(id TEXT PRIMARY KEY, epoch INTEGER NOT NULL); CREATE TABLE objects(kind TEXT NOT NULL, id TEXT NOT NULL, blob TEXT NOT NULL, PRIMARY KEY(kind,id)); CREATE TABLE events(seq INTEGER PRIMARY KEY AUTOINCREMENT, episode_id TEXT NOT NULL, kind TEXT NOT NULL, payload TEXT NOT NULL);")
     {:ok, %{sqlite: sqlite, path: path}}
   end
 
   @impl true
   def handle_call(:reset, _from, state) do
-    :ok =
-      exec(
-        state.sqlite,
-        state.path,
-        "DELETE FROM events; DELETE FROM objects; DELETE FROM episodes;"
-      )
-
+    :ok = exec(state.sqlite, state.path, "DELETE FROM events; DELETE FROM objects; DELETE FROM episodes;")
     {:reply, :ok, state}
   end
 
@@ -69,64 +53,37 @@ defmodule ExampleSQLiteStore do
 
   def handle_call({:put, kind, id, term}, _from, state) do
     blob = encode(term)
-
-    sql =
-      "INSERT OR REPLACE INTO objects(kind,id,blob) VALUES(#{sql_quote(kind)},#{sql_quote(id)},#{sql_quote(blob)});"
-
+    sql = "INSERT OR REPLACE INTO objects(kind,id,blob) VALUES(#{sql_quote(kind)},#{sql_quote(id)},#{sql_quote(blob)});"
     {:reply, exec(state.sqlite, state.path, sql), state}
   end
 
   def handle_call({:fetch, kind, id}, _from, state) do
-    case query(
-           state,
-           "SELECT blob FROM objects WHERE kind=#{sql_quote(kind)} AND id=#{sql_quote(id)};"
-         ) do
+    case query(state, "SELECT blob FROM objects WHERE kind=#{sql_quote(kind)} AND id=#{sql_quote(id)};") do
       "" -> {:reply, :not_found, state}
       blob -> {:reply, {:ok, decode(blob)}, state}
     end
   end
 
   def handle_call({:advance_epoch, id, metadata}, _from, state) do
-    with epoch_text when epoch_text != "" <-
-           query(state, "SELECT epoch FROM episodes WHERE id=#{sql_quote(id)};") do
+    with epoch_text when epoch_text != "" <- query(state, "SELECT epoch FROM episodes WHERE id=#{sql_quote(id)};") do
       old_epoch = String.to_integer(epoch_text)
       new_epoch = old_epoch + 1
       now = Canonical.now()
 
-      leases =
-        list_objects(state, "lease")
-        |> Enum.map(fn {key, lease} ->
-          if lease.episode_id == id and lease.epoch < new_epoch and is_nil(lease.revoked_at),
-            do: {key, %{lease | revoked_at: now}},
-            else: {key, lease}
-        end)
+      leases = list_objects(state, "lease") |> Enum.map(fn {key, lease} ->
+        if lease.episode_id == id and lease.epoch < new_epoch and is_nil(lease.revoked_at), do: {key, %{lease | revoked_at: now}}, else: {key, lease}
+      end)
 
-      effects =
-        list_objects(state, "effect")
-        |> Enum.map(fn {key, effect} ->
-          if effect.episode_id == id and effect.epoch < new_epoch and
-               effect.state in [:proposed, :prepared, :evaluating, :ready],
-             do: {key, %{effect | state: :stale}},
-             else: {key, effect}
-        end)
+      effects = list_objects(state, "effect") |> Enum.map(fn {key, effect} ->
+        if effect.episode_id == id and effect.epoch < new_epoch and effect.state in [:proposed, :prepared, :evaluating, :ready], do: {key, %{effect | state: :stale}}, else: {key, effect}
+      end)
 
       rewrites =
         Enum.map(leases, fn {key, value} -> upsert_sql("lease", key, value) end) ++
           Enum.map(effects, fn {key, value} -> upsert_sql("effect", key, value) end)
 
       event = Canonical.json(%{old_epoch: old_epoch, new_epoch: new_epoch, metadata: metadata})
-
-      sql =
-        [
-          "BEGIN IMMEDIATE;",
-          "UPDATE episodes SET epoch=#{new_epoch} WHERE id=#{sql_quote(id)};",
-          rewrites,
-          "INSERT INTO events(episode_id,kind,payload) VALUES(#{sql_quote(id)},'epoch_advanced',#{sql_quote(event)});",
-          "COMMIT;"
-        ]
-        |> List.flatten()
-        |> Enum.join("\n")
-
+      sql = ["BEGIN IMMEDIATE;", "UPDATE episodes SET epoch=#{new_epoch} WHERE id=#{sql_quote(id)};", rewrites, "INSERT INTO events(episode_id,kind,payload) VALUES(#{sql_quote(id)},'epoch_advanced',#{sql_quote(event)});", "COMMIT;"] |> List.flatten() |> Enum.join("\n")
       :ok = exec(state.sqlite, state.path, sql)
       {:reply, {:ok, new_epoch}, state}
     else
@@ -136,14 +93,7 @@ defmodule ExampleSQLiteStore do
 
   def handle_call({:append_event, episode_id, kind, payload}, _from, state) do
     json = Canonical.json(payload)
-
-    :ok =
-      exec(
-        state.sqlite,
-        state.path,
-        "INSERT INTO events(episode_id,kind,payload) VALUES(#{sql_quote(episode_id)},#{sql_quote(to_string(kind))},#{sql_quote(json)});"
-      )
-
+    :ok = exec(state.sqlite, state.path, "INSERT INTO events(episode_id,kind,payload) VALUES(#{sql_quote(episode_id)},#{sql_quote(to_string(kind))},#{sql_quote(json)});")
     seq = query(state, "SELECT COALESCE(MAX(seq),0) FROM events;") |> String.to_integer()
     {:reply, {:ok, seq}, state}
   end
@@ -157,10 +107,7 @@ defmodule ExampleSQLiteStore do
     end)
   end
 
-  defp upsert_sql(kind, id, term),
-    do:
-      "INSERT OR REPLACE INTO objects(kind,id,blob) VALUES(#{sql_quote(kind)},#{sql_quote(id)},#{sql_quote(encode(term))});"
-
+  defp upsert_sql(kind, id, term), do: "INSERT OR REPLACE INTO objects(kind,id,blob) VALUES(#{sql_quote(kind)},#{sql_quote(id)},#{sql_quote(encode(term))});"
   defp encode(term), do: term |> :erlang.term_to_binary([:compressed]) |> Base.encode64()
   defp decode(text), do: text |> Base.decode64!() |> :erlang.binary_to_term([:safe])
   defp sql_quote(value), do: "'" <> (to_string(value) |> String.replace("'", "''")) <> "'"
@@ -173,9 +120,7 @@ defmodule ExampleSQLiteStore do
   end
 
   defp query(state, sql) do
-    case System.cmd(state.sqlite, ["-batch", "-noheader", state.path, sql],
-           stderr_to_stdout: true
-         ) do
+    case System.cmd(state.sqlite, ["-batch", "-noheader", state.path, sql], stderr_to_stdout: true) do
       {out, 0} -> String.trim(out)
       {out, status} -> raise "sqlite3 query failed (#{status}): #{out}"
     end

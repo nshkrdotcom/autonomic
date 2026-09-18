@@ -5,9 +5,7 @@ defmodule Autonomic.Dev.ScriptedSensor do
 
   alias Autonomic.{Canonical, SemanticObservation}
 
-  def start_link(_opts),
-    do: Agent.start_link(fn -> %{queue: [], default: safe_observations()} end, name: __MODULE__)
-
+  def start_link(_opts), do: Agent.start_link(fn -> %{queue: [], default: safe_observations()} end, name: __MODULE__)
   def reset, do: Agent.update(__MODULE__, fn _ -> %{queue: [], default: safe_observations()} end)
   def script(entries) when is_list(entries), do: Agent.update(__MODULE__, &%{&1 | queue: entries})
   def default(entry), do: Agent.update(__MODULE__, &%{&1 | default: entry})
@@ -26,12 +24,9 @@ defmodule Autonomic.Dev.ScriptedSensor do
   defp normalize({:unavailable, reason}), do: {:error, reason}
   defp normalize({:error, reason}), do: {:error, reason}
   defp normalize({:ok, observations}), do: {:ok, Enum.map(observations, &observation/1)}
-
-  defp normalize(observations) when is_list(observations),
-    do: {:ok, Enum.map(observations, &observation/1)}
+  defp normalize(observations) when is_list(observations), do: {:ok, Enum.map(observations, &observation/1)}
 
   defp observation(%SemanticObservation{} = value), do: value
-
   defp observation(map) when is_map(map) do
     %SemanticObservation{
       sensor: Map.fetch!(map, :sensor),

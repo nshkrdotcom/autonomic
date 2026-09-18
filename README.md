@@ -28,7 +28,6 @@ The laptop examples use the real core control plane with an explicitly unsafe lo
 
 ```bash
 cd examples/01_first_episode
-mix deps.get
 mix run
 ```
 
